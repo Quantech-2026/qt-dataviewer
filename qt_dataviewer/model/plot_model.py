@@ -292,5 +292,5 @@ class PlotModel:
         self._last_selected_data = da
         self._changed = False
         duration = time.perf_counter() - start
-        print(f"Updated {self.var_name} {duration*1000:.1f} ms")
+        logger.info(f"Updated {self.var_name} {duration*1000:.1f} ms")
         return da

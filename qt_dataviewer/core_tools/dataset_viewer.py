@@ -26,7 +26,7 @@ class CoreToolsDatasetViewer(DatasetViewer):
 
         self._ds = ds
         if not self.is_ds_complete(ds):
-            print(f"Incomplete dataset {ds.exp_uuid}")
+            logger.info(f"Incomplete dataset {ds.exp_uuid}")
             self._timer.timeout.connect(self.update_ds)
             self._timer.start(300)
 
@@ -36,7 +36,7 @@ class CoreToolsDatasetViewer(DatasetViewer):
         ds_xr = ds2xarray(ds)
         self._set_ds(ds_xr)
         if not self.is_ds_complete(ds):
-            print(f"Incomplete dataset {ds.exp_uuid}")
+            logger.info(f"Incomplete dataset {ds.exp_uuid}")
             self._timer.timeout.connect(self.update_ds)
             self._timer.start(300)
 
@@ -50,13 +50,13 @@ class CoreToolsDatasetViewer(DatasetViewer):
                     written = param.written()
                     if written is not None:
                         if written < np.prod(param.shape):
-                            print(f"Incomplete {ds.exp_uuid} {written} <> {np.prod(param.shape)}")
+                            logger.info(f"Incomplete {ds.exp_uuid} {written} <> {np.prod(param.shape)}")
                             return False
                     else:
                         # length written is unknown, check if last value is not None
                         data = param()
                         if np.isnan(data.flat[-1]):
-                            print(f"Incomplete {ds.exp_uuid} NaN")
+                            logger.info(f"Incomplete {ds.exp_uuid} NaN")
                             return False
         return True
 
@@ -66,7 +66,6 @@ class CoreToolsDatasetViewer(DatasetViewer):
             self._timer.stop()
 
         ds = self._ds
-        print("Update ds")
         logger.info('Update ds')
         ds.sync()
         # Update every plot

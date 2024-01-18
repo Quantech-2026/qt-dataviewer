@@ -29,7 +29,6 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
             super(QtWidgets.QMainWindow, self).__init__()
             self.setup_ui(self, self)
 
-
             self._plotters: List[DataArrayPlotter] = []
             self.alive = True
 
@@ -48,6 +47,10 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
 
     @qt_log_exception
     def _set_ds(self, ds: xr.Dataset, snapshot: Union[None, str, Dict[str, Any]] = None):
+        if ds is None:
+            self.clear_variables()
+            return
+
         if not isinstance(ds, xr.Dataset):
             raise Exception(f"Unknown dataset class: {type(ds)}")
 
@@ -101,8 +104,8 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
             logger.warning(f"Unknown xarray format. Attrs:{[name for name in ds.attrs]}")
 
     def _qf_to_nD(self, ds):
-        print(ds.attrs['name'], flush=True)
-        print(ds.attrs.keys())
+        # print(ds.attrs['name'], flush=True)
+        # print(ds.attrs.keys())
         if ds.attrs.get('2D-grid'):
             ds = ds.set_index(dim_0=['x0','x1']).unstack('dim_0')
         elif len(ds.coords) == 1:

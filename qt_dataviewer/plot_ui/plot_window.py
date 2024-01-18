@@ -163,7 +163,7 @@ class PlotWindow:
 
         cb_layout = QtWidgets.QHBoxLayout()
         cb_layout.setContentsMargins(5, 2, 4, 4)
-        cb_only_selected = QtWidgets.QCheckBox("Show only selected")
+        cb_only_selected = QtWidgets.QCheckBox("Show 1 chart (the selected)")
         cb_only_selected.toggled.connect(self._only_selected_changed)
         self.cb_only_selected = cb_only_selected
         cb_layout.addWidget(cb_only_selected)
@@ -246,7 +246,8 @@ class PlotWindow:
         selected_row = self._selected_row()
         if selected_row is None:
             return
-        hidden = selected = self.lb_variables.selectedItems()[0].checkState() != QtCore.Qt.Checked
+        selected_item = self.lb_variables.selectedItems()[0]
+        hidden = selected_item.checkState() != QtCore.Qt.Checked
         self._event_handler.variable_selection_changed(selected_row, hidden)
         self._update_plot_borders()
         if self.cb_only_selected.isChecked():
@@ -255,8 +256,8 @@ class PlotWindow:
             selected_row
             nplots = 0
             for seq_nr, widget in self._plot_widgets.items():
-                widget.setVisible(int(seq_nr) == selected)
-                if int(seq_nr) == selected:
+                widget.setVisible(int(seq_nr) == selected_row)
+                if int(seq_nr) == selected_row:
                     irow, icol = divmod(nplots, N_PLOT_COLUMNS)
                     layout.addWidget(widget, irow, icol)
                     nplots += 1
@@ -342,18 +343,16 @@ class PlotWindow:
 
         tabs.addTab(pulses_widget, "Pulses")
 
-    def set_dataset_info(self, name, uuid_str: str, start_time: datetime,):
-        if start_time is None: # @@@@ Remove hack!
-            start_time = datetime(2000, 1, 1)
-
+    def set_dataset_info(self, name, uuid_str: str, start_time: datetime):
         if len(name) > 80:
             name = name[:80] + '...'
-
-        self.setWindowTitle(f'{name}  {start_time:%H:%M:%S %Y-%m-%d}  {uuid_str}')
+        start_time_str = f"{start_time:%H:%M:%S %Y-%m-%d}" if start_time else "--:--:-- ____-__-__"
+        self.setWindowTitle(f'{name}  {start_time_str}  {uuid_str}')
 
         self.label_name.setText(name)
         self.label_uuid.setText(uuid_str)
-        self.label_datetime.setText(f'{start_time:%Y-%m-%d %H:%M:%S}')
+        start_time_str = f"{start_time:%Y-%m-%d %H:%M:%S}" if start_time else "____-__-__ --:--:--"
+        self.label_datetime.setText(f'{start_time_str}')
 
     def set_details_info(self, details_list: List[Tuple[str, str]]):
         for i in range(self.details_layout.count()):
@@ -537,7 +536,7 @@ class PlotWindow:
         self.current_settings_widget = settings_widget
 
     def add_plot(self, title: str, seq_nr: float):
-        print('Add', title)
+        logger.debug('Add', title)
         if seq_nr in self._plot_widgets:
             raise Exception(f"Duplicate plot {seq_nr}")
         layout = self.plots_layout
