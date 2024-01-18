@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qt_dataviewer"
-version = "0.1.1"
+version = "0.1.2"
 authors = [
   { name="Sander de Snoo", email="s.l.desnoo@tudelft.nl" },
 ]

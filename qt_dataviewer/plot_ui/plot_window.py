@@ -341,7 +341,7 @@ class PlotWindow:
         pulses_layout = QtWidgets.QVBoxLayout(pulses_widget)
         self.pulses_layout = pulses_layout
 
-        tabs.addTab(pulses_widget, "Pulses")
+        # tabs.addTab(pulses_widget, "Pulses")
 
     def set_dataset_info(self, name, uuid_str: str, start_time: datetime):
         if len(name) > 80:
