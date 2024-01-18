@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qt_dataviewer"
-version = "0.0.1"
+version = "0.1.1"
 authors = [
   { name="Sander de Snoo", email="s.l.desnoo@tudelft.nl" },
 ]
 description = "QuTech Viewer for xarray Datasets."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.7"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

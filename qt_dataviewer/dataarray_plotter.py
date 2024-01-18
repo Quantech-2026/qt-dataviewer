@@ -5,7 +5,6 @@ from PyQt5 import QtWidgets
 from qt_dataviewer.model.plot_model import PlotModel
 from qt_dataviewer.plot_ui.plot_1d import Plot1D
 from qt_dataviewer.plot_ui.plot_2d import Plot2D
-from qt_dataviewer.plot_ui.plot_3d import Plot3D
 
 
 class DataArrayPlotter:
