@@ -91,7 +91,7 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
                 [(name, ds.attrs[name])
                  for name in ['project', 'set_up', 'sample_name']]
                 )
-            # self.set_snapshot(ds.attrs['snapshot'] if not snapshot else snapshot)
+            self.set_snapshot(ds.attrs['snapshot'] if not snapshot else snapshot)
         elif 'tuid' in ds.attrs:
             # Quantify
             self.set_dataset_info(
@@ -99,7 +99,7 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
                 uuid_str=ds.attrs['tuid'],
                 start_time=None
                 )
-            # self.set_snapshot(snapshot)
+            self.set_snapshot(snapshot)
         else:
             logger.warning(f"Unknown xarray format. Attrs:{[name for name in ds.attrs]}")
 

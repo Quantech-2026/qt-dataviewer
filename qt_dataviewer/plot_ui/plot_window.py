@@ -341,7 +341,7 @@ class PlotWindow:
         pulses_layout = QtWidgets.QVBoxLayout(pulses_widget)
         self.pulses_layout = pulses_layout
 
-        # tabs.addTab(pulses_widget, "Pulses")
+        tabs.addTab(pulses_widget, "Pulses")
 
     def set_dataset_info(self, name, uuid_str: str, start_time: datetime):
         if len(name) > 80:
@@ -367,24 +367,65 @@ class PlotWindow:
             tree_data = json.loads(snapshot)
         else:
             tree_data = snapshot
-        self.snapshot_tree.setUpdatesEnabled(False)
+
         tree = self.snapshot_tree
         tree.clear()
+
         if tree_data:
             self._add_items(None, tree_data)
-            try:
-                pulses = tree_data['']
-            except KeyError:
-                pass
-        self.snapshot_tree.setUpdatesEnabled(True)
+        tree.itemExpanded.connect(self._expand_item)
         pulses = None
         if tree_data:
             try:
                 pulses = tree_data['measurement']['sequence']
                 _ = pulses['pc0']
             except KeyError:
-                pass
+                pulses = None
         self.set_pulses(pulses)
+
+    @qt_log_exception
+    def _expand_item(self, item: QtWidgets.QTreeWidgetItem):
+        data, children_expanded = item.data(0, QtCore.Qt.UserRole)
+        if not children_expanded:
+            for index, (key, value) in enumerate(data.items()):
+                child = item.child(index)
+                if key != child.text(0):
+                    print('Oops', key, child.text())
+                if isinstance(value, Mapping):
+                    self._add_items(child, value)
+            item.setData(0, QtCore.Qt.UserRole, (data, True))
+
+    def _add_items(self, parent, settings, depth=1):
+        for key, value in settings.items():
+            item = QtWidgets.QTreeWidgetItem()
+            item.setText(0, key)
+            item.setData(0, QtCore.Qt.UserRole, (value, False))
+            if parent:
+                parent.addChild(item)
+            else:
+                self.snapshot_tree.addTopLevelItem(item)
+            if value is None:
+                item.setText(1, 'None')
+            elif isinstance(value, Mapping):
+                if depth > 0:
+                    self._add_items(item, value, depth-1)
+            elif not isinstance(value, str) and isinstance(value, Sequence):
+                item.setData(0, QtCore.Qt.UserRole, (value, True))
+                for e in value:
+                    li = QtWidgets.QTreeWidgetItem()
+                    li.setText(0, '-')
+                    li.setText(1, str(e))
+                    item.addChild(li)
+            else:
+                item.setText(1, str(value))
+                # if hasattr(value, 'dtype') and value.dtype <= float:
+                #     if value.ndim == 0:
+                #         value = value.item()
+                #     else:
+                #         value = str(value)
+                # item.setData(1, QtCore.Qt.EditRole, value)
+                # flags = QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
+                # item.setFlags(flags)
 
     @qt_log_exception
     def set_pulses(self, pulses: Union[None, Dict[str, Any]]):
@@ -474,34 +515,6 @@ class PlotWindow:
             error_message.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
             self.pulses_layout.addWidget(error_message, 1)
 
-    def _add_items(self, parent, settings):
-        for key,value in settings.items():
-            item = QtWidgets.QTreeWidgetItem()
-            item.setText(0, key)
-            if parent:
-                parent.addChild(item)
-            else:
-                self.snapshot_tree.addTopLevelItem(item)
-            if value is None:
-                item.setText(1, 'None')
-            elif isinstance(value, Mapping):
-                self._add_items(item, value)
-            elif not isinstance(value, str) and isinstance(value, Sequence):
-                for e in value:
-                    li = QtWidgets.QTreeWidgetItem()
-                    li.setText(0, '-')
-                    li.setText(1, str(e))
-                    item.addChild(li)
-            else:
-                if hasattr(value, 'dtype') and value.dtype <= float:
-                    if value.ndim == 0:
-                        value = value.item()
-                    else:
-                        value = str(value)
-                item.setData(1, QtCore.Qt.EditRole, value)
-                flags = QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-                item.setFlags(flags)
-
     def clear_variables(self):
         if self.current_settings_widget is not None:
            self.current_settings_widget.deleteLater()
@@ -536,7 +549,7 @@ class PlotWindow:
         self.current_settings_widget = settings_widget
 
     def add_plot(self, title: str, seq_nr: float):
-        logger.debug('Add', title)
+        logger.debug(f"Add {title}")
         if seq_nr in self._plot_widgets:
             raise Exception(f"Duplicate plot {seq_nr}")
         layout = self.plots_layout
