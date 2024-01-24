@@ -42,7 +42,7 @@ class Plot1D(BasePlot):
         self.curves = []
 
         plot = self.plot
-        plot.setBackground('white')
+        # plot.setBackground('white')
         # plot.addLegend()
         plot.showGrid(True, True)
 
@@ -57,7 +57,11 @@ class Plot1D(BasePlot):
         y_data = self._y_formatter.scale * y.data
         self.x_data = x_data
         self.y_data = y_data
-        curve = plot.plot(x_data, y_data, **graph_color[0], name=label, connect='finite')
+        curve_style = graph_color[0]
+        if len(x_data) > 100:
+            curve_style = {"pen": curve_style["pen"]}
+
+        curve = plot.plot(x_data, y_data, **curve_style, name=label, connect='finite')
         self.curves.append(curve)
 
         self.proxy = pg.SignalProxy(plot.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
