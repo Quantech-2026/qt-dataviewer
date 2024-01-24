@@ -105,6 +105,16 @@ class PlotSettings(QtWidgets.QWidget):
         layout.addWidget(self._height_filler(), irow, 0)
         irow += 1
 
+        layout.addWidget(QtWidgets.QLabel('multiline plot'), irow, 0)
+        cb = QtWidgets.QCheckBox()
+        cb.setChecked(plot_model.multiline_plot)
+        cb.toggled.connect(self._set_multiline_plot)
+        self._cb_multiline = cb
+        layout.addWidget(cb, irow, btn_col, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+        irow += 1
+        layout.addWidget(self._height_filler(), irow, 0)
+        irow += 1
+
         layout.addWidget(QtWidgets.QLabel('measured log.'), irow, 0)
         cb = QtWidgets.QCheckBox()
         cb.setChecked(plot_model.logarithmic)
@@ -165,6 +175,10 @@ class PlotSettings(QtWidgets.QWidget):
     @qt_log_exception
     def _set_logarithmic(self, checked):
         self._plot_model.set_logarithmic(checked)
+
+    @qt_log_exception
+    def _set_multiline_plot(self, checked):
+        self._plot_model.set_multiline_plot(checked)
 
     @qt_log_exception
     def _set_show_sidebar(self, checked):

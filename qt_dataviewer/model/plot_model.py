@@ -34,6 +34,7 @@ class VariableSettings:
     manual_value_range: Optional[Tuple[float, float]] = None
     slice_value_range: Optional[Tuple[float, float]] = None
     show_sidebar: bool = False
+    multiline_plot: bool = False
 
     @property
     def value_range(self) -> Optional[Tuple[float, float]]:
@@ -228,6 +229,16 @@ class PlotModel:
         return self._var_settings.logarithmic
 
     @plot_changer
+    def set_multiline_plot(self, multiline_plot):
+        if self._var_settings.multiline_plot != multiline_plot:
+            self._var_settings.multiline_plot = multiline_plot
+            self._changed = True
+
+    @property
+    def multiline_plot(self):
+        return self._var_settings.multiline_plot
+
+    @plot_changer
     def set_value_range(self, value_range: Optional[Tuple[float, float]]):
         if self._var_settings.manual_value_range != value_range:
             if value_range is not None and not isinstance(value_range, tuple):
@@ -261,12 +272,20 @@ class PlotModel:
         start = time.perf_counter()
         histogram_mode = self._var_settings.histogram_mode
         da = self._data
+        dims = [settings.data.name for settings in self._axis_settings]
         if histogram_mode is None:
             for settings in reversed(self._axis_settings):
                 if settings.mode == AxisMode.Average:
                     dim_name = settings.data.name
                     da = da.mean(dim_name)
+                    dims.remove(dim_name)
+
         value_range = (float(da.min()), float(da.max()))
+        # if histogram_mode is not None:
+        #     da = histogram(da, dims, 40, value_range) # TODO bins, range
+        #     da['histogram'].attrs['log'] = False
+        #     value_range = (float(da.min()), float(da.max()))
+
         has_slice = False
         for settings in self._axis_settings:
             dim_name = settings.data.name
@@ -281,6 +300,9 @@ class PlotModel:
         if histogram_mode is not None:
             da = histogram(da, self.dims, 40, value_range) # TODO bins, range
             da['histogram'].attrs['log'] = False
+            # TODO: set slice_value_range
+            # if has_slice:
+            #     self._var_settings.slice_value_range = value_range
         else:
             for name in ['units', 'long_name']:
                 da.attrs[name] = self._data.attrs[name]
