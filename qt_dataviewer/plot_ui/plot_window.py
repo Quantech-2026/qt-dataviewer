@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 import traceback
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
@@ -18,7 +19,7 @@ from .plot_settings_panel import PlotSettings
 
 logger = logging.getLogger(__name__)
 
-# default colors and colorscales, taken from plotly
+# default colors cycle: see matplotlib CN colors.
 color_cycle = [
     '#1f77b4',  # muted blue
     '#ff7f0e',  # safety orange
@@ -122,20 +123,36 @@ class PlotWindow:
     @qt_log_exception
     def _select_next(self, checked: bool):
         if self.datalist is not None:
-            try:
-                self.setCursor(QtCore.Qt.WaitCursor)
-                self.datalist.select_next()
-            finally:
-                self.setCursor(QtCore.Qt.ArrowCursor)
+            if not self.datalist.has_next():
+                QtWidgets.QToolTip.showText(self.mapToGlobal(self.btnNext.pos() + QtCore.QPoint(0, 10)),
+                                            'No more data', self.btnNext,
+                                            QtCore.QRect(), 500)
+            else:
+                try:
+                    t0 = time.perf_counter()
+                    self.setCursor(QtCore.Qt.WaitCursor)
+                    self.datalist.select_next()
+                finally:
+                    self.setCursor(QtCore.Qt.ArrowCursor)
+                    t1 = time.perf_counter()
+                    # print(f"Next {(t1-t0)*1000:.1f} ms")
 
     @qt_log_exception
     def _select_previous(self, checked: bool):
         if self.datalist is not None:
-            try:
-                self.setCursor(QtCore.Qt.WaitCursor)
-                self.datalist.select_previous()
-            finally:
-                self.setCursor(QtCore.Qt.ArrowCursor)
+            if not self.datalist.has_previous():
+                QtWidgets.QToolTip.showText(self.mapToGlobal(self.btnPrevious.pos() + QtCore.QPoint(0, 10)),
+                                            'No more data', self.btnPrevious,
+                                            QtCore.QRect(), 500)
+            else:
+                try:
+                    t0 = time.perf_counter()
+                    self.setCursor(QtCore.Qt.WaitCursor)
+                    self.datalist.select_previous()
+                finally:
+                    self.setCursor(QtCore.Qt.ArrowCursor)
+                    t1 = time.perf_counter()
+                    # print(f"Prev {(t1-t0)*1000:.1f} ms")
 
     def create_plots_tab(self, tabs): # @@@ Move to separate class
         plots_widget = QtWidgets.QWidget()
@@ -389,6 +406,7 @@ class PlotWindow:
         if not children_expanded:
             for index, (key, value) in enumerate(data.items()):
                 child = item.child(index)
+                child.setData(0, QtCore.Qt.UserRole, (value, True))
                 if key != child.text(0):
                     print('Oops', key, child.text())
                 if isinstance(value, Mapping):
