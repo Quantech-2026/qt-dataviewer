@@ -1,5 +1,6 @@
 import pyqtgraph as pg
 import numpy as np
+from matplotlib import colormaps
 
 from PyQt5 import QtCore, QtWidgets
 from qt_dataviewer.utils.qt_utils import qt_log_exception
@@ -41,9 +42,10 @@ class PlotMultiline(BasePlot):
         self._layout.addWidget(self.label)
 
         self.curves = {}
+        self.colormap = colormaps.get_cmap('turbo')
 
         plot = self.plot
-        # plot.addLegend()
+        plot.addLegend()
         plot.showGrid(True, True)
 
         self.update()
@@ -52,7 +54,7 @@ class PlotMultiline(BasePlot):
     def _update_axis(self, x, y):
         log_mode = {'x': x.attrs['log'], 'y': y.attrs['log']}
         self._log_mode = log_mode
-        x_formatter = self._x1_formatter
+        x_formatter = self._x0_formatter
         y_formatter = self._y_formatter
 
         plot = self.plot
@@ -92,7 +94,9 @@ class PlotMultiline(BasePlot):
         self._x1_formatter = x1_formatter
         y_formatter = SmartFormatter(y.attrs['units'])
         self._y_formatter = y_formatter
-        self._update_axis(x1, y)
+
+        self._update_axis(x0, y)
+
         x0_data = self._x0_formatter.scale * x0.data
         x1_data = self._x1_formatter.scale * x1.data
         y_data = self._y_formatter.scale * y.data
@@ -100,12 +104,24 @@ class PlotMultiline(BasePlot):
         self.x1_data = x1_data
         self.y_data = y_data
 
+        discrete_colors = len(x1_data) <= 8
+        if not discrete_colors:
+            # 5 values: first, last and evenly distributed
+            step_size = (len(x1_data) - 1) / 4
+            label_indices = [round(step_size * i) for i in range(5)]
+
         for i, v1 in enumerate(x1_data):
             if np.isnan(v1):
                 continue
             label = x1_formatter.with_units(v1, x1_data)
+            if discrete_colors:
+                color = color_cycle[i % 10]
+            else:
+                color = self.colormap(i/(len(x1_data)-1), bytes=True)
+                if i not in label_indices:
+                    label = None
             if i not in self.curves:
-                curve = plot.plot(x0_data, y_data[:,i], pen=dict(color=color_cycle[i % 10], width=2),
+                curve = plot.plot(x0_data, y_data[:,i], pen=dict(color=color, width=2),
                                   name=label, connect='finite')
                 self.curves[i] = curve
             else:
