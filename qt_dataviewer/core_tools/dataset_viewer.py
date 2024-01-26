@@ -23,12 +23,14 @@ class CoreToolsDatasetViewer(DatasetViewer):
         super().__init__(ds_xr, datalist=datalist)
 
         self._timer = QtCore.QTimer()
+        self._timer.timeout.connect(self.update_ds)
+        self._timer.setSingleShot(True)
+        self._timer.setInterval(500)
 
         self._ds = ds
         if not self.is_ds_complete(ds):
             logger.info(f"Incomplete dataset {ds.exp_uuid}")
-            self._timer.timeout.connect(self.update_ds)
-            self._timer.start(300)
+            self._timer.start()
 
     def set_ds(self, ds: data_set):
         self._ds = ds
@@ -37,8 +39,7 @@ class CoreToolsDatasetViewer(DatasetViewer):
         self._set_ds(ds_xr)
         if not self.is_ds_complete(ds):
             logger.info(f"Incomplete dataset {ds.exp_uuid}")
-            self._timer.timeout.connect(self.update_ds)
-            self._timer.start(300)
+            self._timer.start()
 
     def is_ds_complete(self, ds):
         if (not ds.completed
@@ -74,6 +75,7 @@ class CoreToolsDatasetViewer(DatasetViewer):
             plotter = self._plotters[i]
             logger.info(f"Update {var.name}")
             plotter.update_data(var)
+        self._timer.start()
 
     def closeEvent(self, event):
         """ Override of QT closeEvent. """
