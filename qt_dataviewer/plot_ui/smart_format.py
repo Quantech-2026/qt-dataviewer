@@ -3,12 +3,24 @@ import xarray as xr
 
 from pyqtgraph.functions import siScale
 
-
+_si_prefixes = {
+    "T": 1e12,
+    "G": 1e9,
+    "M": 1e6,
+    "k": 1e3,
+    "" : 1,
+    "m": 1e-3,
+    "u": 1e-6,
+    "\u03BC": 1e-6,  # mu
+    "n": 1e-9,
+    "p": 1e-12,
+    "f": 1e-15,
+    }
+_si_units = ["s", "Hz", "A", "V", "Ohm", "\u03A9", "H", "T"]
 _auto_si_units = {
-    "A": 1, "mA" : 1e-3, "uA" : 1e-6, "nA" : 1e-9, "pA" : 1e-12, "fA" : 1e-15,
-    "V": 1, "nV" : 1e-9, "uV" : 1e-6, "mV" : 1e-3,
-    "s": 1, "ns" : 1e-9, "us" : 1e-6, "ms" : 1e-3,
-    "Hz": 1, "kHz" : 1e3, "MHz" : 1e6, "GHz" : 1e9,
+    prefix+unit: scale
+    for prefix, scale in _si_prefixes.items()
+    for unit in _si_units
     }
 
 
