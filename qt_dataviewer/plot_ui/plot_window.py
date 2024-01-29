@@ -107,7 +107,7 @@ class PlotWindow:
 
         self.btnPrevious = QtWidgets.QPushButton('Previous')
         self.btnPrevious.setMinimumSize(QtCore.QSize(80, 0))
-        self.btnPrevious.setVisible(self.datalist is not None) # And has_next not abstract.
+        self.btnPrevious.setVisible(self.datalist is not None) # And has_next not abstract. @@@ YUK!
         self.btnPrevious.clicked.connect(self._select_previous)
         top_layout.addWidget(self.btnPrevious)
         self.btnNext = QtWidgets.QPushButton('Next')
@@ -180,7 +180,7 @@ class PlotWindow:
 
         cb_layout = QtWidgets.QHBoxLayout()
         cb_layout.setContentsMargins(5, 2, 4, 4)
-        cb_only_selected = QtWidgets.QCheckBox("Show 1 chart (the selected)")
+        cb_only_selected = QtWidgets.QCheckBox("Single chart (the selected)")
         cb_only_selected.toggled.connect(self._only_selected_changed)
         self.cb_only_selected = cb_only_selected
         cb_layout.addWidget(cb_only_selected)

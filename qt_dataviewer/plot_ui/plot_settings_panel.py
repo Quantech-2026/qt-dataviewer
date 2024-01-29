@@ -125,7 +125,7 @@ class PlotSettings(QtWidgets.QWidget):
         layout.addWidget(self._height_filler(), irow, 0)
         irow += 1
 
-        layout.addWidget(QtWidgets.QLabel('sidebar'), irow, 0)
+        layout.addWidget(QtWidgets.QLabel('2D sidebar histogram'), irow, 0)
         cb = QtWidgets.QCheckBox()
         cb.setChecked(plot_model.show_sidebar)
         cb.toggled.connect(self._set_show_sidebar)
