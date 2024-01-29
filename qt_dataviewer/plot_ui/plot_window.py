@@ -1,39 +1,23 @@
 import json
 import logging
 import time
-import traceback
+
 from abc import abstractmethod
-from collections.abc import Mapping, Sequence
 from datetime import datetime
 from functools import partial
 from typing import List, Tuple, Union, Dict, Any
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-import pyqtgraph as pg
-import numpy as np
 
 from qt_dataviewer.model.plot_model import PlotModel
 from qt_dataviewer.utils.qt_utils import qt_log_exception
+
+from .info_widget import InfoWidget
 from .plot_settings_panel import PlotSettings
+from .pulses_widget import PulsesWidget
 
 
 logger = logging.getLogger(__name__)
-
-# default colors cycle: see matplotlib CN colors.
-color_cycle = [
-    '#1f77b4',  # muted blue
-    '#ff7f0e',  # safety orange
-    '#2ca02c',  # cooked asparagus green
-    '#d62728',  # brick red
-    '#9467bd',  # muted purple
-    '#8c564b',  # chestnut brown
-    '#e377c2',  # raspberry yogurt pink
-    '#7f7f7f',  # middle gray
-    '#bcbd22',  # curry yellow-green
-    '#17becf'   # blue-teal
-]
-
-color_list = [pg.mkColor(cl) for cl in color_cycle]
 
 
 class EventHandler:
@@ -309,55 +293,13 @@ class PlotWindow:
             self.current_settings_widget.setVisible(not hidden)
 
     def create_info_tab(self, tabs):
-        info_widget = QtWidgets.QWidget()
-        # Horizontal: panel, line, grid with plots, spacer
-        h_layout = QtWidgets.QHBoxLayout(info_widget)
-        h_layout.setContentsMargins(0, 0, 0, 0)
-        h_layout.setSpacing(2)
-
-        left_layout = QtWidgets.QVBoxLayout()
-        left_layout.setContentsMargins(2, 2, 2, 2)
-        left_layout.setSpacing(2)
-
-        h_layout.addLayout(left_layout)
-
-        details_widget = QtWidgets.QFrame()
-        details_widget.setMinimumWidth(350)
-        details_widget.setMaximumWidth(350)
-        details_widget.setFrameStyle(QtWidgets.QFrame.StyledPanel)
-        details_layout = QtWidgets.QGridLayout(details_widget)
-        self.details_layout = details_layout
-
-        left_layout.addWidget(details_widget)
-
-        left_layout.addSpacerItem(
-            QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding))
-
-        # TODO ?
-        # compact view
-        # qc circuit
-        # qc settings
-        # gates
-        # virtual matrix
-        # plot sequence
-        tree = QtWidgets.QTreeWidget(self)
-        tree.setMinimumSize(QtCore.QSize(340, 600))
-        tree.setColumnCount(2)
-        tree.setColumnWidth(0, 200)
-        tree.setHeaderLabels(['Path', 'Value'])
-        self.snapshot_tree = tree
-
-        h_layout.addWidget(tree, 1)
-
-        h_layout.addSpacerItem(
-            QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+        info_widget = InfoWidget()
+        self.info_widget = info_widget
         tabs.addTab(info_widget, "Info")
 
     def create_pulses_tab(self, tabs):
-        pulses_widget = QtWidgets.QWidget()
-        pulses_layout = QtWidgets.QVBoxLayout(pulses_widget)
-        self.pulses_layout = pulses_layout
-
+        pulses_widget = PulsesWidget()
+        self.pulses_widget = pulses_widget
         tabs.addTab(pulses_widget, "Pulses")
 
     def set_dataset_info(self, name, uuid_str: str, start_time: datetime):
@@ -372,25 +314,20 @@ class PlotWindow:
         self.label_datetime.setText(f'{start_time_str}')
 
     def set_details_info(self, details_list: List[Tuple[str, str]]):
-        for i in range(self.details_layout.count()):
-            widget = self.details_layout.itemAt(i).widget()
-            widget.deleteLater()
-        for irow, (name, value) in enumerate(details_list):
-            self.details_layout.addWidget(QtWidgets.QLabel(name), irow, 0)
-            self.details_layout.addWidget(QtWidgets.QLabel(value), irow, 1)
+        self.info_widget.set_info(details_list)
 
-    def set_snapshot(self, snapshot: Union[str, Dict[str, Any]]):
+    def set_snapshot(self, snapshot: Union[None, str, Dict[str, Any]]):
         if isinstance(snapshot, str):
             tree_data = json.loads(snapshot)
-        else:
+        elif isinstance(snapshot, dict):
             tree_data = snapshot
+        elif snapshot is None:
+            tree_data = None
+        else:
+            raise Exception(f"Unknown snapshot type: {type(snapshot)}")
 
-        tree = self.snapshot_tree
-        tree.clear()
+        self.info_widget.set_snapshot(tree_data)
 
-        if tree_data:
-            self._add_items(None, tree_data)
-        tree.itemExpanded.connect(self._expand_item)
         pulses = None
         if tree_data:
             try:
@@ -398,140 +335,9 @@ class PlotWindow:
                 _ = pulses['pc0']
             except KeyError:
                 pulses = None
-        self.set_pulses(pulses)
-
-    @qt_log_exception
-    def _expand_item(self, item: QtWidgets.QTreeWidgetItem):
-        data, children_expanded = item.data(0, QtCore.Qt.UserRole)
-        if not children_expanded:
-            for index, (key, value) in enumerate(data.items()):
-                child = item.child(index)
-                child.setData(0, QtCore.Qt.UserRole, (value, True))
-                if key != child.text(0):
-                    print('Oops', key, child.text())
-                if isinstance(value, Mapping):
-                    self._add_items(child, value)
-            item.setData(0, QtCore.Qt.UserRole, (data, True))
-
-    def _add_items(self, parent, settings, depth=1):
-        for key, value in settings.items():
-            item = QtWidgets.QTreeWidgetItem()
-            item.setText(0, key)
-            item.setData(0, QtCore.Qt.UserRole, (value, False))
-            if parent:
-                parent.addChild(item)
-            else:
-                self.snapshot_tree.addTopLevelItem(item)
-            if value is None:
-                item.setText(1, 'None')
-            elif isinstance(value, Mapping):
-                if depth > 0:
-                    self._add_items(item, value, depth-1)
-            elif not isinstance(value, str) and isinstance(value, Sequence):
-                item.setData(0, QtCore.Qt.UserRole, (value, True))
-                for e in value:
-                    li = QtWidgets.QTreeWidgetItem()
-                    li.setText(0, '-')
-                    li.setText(1, str(e))
-                    item.addChild(li)
-            else:
-                item.setText(1, str(value))
-                # if hasattr(value, 'dtype') and value.dtype <= float:
-                #     if value.ndim == 0:
-                #         value = value.item()
-                #     else:
-                #         value = str(value)
-                # item.setData(1, QtCore.Qt.EditRole, value)
-                # flags = QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable
-                # item.setFlags(flags)
-
-    @qt_log_exception
-    def set_pulses(self, pulses: Union[None, Dict[str, Any]]):
-        for i in range(self.pulses_layout.count()):
-            widget = self.pulses_layout.itemAt(i).widget()
-            widget.deleteLater()
+        self.pulses_widget.set_pulses(pulses)
         # self.tab_widget.setTabEnabled(2, pulses is not None)
         self.tab_widget.setTabVisible(2, pulses is not None)
-        if pulses is None:
-            return
-        try:
-            pulse_plot = pg.PlotWidget()
-            pulse_plot.addLegend()
-            pulse_plot.getAxis('bottom').enableAutoSIPrefix(False)
-            pc_keys = [k for k, v in pulses.items() if k.startswith('pc') and v is not None]
-            gate_keys = set([key for pc in pc_keys for key in pulses[pc] if not key.startswith('_')])
-            try:
-                baseband_freqs = pulses['LOs']
-            except KeyError:
-                pass
-            for (j, name) in enumerate(gate_keys):
-                t0 = 0
-                x_plot = list()
-                y_plot = list()
-                # @@@ handle acquisition channels, condition channels
-                # @@@ add check boxes for channels
-                for pc in pc_keys:
-                    legend_name = name.replace('_baseband','').replace('_pulses','')
-                    x = list()
-                    y = list()
-                    try:
-                        end_time = pulses[pc]['_total_time']
-                        while isinstance(end_time, list):
-                            end_time = end_time[-1]
-                    except:
-                        end_time = max([x['stop'] for y in pulses[pc].values() for x in y.values()])
-                    try:
-                        pulses[pc][name]
-                    except:
-                        t0 += end_time
-                        continue
-
-                    if 'baseband' in name:
-                        timepoints = set([x[key] for x in pulses[pc][name].values() for key in ['start','stop']])
-                        timepoints.add(end_time)
-                        for tp in sorted(timepoints):
-                            point1 = 0
-                            point2 = 0
-                            for seg_name, seg_dict in pulses[pc][name].items():
-                                if seg_dict['start'] < tp and seg_dict['stop'] > tp: # active segement
-                                    point1 += tp/(seg_dict['stop'] - seg_dict['start']) * ( seg_dict['v_stop'] - seg_dict['v_start'] ) + seg_dict['v_start']
-                                    point2 += tp/(seg_dict['stop'] - seg_dict['start']) * ( seg_dict['v_stop'] - seg_dict['v_start'] ) + seg_dict['v_start']
-                                elif seg_dict['start'] == tp:
-                                    point2 += seg_dict['v_start']
-                                elif seg_dict['stop'] == tp:
-                                    point1 += seg_dict['v_stop']
-                            x_plot += [tp + t0, tp + t0]
-                            y_plot += [point1, point2]
-
-                    elif 'pulses' in name:
-                        try:
-                            baseband = baseband_freqs[name.replace('_pulses','')]
-                        except:
-                            logger.warning('No baseband frequency found, assuming 0')
-                            baseband = 0
-
-                        for seg_name, seg_dict in pulses[pc][name].items():
-                            x_ar = np.arange(seg_dict['start'], seg_dict['stop'])
-                            xx_ar = x_ar-seg_dict['start']
-                            f_rl = (seg_dict['frequency'] - baseband)/1e9
-                            y_ar = np.sin(2*np.pi*f_rl*xx_ar+seg_dict['start_phase'])*seg_dict['amplitude']
-                            x = x + list(x_ar) + [seg_dict['stop']]
-                            y = y + list(y_ar) + [0]
-                            x_plot = x
-                            y_plot = y
-                    t0 += end_time
-
-                pulse_plot.setLabel('left', 'Voltage', 'mV')
-                pulse_plot.setLabel('bottom', 'Time', 'ns')
-                pulse_plot.plot(x_plot, y_plot, pen = color_list[j%len(color_list)], name = legend_name)
-
-            self.pulses_layout.addWidget(pulse_plot, 1)
-        except Exception:
-            logger.error("Couldn't plot pulses", exc_info=True)
-            message = traceback.format_exc()
-            error_message = QtWidgets.QLabel(message)
-            error_message.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
-            self.pulses_layout.addWidget(error_message, 1)
 
     def clear_variables(self):
         if self.current_settings_widget is not None:
