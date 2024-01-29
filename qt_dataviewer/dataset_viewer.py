@@ -1,3 +1,4 @@
+import gzip
 import logging
 from datetime import datetime
 from typing import List, Dict, Any, Union
@@ -6,7 +7,9 @@ import xarray as xr
 from PyQt5 import QtCore, QtWidgets
 
 from qt_dataviewer.plot_ui.plot_window import PlotWindow, EventHandler
+from qt_dataviewer.xarray_adapters.quantify_xarray import convert_quantify
 from qt_dataviewer.utils.qt_utils import qt_log_exception
+
 from .dataarray_plotter import DataArrayPlotter
 from .dataset_list import DatasetList
 
@@ -54,9 +57,9 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
         if not isinstance(ds, xr.Dataset):
             raise Exception(f"Unknown dataset class: {type(ds)}")
 
-        if 'tuid' in ds.attrs:
-            # Quantify
-            ds = self._qf_to_nD(ds) # @@@ Move to quantify dataviwer
+        if "tuid" in ds.attrs:
+            # Quantify: set measurement time and make 2D
+            ds = convert_quantify(ds)
 
         self._set_info(ds, snapshot)
 
@@ -78,6 +81,13 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
         self.setUpdatesEnabled(True)
 
     def _set_info(self, ds: xr.Dataset, snapshot: Union[None, str, Dict[str, Any]] = None):
+        if snapshot is not None:
+            pass
+        elif 'snapshot' in ds.attrs:
+            snapshot = ds.attrs['snapshot']
+        elif 'snapshot-gzip' in ds.attrs:
+            snapshot = gzip.decompress(ds.attrs['snapshot-gzip']).decode("utf-8")
+
         if 'uuid' in ds.attrs:
             # core-tools:
             s = str(ds.attrs['uuid'])
@@ -91,27 +101,17 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
                 [(name, ds.attrs[name])
                  for name in ['project', 'set_up', 'sample_name']]
                 )
-            self.set_snapshot(ds.attrs['snapshot'] if not snapshot else snapshot)
+            self.set_snapshot(snapshot)
         elif 'tuid' in ds.attrs:
             # Quantify
             self.set_dataset_info(
                 ds.attrs.get('name', '<no-name>'),
                 uuid_str=ds.attrs['tuid'],
-                start_time=None
+                start_time=datetime.fromisoformat(ds.attrs.get('measurement_time'))
                 )
             self.set_snapshot(snapshot)
         else:
             logger.warning(f"Unknown xarray format. Attrs:{[name for name in ds.attrs]}")
-
-    def _qf_to_nD(self, ds):
-        # print(ds.attrs['name'], flush=True)
-        # print(ds.attrs.keys())
-        if ds.attrs.get('2D-grid'):
-            ds = ds.set_index(dim_0=['x0','x1']).unstack('dim_0')
-        elif len(ds.coords) == 1:
-            for i, dim in enumerate(ds.dims):
-                ds = ds.swap_dims({dim:f"x{i}"})
-        return ds
 
     def closeEvent(self, event):
         """ Override of QT closeEvent. """
