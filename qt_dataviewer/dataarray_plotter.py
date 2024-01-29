@@ -36,7 +36,6 @@ class DataArrayPlotter:
         ndim = plot_model.ndim
         plot = self._plot
 
-        # self._layout.parentWidget().setUpdatesEnabled(False)
         if plot is not None:
             if (plot_model.dims != self._plot.dims
                     or self._plot.one_d_is_vertical != plot_model.one_d_is_vertical
@@ -60,7 +59,6 @@ class DataArrayPlotter:
         self._plot = plot
         if plot is not None:
             plot.update()
-        # self._layout.parentWidget().setUpdatesEnabled(True)
 
     def update_data(self, data: xr.DataArray):
         self._plot_model.update_data(data)
