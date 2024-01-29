@@ -13,14 +13,20 @@ from qt_dataviewer.utils.qt_utils import qt_log_exception
 logger = logging.getLogger(__name__)
 
 
+# @@@ require core-tools > 1.4.42
+
 class CoreToolsDatasetViewer(DatasetViewer):
     def __init__(self, ds: data_set, datalist: DatasetList = None):
         ds_fullqualname = type(ds).__module__ +'.' + type(ds).__qualname__
         if ds_fullqualname != "core_tools.data.ds.data_set_core.data_set":
             raise Exception(f"Expected coretools data_set got '{ds_fullqualname}'")
 
-        ds_xr = ds2xarray(ds)
-        super().__init__(ds_xr, datalist=datalist)
+        try:
+            ds_xr = ds2xarray(ds, snapshot=None)
+        except TypeError:
+            # older version of ds2xarray always stores snapshot in attrs as json
+            ds_xr = ds2xarray(ds)
+        super().__init__(ds_xr, datalist=datalist, snapshot=ds.snapshot)
 
         self._timer = QtCore.QTimer()
         self._timer.timeout.connect(self.update_ds)
@@ -35,8 +41,13 @@ class CoreToolsDatasetViewer(DatasetViewer):
     def set_ds(self, ds: data_set):
         self._ds = ds
         self._timer.stop()
-        ds_xr = ds2xarray(ds)
-        self._set_ds(ds_xr)
+        try:
+            ds_xr = ds2xarray(ds, snapshot=None)
+        except TypeError:
+            # older version of ds2xarray always stores snapshot in attrs as json
+            ds_xr = ds2xarray(ds)
+        self._set_ds(ds_xr, ds.snapshot)
+
         if not self.is_ds_complete(ds):
             logger.info(f"Incomplete dataset {ds.exp_uuid}")
             self._timer.start()
