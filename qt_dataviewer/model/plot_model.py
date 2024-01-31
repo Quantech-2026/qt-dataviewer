@@ -104,7 +104,6 @@ class PlotModel:
                 self.set_axis_mode(i, AxisMode.XAxis)
                 x_axis = i
 
-
     @plot_changer
     def update_data(self, data: xr.DataArray):
         # @@@ This works with core-tools database.
@@ -298,7 +297,7 @@ class PlotModel:
         self._var_settings.slice_value_range = value_range if has_slice and histogram_mode is None else None
 
         if histogram_mode is not None:
-            da = histogram(da, self.dims, 40, value_range) # TODO bins, range
+            da = histogram(da, self.dims, 50, value_range) # TODO bins, range
             da['histogram'].attrs['log'] = False
             # TODO: set slice_value_range
             # if has_slice:
