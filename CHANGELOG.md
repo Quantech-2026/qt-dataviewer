@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.2.1] - 2024-01-31
+
+- Fixed bug in 2D plotting with logarithmic axis
+- Fixed plotting of MW pulses
+
 ## \[0.2.0] - 2024-01-29
 
 - Added snapshot tree
