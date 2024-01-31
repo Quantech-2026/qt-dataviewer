@@ -74,9 +74,11 @@ class Plot2D(BasePlot):
         y = y * y_formatter.scale
         log_mode = {}
         if self.detect_log_mode(x):
+            logger.info(f'LOG {x_array.name}')
             log_mode['x'] = True
             x = np.log10(x)
         if self.detect_log_mode(y):
+            logger.info(f'LOG {y_array.name}')
             log_mode['y'] = True
             y = np.log10(y)
 
@@ -150,8 +152,6 @@ class Plot2D(BasePlot):
         is_log = (
                 0.99999 < np.min(ratio)/np.max(ratio) < 1.00001
                 and (mean_ratio < 0.99 or mean_ratio > 1.01))
-        if is_log:
-            logger.info(f'LOG {self.data.name}')
         return is_log
 
     @qt_log_exception
