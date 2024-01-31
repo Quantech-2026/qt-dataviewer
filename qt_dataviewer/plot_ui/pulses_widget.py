@@ -60,8 +60,6 @@ class PulsesWidget(QtWidgets.QWidget):
                 # @@@ add check boxes for channels
                 for pc in pc_keys:
                     legend_name = name.replace('_baseband','').replace('_pulses','')
-                    x = list()
-                    y = list()
                     try:
                         end_time = pulses[pc]['_total_time']
                         while isinstance(end_time, list):
@@ -98,13 +96,15 @@ class PulsesWidget(QtWidgets.QWidget):
                             logger.warning('No baseband frequency found, assuming 0')
                             baseband = 0
 
+                        x = []
+                        y = []
                         for seg_name, seg_dict in pulses[pc][name].items():
                             x_ar = np.arange(seg_dict['start'], seg_dict['stop'])
                             xx_ar = x_ar-seg_dict['start']
                             f_rl = (seg_dict['frequency'] - baseband)/1e9
                             y_ar = np.sin(2*np.pi*f_rl*xx_ar+seg_dict['start_phase'])*seg_dict['amplitude']
-                            x = x + list(x_ar) + [seg_dict['stop']]
-                            y = y + list(y_ar) + [0]
+                            x = x + [seg_dict['start']] + list(x_ar) + [seg_dict['stop']]
+                            y = y + [0] + list(y_ar) + [0]
                             x_plot = x
                             y_plot = y
                     t0 += end_time
