@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.2.3] - 2024-02-01
+
+- Postpone plotting of pulses till tab is selected (performance improvement)
+- Fixed flashing window
+
 ## \[0.2.2] - 2024-01-31
 
 - Fixed bug in 2D plotting with logarithmic axis

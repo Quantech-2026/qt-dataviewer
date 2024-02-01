@@ -34,15 +34,32 @@ class PulsesWidget(QtWidgets.QWidget):
         super().__init__()
         pulses_layout = QtWidgets.QVBoxLayout(self)
         self.pulses_layout = pulses_layout
+        self.active = False
+        self.pulses = None
+
+    def set_active(self, active):
+        self.active = active
+        if active and self.needs_plotting:
+            self._plot_pulses()
 
     @qt_log_exception
     def set_pulses(self, pulses: Union[None, Dict[str, Any]]):
         for i in range(self.pulses_layout.count()):
             widget = self.pulses_layout.itemAt(i).widget()
             widget.deleteLater()
-        if pulses is None:
+        self.pulses = pulses
+        if pulses is not None:
+            self.needs_plotting = True
+            self._plot_pulses()
+
+    def _plot_pulses(self):
+        if not self.active:
             return
+        self.needs_plotting = False
+        pulses = self.pulses
         try:
+            tab_widget = self.parent().parent()
+            tab_widget.setCursor(QtCore.Qt.WaitCursor)
             pulse_plot = pg.PlotWidget()
             pulse_plot.addLegend()
             pulse_plot.getAxis('bottom').enableAutoSIPrefix(False)
@@ -120,3 +137,5 @@ class PulsesWidget(QtWidgets.QWidget):
             error_message = QtWidgets.QLabel(message)
             error_message.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
             self.pulses_layout.addWidget(error_message, 1)
+        finally:
+            tab_widget.setCursor(QtCore.Qt.ArrowCursor)

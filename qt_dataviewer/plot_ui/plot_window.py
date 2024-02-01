@@ -58,6 +58,7 @@ class PlotWindow:
         self.create_plots_tab(tabs)
         self.create_info_tab(tabs)
         self.create_pulses_tab(tabs)
+        tabs.currentChanged.connect(self._current_tab_changed)
         central_layout.addWidget(tabs)
 
         main_window.setCentralWidget(central_widget)
@@ -228,19 +229,20 @@ class PlotWindow:
         selected = self.lb_variables.selectedIndexes()[0].row()
         layout = self.plots_layout
 
-        self.plots_widget.setUpdatesEnabled(False)
-        for seq_nr, widget in self._plot_widgets.items():
-            widget.setVisible(not checked or (int(seq_nr) == selected))
+        # self.plots_widget.setUpdatesEnabled(False)
 
         nplots = 0
         for seq_nr, widget in sorted(self._plot_widgets.items()):
             if (int(seq_nr) == selected) or not checked:
                 irow, icol = divmod(nplots, N_PLOT_COLUMNS)
                 layout.addWidget(widget, irow, icol)
+                widget.setVisible(True)
                 nplots += 1
+            else:
+                widget.setVisible(False)
 
         self._update_grid_stretch()
-        self.plots_widget.setUpdatesEnabled(True)
+        # self.plots_widget.setUpdatesEnabled(True)
 
     @qt_log_exception
     def _variable_selection_changed(self):
@@ -253,17 +255,19 @@ class PlotWindow:
         self._update_plot_borders()
         if self.cb_only_selected.isChecked():
             layout = self.plots_layout
-            self.plots_widget.setUpdatesEnabled(False) # @@@ decorator for nested updates
+            # self.plots_widget.setUpdatesEnabled(False) # @@@ decorator for nested updates?
             selected_row
             nplots = 0
             for seq_nr, widget in self._plot_widgets.items():
-                widget.setVisible(int(seq_nr) == selected_row)
                 if int(seq_nr) == selected_row:
                     irow, icol = divmod(nplots, N_PLOT_COLUMNS)
                     layout.addWidget(widget, irow, icol)
+                    widget.setVisible(True)
                     nplots += 1
+                else:
+                    widget.setVisible(False)
             self._update_grid_stretch()
-            self.plots_widget.setUpdatesEnabled(True)
+            # self.plots_widget.setUpdatesEnabled(True)
 
     def _update_plot_borders(self):
         # Highlight plot
@@ -327,17 +331,22 @@ class PlotWindow:
             raise Exception(f"Unknown snapshot type: {type(snapshot)}")
 
         self.info_widget.set_snapshot(tree_data)
+        self._set_pulses(tree_data)
 
+    def _set_pulses(self, snapshot_tree):
         pulses = None
-        if tree_data:
+        if snapshot_tree:
             try:
-                pulses = tree_data['measurement']['sequence']
+                pulses = snapshot_tree['measurement']['sequence']
                 _ = pulses['pc0']
             except KeyError:
                 pulses = None
         self.pulses_widget.set_pulses(pulses)
-        # self.tab_widget.setTabEnabled(2, pulses is not None)
         self.tab_widget.setTabVisible(2, pulses is not None)
+
+    @qt_log_exception
+    def _current_tab_changed(self, current_index: int):
+        self.pulses_widget.set_active(current_index == 2)
 
     def clear_variables(self):
         if self.current_settings_widget is not None:
@@ -368,8 +377,8 @@ class PlotWindow:
             self.current_settings_widget.deleteLater()
 
         settings_widget = PlotSettings(plot_model)
-        settings_widget.setVisible(not hidden)
         self.settings_layout.addWidget(settings_widget)
+        settings_widget.setVisible(not hidden)
         self.current_settings_widget = settings_widget
 
     def add_plot(self, title: str, seq_nr: float):
@@ -377,7 +386,7 @@ class PlotWindow:
         if seq_nr in self._plot_widgets:
             raise Exception(f"Duplicate plot {seq_nr}")
         layout = self.plots_layout
-        self.plots_widget.setUpdatesEnabled(False) # @@@ decorator for nested updates
+        # self.plots_widget.setUpdatesEnabled(False) # @@@ decorator for nested updates
 
         # Move plots to insert at right position
         seq_nrs = sorted(self._plot_widgets.keys())
@@ -391,7 +400,7 @@ class PlotWindow:
             irow, icol = divmod(i+1, N_PLOT_COLUMNS)
             layout.addWidget(widget, irow, icol)
 
-        widget = ClickFrame()
+        widget = ClickFrame(self)
         widget.setMinimumWidth(250)
         widget.setMinimumHeight(250)
         widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
@@ -412,16 +421,17 @@ class PlotWindow:
 
         if self.cb_only_selected.isChecked():
             selected = self.lb_variables.selectedIndexes()[0].row()
-            widget.setVisible(int(seq_nr) == selected)
             plot_index = 0 # @@@ not correct with sub-plots
+            if int(seq_nr) != selected:
+                widget.setVisible(False)
         irow, icol = divmod(plot_index, N_PLOT_COLUMNS)
         layout.addWidget(widget, irow, icol)
 
         self._plot_widgets[seq_nr] = widget
 
         self._update_grid_stretch()
-        # self._update_plot_borders()
-        self.plots_widget.setUpdatesEnabled(True)
+        self._update_plot_borders()
+        # self.plots_widget.setUpdatesEnabled(True)
 
         return plot_layout
 
@@ -432,7 +442,7 @@ class PlotWindow:
         if seq_nr not in self._plot_widgets:
             return
         layout = self.plots_layout
-        self.plots_widget.setUpdatesEnabled(False)
+        # self.plots_widget.setUpdatesEnabled(False)
 
         widget = self._plot_widgets[seq_nr]
         widget.deleteLater()
@@ -447,7 +457,7 @@ class PlotWindow:
                 layout.addWidget(widget, irow, icol)
 
         self._update_grid_stretch()
-        self.plots_widget.setUpdatesEnabled(True)
+        # self.plots_widget.setUpdatesEnabled(True)
 
     def _update_grid_stretch(self):
         if self.cb_only_selected.isChecked():
@@ -479,6 +489,7 @@ def get_font(point_size):
 
 
 class ClickFrame(QtWidgets.QFrame):
+
     def onMousePressed(self, func):
         self._mousePressed = func
 
