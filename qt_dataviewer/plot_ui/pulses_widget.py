@@ -63,72 +63,52 @@ class PulsesWidget(QtWidgets.QWidget):
             pulse_plot = pg.PlotWidget()
             pulse_plot.addLegend()
             pulse_plot.getAxis('bottom').enableAutoSIPrefix(False)
+            pulse_plot.setLabel('left', 'Voltage', 'mV')
+            pulse_plot.setLabel('bottom', 'Time', 'ns')
+            self.pulse_plot = pulse_plot
+
             pc_keys = [k for k, v in pulses.items() if k.startswith('pc') and v is not None]
-            gate_keys = set([key for pc in pc_keys for key in pulses[pc] if not key.startswith('_')])
+            gate_keys = sorted(set([key for pc in pc_keys for key in pulses[pc] if not key.startswith('_')]))
+
+            end_times = {}
+            for pc in pc_keys:
+                if 'branch_0' in pulses[pc]:
+                    seg = pulses[pc]['branch_0']
+                else:
+                    seg = pulses[pc]
+                try:
+                    end_time = seg['_total_time']
+                    while isinstance(end_time, list):
+                        end_time = end_time[-1]
+                except:
+                    end_time = max([x['stop'] for y in seg.values() for x in y.values()])
+                end_times[pc] = end_time
+
             try:
-                baseband_freqs = pulses['LOs']
+                lo_freqs = pulses['LOs']
             except KeyError:
                 pass
+
+            # TODO  handle acquisition channels, condition channels
+            # TODO add check boxes for channels
             for (j, name) in enumerate(gate_keys):
-                t0 = 0
-                x_plot = list()
-                y_plot = list()
-                # @@@ handle acquisition channels, condition channels
-                # @@@ add check boxes for channels
-                for pc in pc_keys:
-                    legend_name = name.replace('_baseband','').replace('_pulses','')
+                if name.endswith('_baseband'):
+                    old_format = False
+                    for pc in pc_keys:
+                        if name in pc:
+                            old_format = 'index_start' in pulses[pc][name]['p0']
+                            break
+                    if old_format:
+                        self._plot_baseband_old(pulses, pc_keys, end_times, name, color=color_list[j%len(color_list)])
+                    else:
+                        self._plot_baseband(pulses, pc_keys, end_times, name, color=color_list[j%len(color_list)])
+                elif name.endswith('_pulses'):
                     try:
-                        end_time = pulses[pc]['_total_time']
-                        while isinstance(end_time, list):
-                            end_time = end_time[-1]
+                        lo_frequency = lo_freqs[name[:-7]]
                     except:
-                        end_time = max([x['stop'] for y in pulses[pc].values() for x in y.values()])
-                    try:
-                        pulses[pc][name]
-                    except:
-                        t0 += end_time
-                        continue
-
-                    if 'baseband' in name:
-                        timepoints = set([x[key] for x in pulses[pc][name].values() for key in ['start','stop']])
-                        timepoints.add(end_time)
-                        for tp in sorted(timepoints):
-                            point1 = 0
-                            point2 = 0
-                            for seg_name, seg_dict in pulses[pc][name].items():
-                                if seg_dict['start'] < tp and seg_dict['stop'] > tp: # active segement
-                                    point1 += tp/(seg_dict['stop'] - seg_dict['start']) * ( seg_dict['v_stop'] - seg_dict['v_start'] ) + seg_dict['v_start']
-                                    point2 += tp/(seg_dict['stop'] - seg_dict['start']) * ( seg_dict['v_stop'] - seg_dict['v_start'] ) + seg_dict['v_start']
-                                elif seg_dict['start'] == tp:
-                                    point2 += seg_dict['v_start']
-                                elif seg_dict['stop'] == tp:
-                                    point1 += seg_dict['v_stop']
-                            x_plot += [tp + t0, tp + t0]
-                            y_plot += [point1, point2]
-
-                    elif 'pulses' in name:
-                        try:
-                            baseband = baseband_freqs[name.replace('_pulses','')]
-                        except:
-                            logger.warning('No baseband frequency found, assuming 0')
-                            baseband = 0
-
-                        x = []
-                        y = []
-                        for seg_name, seg_dict in pulses[pc][name].items():
-                            x_ar = np.arange(seg_dict['start'], seg_dict['stop'])
-                            xx_ar = x_ar-seg_dict['start']
-                            f_rl = (seg_dict['frequency'] - baseband)/1e9
-                            y_ar = np.sin(2*np.pi*f_rl*xx_ar+seg_dict['start_phase'])*seg_dict['amplitude']
-                            x = x + [seg_dict['start']] + list(x_ar) + [seg_dict['stop']]
-                            y = y + [0] + list(y_ar) + [0]
-                            x_plot = x
-                            y_plot = y
-                    t0 += end_time
-
-                pulse_plot.setLabel('left', 'Voltage', 'mV')
-                pulse_plot.setLabel('bottom', 'Time', 'ns')
-                pulse_plot.plot(x_plot, y_plot, pen = color_list[j%len(color_list)], name = legend_name)
+                        logger.warning('No baseband frequency found, assuming 0')
+                        lo_frequency = 0
+                    self._plot_mw_pulses(pulses, pc_keys, end_times, name, color_list[j%len(color_list)], lo_frequency)
 
             self.pulses_layout.addWidget(pulse_plot, 1)
         except Exception:
@@ -139,3 +119,128 @@ class PulsesWidget(QtWidgets.QWidget):
             self.pulses_layout.addWidget(error_message, 1)
         finally:
             tab_widget.setCursor(QtCore.Qt.ArrowCursor)
+
+
+    def _plot_baseband_old(self, pulses, pc_keys, end_times, name, color):
+        t0 = 0
+        x_plot = list()
+        y_plot = list()
+        for pc in pc_keys:
+            end_time = end_times[pc]
+
+            try:
+                seg_pulses = pulses[pc][name]
+            except:
+                t0 += end_time
+                continue
+
+            timepoints = set([x[key] for x in seg_pulses.values() for key in ['start','stop']])
+            timepoints.add(end_time)
+            for tp in sorted(timepoints):
+                point1 = 0
+                point2 = 0
+                for seg_name, seg_dict in seg_pulses.items():
+                    if seg_dict['start'] < tp and seg_dict['stop'] > tp: # active segement
+                        offset = tp/(seg_dict['stop'] - seg_dict['start']) * (seg_dict['v_stop'] - seg_dict['v_start']) + seg_dict['v_start']
+                        point1 += offset
+                        point2 += offset
+                    elif seg_dict['start'] == tp:
+                        point2 += seg_dict['v_start']
+                    elif seg_dict['stop'] == tp:
+                        point1 += seg_dict['v_stop']
+                x_plot += [tp + t0, tp + t0]
+                y_plot += [point1, point2]
+            t0 += end_time
+
+        legend_name = name[:-9]
+        self.pulse_plot.plot(x_plot, y_plot, pen=color, name=legend_name)
+
+    def _plot_baseband(self, pulses, pc_keys, end_times, name, color):
+        t0 = 0
+        x_plot = [0.0]
+        y_plot = [0.0]
+        t = 0.0
+        v = 0.0
+        for pc in pc_keys:
+            end_time = end_times[pc]
+
+            if 'branch_0' in pulses[pc]:
+                seg = pulses[pc]['branch_0']
+            else:
+                seg = pulses[pc]
+
+            try:
+                seg_pulses = seg[name]
+            except:
+                t0 += end_time
+                continue
+
+            for pulse in seg_pulses.values():
+                start = pulse['start'] + t0
+                stop = pulse['stop'] + t0
+                v_start = pulse['v_start']
+                v_stop = pulse['v_stop']
+                if start != t:
+                    # there is a gap. Add point at end of last pulse
+                    x_plot.append(t)
+                    y_plot.append(0.0)
+                    v = 0.0
+                    if v_start != v:
+                        # there is a step
+                        x_plot.append(start)
+                        y_plot.append(v)
+                    x_plot.append(start)
+                    y_plot.append(v_start)
+                elif v_start != v:
+                    # there is a step
+                    x_plot.append(start)
+                    y_plot.append(v_start)
+                x_plot.append(stop)
+                y_plot.append(v_stop)
+                t = stop
+                v = v_stop
+            t0 += end_time
+
+        if t != t0:
+            # there is a gap. Add line till end.
+            x_plot.append(t)
+            y_plot.append(0.0)
+            x_plot.append(t0)
+            y_plot.append(0.0)
+
+        legend_name = name[:-9]
+        self.pulse_plot.plot(x_plot, y_plot, pen=color, name=legend_name)
+
+    def _plot_mw_pulses(self, pulses, pc_keys, end_times, name, color, lo_frequency):
+        t0 = 0
+        x_plot = list()
+        y_plot = list()
+        for pc in pc_keys:
+            end_time = end_times[pc]
+
+            if 'branch_0' in pulses[pc]:
+                seg = pulses[pc]['branch_0']
+            else:
+                seg = pulses[pc]
+
+            try:
+                seg_pulses = seg[name]
+            except:
+                t0 += end_time
+                continue
+
+            x = []
+            y = []
+            for seg_name, seg_dict in seg_pulses.items():
+                x_ar = np.arange(seg_dict['start'], seg_dict['stop'])
+                xx_ar = x_ar-seg_dict['start']
+                f_rl = (seg_dict['frequency'] - lo_frequency)/1e9
+                y_ar = np.sin(2*np.pi*f_rl*xx_ar+seg_dict['start_phase'])*seg_dict['amplitude']
+                x = x + [seg_dict['start']] + list(x_ar) + [seg_dict['stop']]
+                y = y + [0] + list(y_ar) + [0]
+                x_plot = x
+                y_plot = y
+            t0 += end_time
+
+        legend_name = name[:-7]
+        self.pulse_plot.plot(x_plot, y_plot, pen=color, name=legend_name)
