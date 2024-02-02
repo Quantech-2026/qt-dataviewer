@@ -89,7 +89,7 @@ class PulsesWidget(QtWidgets.QWidget):
             except KeyError:
                 pass
 
-            # TODO  handle acquisition channels, condition channels
+            # TODO handle acquisition channels
             # TODO add check boxes for channels
             for (j, name) in enumerate(gate_keys):
                 if name.endswith('_baseband'):

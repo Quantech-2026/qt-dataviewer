@@ -210,7 +210,7 @@ class Slider:
         self.axis = axis
         self.settings = settings
         self.changed_cb = changed_cb
-        self.formatter = SmartFormatter(settings.data.attrs['units'])
+        self.formatter = SmartFormatter(settings.data.attrs)
 
         slider = QtWidgets.QSlider()
         slider.setOrientation(QtCore.Qt.Horizontal)

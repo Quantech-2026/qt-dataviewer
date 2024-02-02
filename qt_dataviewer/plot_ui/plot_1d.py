@@ -69,16 +69,14 @@ class Plot1D(BasePlot):
     def _update_axis(self, x, y):
         log_mode = {'x': x.attrs['log'], 'y': y.attrs['log']}
         self._log_mode = log_mode
-        x_formatter = SmartFormatter(x.attrs['units'])
+        x_formatter = SmartFormatter(x.attrs)
         self._x_formatter = x_formatter
-        y_formatter = SmartFormatter(y.attrs['units'])
+        y_formatter = SmartFormatter(y.attrs)
         self._y_formatter = y_formatter
 
         plot = self.plot
-        plot.getAxis('bottom').enableAutoSIPrefix(x_formatter.auto_si_prefix)
-        plot.getAxis('left').enableAutoSIPrefix(y_formatter.auto_si_prefix)
-        plot.setLabel('bottom', x.attrs['long_name'], units=x_formatter.units)
-        plot.setLabel('left', y.attrs['long_name'], units=y_formatter.units)
+        x_formatter.set_plot_axis(plot.getAxis('bottom'))
+        y_formatter.set_plot_axis(plot.getAxis('left'))
         plot.setLogMode(**log_mode)
 
         value_range = self._plot_model.value_range
@@ -127,9 +125,9 @@ class Plot1D(BasePlot):
             x_val = mousePoint.x()
             y_val = mousePoint.y()
             if self._log_mode['x']:
-                 x_val = 10**x_val
+                  x_val = 10**x_val
             if self._log_mode['y']:
-                 y_val = 10**y_val
+                  y_val = 10**y_val
 
             x_data = self.x_data
             y_data = self.y_data

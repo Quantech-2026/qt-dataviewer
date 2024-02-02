@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.2.4] - 2024-02-02
+
+- Fixed pulse plotting: faster and also conditional segments
+- Added 2D plotting of non-uniform 2D grid.
+- Fixed auto SI-prefix with not scaling units like '#' and 'a.u.'
+
 ## \[0.2.3] - 2024-02-01
 
 - Postpone plotting of pulses till tab is selected (performance improvement)

@@ -58,10 +58,8 @@ class PlotMultiline(BasePlot):
         y_formatter = self._y_formatter
 
         plot = self.plot
-        plot.getAxis('bottom').enableAutoSIPrefix(x_formatter.auto_si_prefix)
-        plot.getAxis('left').enableAutoSIPrefix(y_formatter.auto_si_prefix)
-        plot.setLabel('bottom', x.attrs['long_name'], units=x_formatter.units)
-        plot.setLabel('left', y.attrs['long_name'], units=y_formatter.units)
+        x_formatter.set_plot_axis(plot.getAxis('bottom'))
+        y_formatter.set_plot_axis(plot.getAxis('left'))
         plot.setLogMode(**log_mode)
 
         value_range = self._plot_model.value_range
@@ -88,11 +86,11 @@ class PlotMultiline(BasePlot):
         x1 = data[data.dims[1]]
         y = data
 
-        x0_formatter = SmartFormatter(x0.attrs['units'])
+        x0_formatter = SmartFormatter(x0.attrs)
         self._x0_formatter = x0_formatter
-        x1_formatter = SmartFormatter(x1.attrs['units'])
+        x1_formatter = SmartFormatter(x1.attrs)
         self._x1_formatter = x1_formatter
-        y_formatter = SmartFormatter(y.attrs['units'])
+        y_formatter = SmartFormatter(y.attrs)
         self._y_formatter = y_formatter
 
         self._update_axis(x0, y)

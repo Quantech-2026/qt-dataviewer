@@ -21,6 +21,7 @@ class Plot2D(BasePlot):
 
         self.plot = pg.PlotItem()
         self.plot.setDefaultPadding(0.01)
+
         self.img = pg.ImageItem()
         # set some image data. This is required for pyqtgraph > 0.11
         self.img.setImage(np.zeros((1, 1)))
@@ -31,6 +32,7 @@ class Plot2D(BasePlot):
         img_view.ui.roiBtn.hide()
         img_view.ui.menuBtn.hide()
         img_view.ui.histogram.autoHistogramRange()
+        self._plot_mode = 'uniform'
 
         self.label = QtWidgets.QLabel()
         self.label.setAlignment(QtCore.Qt.AlignRight)
@@ -43,7 +45,10 @@ class Plot2D(BasePlot):
         self.plot.setAspectLocked(False)
 
     def show_sidebar(self, show):
-        histogram = self.img_view.ui.histogram
+        if self.img_view is not None:
+            histogram = self.img_view.ui.histogram
+        else:
+            return # TODO find out how to add histogram to PColorMesh
         if not show:
             if not histogram.isHidden():
                 histogram.hide()
@@ -63,96 +68,155 @@ class Plot2D(BasePlot):
         x = x_array.data
         y = y_array.data
 
-        x_formatter = SmartFormatter(x_array.attrs['units'])
+        x_formatter = SmartFormatter(x_array.attrs)
         self._x_formatter = x_formatter
-        y_formatter = SmartFormatter(y_array.attrs['units'])
+        y_formatter = SmartFormatter(y_array.attrs)
         self._y_formatter = y_formatter
-        z_formatter = SmartFormatter(data.attrs['units'])
+        z_formatter = SmartFormatter(data.attrs)
         self._z_formatter = z_formatter
 
         x = x * x_formatter.scale
         y = y * y_formatter.scale
-        log_mode = {}
-        if self.detect_log_mode(x):
-            logger.info(f'LOG {x_array.name}')
-            log_mode['x'] = True
-            x = np.log10(x)
-        if self.detect_log_mode(y):
-            logger.info(f'LOG {y_array.name}')
-            log_mode['y'] = True
-            y = np.log10(y)
+        z = data.data
 
         plot = self.plot
-        plot.getAxis('bottom').enableAutoSIPrefix(x_formatter.auto_si_prefix)
-        plot.getAxis('left').enableAutoSIPrefix(y_formatter.auto_si_prefix)
-        plot.setLabel('bottom', x_array.attrs['long_name'], units=x_formatter.units)
-        plot.setLabel('left', y_array.attrs['long_name'], units=y_formatter.units)
-        plot.setLogMode(**log_mode)
+        x_formatter.set_plot_axis(plot.getAxis('bottom'))
+        y_formatter.set_plot_axis(plot.getAxis('left'))
 
         x_args = np.argwhere(np.isfinite(x)).T[0]
+        y_args = np.argwhere(np.isfinite(y)).T[0]
+        x_limit = [np.min(x_args), np.max(x_args)]
+        y_limit = [np.min(y_args), np.max(y_args)]
+        x_slice = slice(x_limit[0], x_limit[1]+1)
+        y_slice = slice(y_limit[0], y_limit[1]+1)
         if len(x_args) == 0:
             # No data yet. Nothing to update.
             return
-        x_limit = [np.min(x_args), np.max(x_args)]
-        x_limit_num = (x[x_limit[0]], x[x_limit[1]])
-        y_args = np.argwhere(np.isfinite(y)).T[0]
-        y_limit = [np.min(y_args), np.max(y_args)]
-        y_limit_num = (y[y_limit[0]], y[y_limit[1]])
 
-        data_cp = np.full(data.shape, np.nan)
-        x_slice = slice(x_limit[0], x_limit[1]+1)
-        y_slice = slice(y_limit[0], y_limit[1]+1)
-        data_cp[x_slice, y_slice] = data.data[x_slice, y_slice]
-        data = data_cp
-
-        x_offset = np.min(x[x_args])
-        y_offset = np.min(y[y_args])
-        with np.errstate(divide='ignore'):
-            x_scale = abs(x_limit_num[1] - x_limit_num[0])/(x_limit[1] - x_limit[0])
-            y_scale = abs(y_limit_num[1] - y_limit_num[0])/(y_limit[1] - y_limit[0])
-
-        if x_scale == 0 or np.isnan(x_scale):
-            x_scale = 1
+        if x_array.attrs.get('scale') == 'irregular' or y_array.attrs.get('scale') == 'irregular':
+            plot_mode = 'irregular'
         else:
-            x_offset -= 0.5*x_scale
+            plot_mode = 'uniform'
 
-        if y_scale == 0 or np.isnan(y_scale):
-            y_scale = 1
-        else:
-            y_offset -= 0.5*y_scale
+        if plot_mode == 'uniform':
+            if self._plot_mode != 'uniform':
+                self.plot.removeItem(self.mesh)
+                self.mesh = None
+                self.img = pg.ImageItem()
+                # set some image data. This is required for pyqtgraph > 0.11
+                self.img.setImage(np.zeros((1, 1)))
+                img_view = pg.ImageView(view=self.plot, imageItem=self.img)
+                self.img_view = img_view
+                img_view.setColorMap(get_color_map())
+                img_view.ui.roiBtn.hide()
+                img_view.ui.menuBtn.hide()
+                img_view.ui.histogram.autoHistogramRange()
+                self._plot_mode = 'uniform'
 
-        # flip axis is postive to negative scan
-        if x_limit_num[0] > x_limit_num[1]:
-            data = data[::-1, :]
-            x_offset -= (len(x)-x_limit[1]-1)*x_scale
-        else:
-            x_offset -= x_limit[0]*x_scale
-        if y_limit_num[0] > y_limit_num[1]:
-            data = data[:, ::-1]
-            y_offset -= (len(y)-y_limit[1]-1)*y_scale
-        else:
-            y_offset -= y_limit[0]*y_scale
 
-        self.plot.invertY(False)
-        self.img.setImage(data)
+            log_mode = {}
+            if x_array.attrs.get('scale') == 'log':
+                log_mode['x'] = True
+                x = np.log10(x)
+            if y_array.attrs.get('scale') == 'log':
+                log_mode['y'] = True
+                y = np.log10(y)
 
-        tr = QtGui.QTransform()
-        tr.translate(x_offset, y_offset)
-        tr.scale(x_scale, y_scale)
-        self.img.setTransform(tr)
+            x_limit_num = (x[x_limit[0]], x[x_limit[1]])
+            y_limit_num = (y[y_limit[0]], y[y_limit[1]])
 
-    def detect_log_mode(self, data):
-        ind = np.argwhere(np.isfinite(data)).T[0]
-        if len(ind) < 3:
-            # need at least 3 points to check for logarithmic axis
-            return False
-        data_finite = data[ind] + 1e-100
-        ratio = data_finite[:-1] / data_finite[1:]
-        mean_ratio = np.mean(ratio)
-        is_log = (
-                0.99999 < np.min(ratio)/np.max(ratio) < 1.00001
-                and (mean_ratio < 0.99 or mean_ratio > 1.01))
-        return is_log
+            x_offset = np.min(x[x_args])
+            y_offset = np.min(y[y_args])
+            with np.errstate(divide='ignore'): # @@@ check negative axis
+                x_scale = abs(x_limit_num[1] - x_limit_num[0])/(x_limit[1] - x_limit[0])
+                y_scale = abs(y_limit_num[1] - y_limit_num[0])/(y_limit[1] - y_limit[0])
+
+            if x_scale == 0 or np.isnan(x_scale):
+                x_scale = 1
+            else:
+                x_offset -= 0.5*x_scale
+
+            if y_scale == 0 or np.isnan(y_scale):
+                y_scale = 1
+            else:
+                y_offset -= 0.5*y_scale
+
+            rect = QtCore.QRectF(
+                x_offset,
+                y_offset,
+                x_scale * len(x),
+                y_scale * len(y),
+            )
+            plot.setLogMode(**log_mode)
+            self._log_mode = log_mode
+
+            # flip axis is postive to negative scan
+            if x_limit_num[0] > x_limit_num[1]:
+                z = z[::-1, :]
+                x_offset -= (len(x)-x_limit[1]-1)*x_scale
+            else:
+                x_offset -= x_limit[0]*x_scale
+            if y_limit_num[0] > y_limit_num[1]:
+                z = z[:, ::-1]
+                y_offset -= (len(y)-y_limit[1]-1)*y_scale
+            else:
+                y_offset -= y_limit[0]*y_scale
+
+            self.plot.invertY(False)
+            self.img.setRect(rect)
+            self.img.setImage(z)
+
+        if plot_mode == 'irregular':
+            if self._plot_mode != 'irregular':
+                self.plot.removeItem(self.img_view)
+                self.img_view = None
+                self.mesh = pg.PColorMeshItem()
+                self.plot.addItem(self.mesh)
+                self._plot_mode = 'irregular'
+
+            log_mode = {
+                'x': x_array.attrs['log'],
+                'y': y_array.attrs['log'],
+                }
+            plot.setLogMode(**log_mode)
+            self._log_mode = log_mode
+
+            x_valid = x[x_slice]
+            y_valid = y[y_slice]
+            if log_mode.get('x'):
+                x_valid = np.log10(x_valid)
+            if log_mode.get('y'):
+                y_valid = np.log10(y_valid)
+
+            x_edges = self._get_edges(x_valid)
+            y_edges = self._get_edges(y_valid)
+
+            x_grid = x_edges[:, None] * np.ones(len(y_edges))
+            y_grid = y_edges * np.ones(len(x_edges))[:, None]
+            z = data.data[x_slice, y_slice]
+            self.mesh.setData(x_grid, y_grid, z)
+
+            x_min, x_max = self._get_axis_limits(x_edges)
+            y_min, y_max = self._get_axis_limits(y_edges)
+
+            self.plot.setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
+            self.plot.invertY(False)
+
+    def _get_edges(self, x):
+        nx = len(x)+1
+        edges = np.zeros(nx)
+        edges[1:-1] = (x[1:] + x[:-1])/2
+        edges[0] = 2*x[0] - edges[1]
+        edges[-1] = 2*x[-1] - edges[-2]
+        return edges
+
+    def _get_axis_limits(self, values):
+        x_min = min(values)
+        x_max = max(values)
+        delta = (x_max - x_min) * 0.02
+        x_min -= delta
+        x_max += delta
+        return x_min, x_max
 
     @qt_log_exception
     def mouseMoved(self, evt):
@@ -161,11 +225,11 @@ class Plot2D(BasePlot):
         if self.plot.sceneBoundingRect().contains(pos):
             mousePoint = vb.mapSceneToView(pos)
             x_val = mousePoint.x()
-            # if self.logmode['x'] == True: # @@@
-            #     x_val = 10**x_val
             y_val = mousePoint.y()
-            # if self.logmode['y'] == True:
-            #     y_val = 10**y_val
+            if self._log_mode.get('x'):
+                  x_val = 10**x_val
+            if self._log_mode.get('y'):
+                  y_val = 10**y_val
 
             data = self._data
             z = data * self._z_formatter.scale
@@ -189,8 +253,6 @@ class Plot2D(BasePlot):
             z_str = self._z_formatter.with_units(value, z)
 
             self.label.setText(f"x={x_str}, y={y_str}: {z_str}")
-
-
 
 
 def get_color_map():

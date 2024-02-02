@@ -3,6 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
+import numpy as np
 import xarray as xr
 
 from .histograms import histogram
@@ -103,10 +104,41 @@ class PlotModel:
                 y_axis = x_axis
                 self.set_axis_mode(i, AxisMode.XAxis)
                 x_axis = i
+            data.attrs['scale'] = self._detect_axis_scale(data) # @@@ This can be done on Dataset..
+
+    def _detect_axis_scale(self, axis):
+        data = axis.data
+        ind = np.argwhere(np.isfinite(data)).T[0]
+        if len(ind) < 3:
+            # need at least 3 points to check for logarithmic axis
+            return 'lin'
+        # remove NaN
+        data = data[ind]
+
+        deltas = data[1:] - data[:-1]
+        delta_ratio = np.min(deltas)/np.max(deltas)
+        is_lin = 0.999 < delta_ratio < 1.001
+        if is_lin:
+            return 'lin'
+
+        if delta_ratio <= 0:
+            logger.error(f"Unsorted data on axis {axis.name}")
+            return 'unsorted'
+
+        data_finite = data + 1e-100
+        ratio = data_finite[:-1] / data_finite[1:]
+        mean_ratio = np.mean(ratio)
+        is_log = (
+                0.999 < np.min(ratio)/np.max(ratio) < 1.001
+                and (mean_ratio < 0.99 or mean_ratio > 1.01))
+        if is_log:
+            return 'log'
+        # TODO log_irregular / log irregular? => auto log
+        return 'irregular'
 
     @plot_changer
     def update_data(self, data: xr.DataArray):
-        # @@@ This works with core-tools database.
+        # @@@ This works only with core-tools database !! But still has bugs!
         try:
             if data.name != self._data.name:
                 raise Exception(f"OOPS!! name of array doesn't match {data.name} <> {self._data.name}")

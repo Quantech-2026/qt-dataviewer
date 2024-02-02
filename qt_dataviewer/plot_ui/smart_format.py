@@ -2,6 +2,7 @@ import numpy as np
 import xarray as xr
 
 from pyqtgraph.functions import siScale
+from pyqtgraph.graphicsItems import AxisItem
 
 _si_prefixes = {
     "T": 1e12,
@@ -25,18 +26,21 @@ _auto_si_units = {
 
 
 class SmartFormatter:
-    def __init__(self, units):
+    def __init__(self, attrs):
+        self.label = attrs['long_name']
+        units = attrs['units']
         try:
             self.scale = _auto_si_units[units]
+        except KeyError:
+            self.scale = 1.0
+            self.auto_si_prefix = False
+            self.units = units
+        else:
             self.auto_si_prefix = True
             if self.scale != 1.0:
                 self.units = units[1:]
             else:
                 self.units = units
-        except KeyError:
-            self.scale = 1.0
-            self.auto_si_prefix = False
-            self.units = units
 
     def get_precision(self, data: xr.DataArray):
         n = len(data)
@@ -66,3 +70,10 @@ class SmartFormatter:
             units = prefix+units
         return f"{value:#.{d}g} {units}"
 
+    def set_plot_axis(self, axis:AxisItem):
+        if self.auto_si_prefix != axis.autoSIPrefix:
+            axis.enableAutoSIPrefix(self.auto_si_prefix)
+            if not self.auto_si_prefix:
+                # fix bug in pyqtgraph
+                axis.autoSIPrefixScale = 1.0
+        axis.setLabel(self.label, self.units)
