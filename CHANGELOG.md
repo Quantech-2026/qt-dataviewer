@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.2.5] - 2024-02-02
+
+- Fixed bug in 2D when dataset was opened before any data was written to it.
+
 ## \[0.2.4] - 2024-02-02
 
 - Fixed pulse plotting: faster and also conditional segments

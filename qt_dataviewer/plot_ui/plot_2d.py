@@ -40,6 +40,8 @@ class Plot2D(BasePlot):
         self._layout.addWidget(self.img_view)
         self._layout.addWidget(self.label)
 
+        self._log_mode = {}
+
         self.proxy = pg.SignalProxy(self.plot.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
         self.update()
         self.plot.setAspectLocked(False)
@@ -85,13 +87,13 @@ class Plot2D(BasePlot):
 
         x_args = np.argwhere(np.isfinite(x)).T[0]
         y_args = np.argwhere(np.isfinite(y)).T[0]
+        if len(x_args) == 0:
+            # No data yet. Nothing to update.
+            return
         x_limit = [np.min(x_args), np.max(x_args)]
         y_limit = [np.min(y_args), np.max(y_args)]
         x_slice = slice(x_limit[0], x_limit[1]+1)
         y_slice = slice(y_limit[0], y_limit[1]+1)
-        if len(x_args) == 0:
-            # No data yet. Nothing to update.
-            return
 
         if x_array.attrs.get('scale') == 'irregular' or y_array.attrs.get('scale') == 'irregular':
             plot_mode = 'irregular'
