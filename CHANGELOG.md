@@ -1,7 +1,9 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
-## \[0.2.5] - 2024-02-02
+## \[0.2.6] - 2024-02-06
+
+## \[0.2.5] - 2024-02-05
 
 - Fixed bug in 2D when dataset was opened before any data was written to it.
 

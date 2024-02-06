@@ -59,6 +59,8 @@ class SmartFormatter:
         return d
 
     def with_units(self, value: float, data: xr.DataArray):
+        if not isinstance(value, float):
+            value = float(value)
         # Note: the data can change.
         d = self.get_precision(data)
         units = self.units
