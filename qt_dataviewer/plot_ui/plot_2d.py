@@ -2,7 +2,7 @@ import logging
 import pyqtgraph as pg
 import numpy as np
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 from matplotlib.pyplot import get_cmap
 
 from qt_dataviewer.utils.qt_utils import qt_log_exception
@@ -168,6 +168,7 @@ class Plot2D(BasePlot):
             self.img.setRect(rect)
             self.img.setImage(z)
 
+        # TODO Cleanup !!
         if plot_mode == 'irregular':
             if self._plot_mode != 'irregular':
                 self.plot.removeItem(self.img_view)
@@ -184,10 +185,29 @@ class Plot2D(BasePlot):
             self._log_mode = log_mode
 
             x_valid = x[x_slice]
-            y_valid = y[y_slice]
             if log_mode.get('x'):
+                if np.any(x_valid <= 0.0):
+                    logger.warning("Skipping values <= 0 on x-axis")
+                    x_args = np.argwhere(np.isfinite(x) & (x > 0)).T[0]
+                    if len(x_args) == 0:
+                        logger.warning("No data left on x-axis")
+                        return
+                    x_limit = [np.min(x_args), np.max(x_args)]
+                    x_slice = slice(x_limit[0], x_limit[1]+1)
+                    x_valid = x[x_slice]
                 x_valid = np.log10(x_valid)
+
+            y_valid = y[y_slice]
             if log_mode.get('y'):
+                if np.any(y_valid <= 0.0):
+                    logger.warning("Skipping values <= 0 on y-axis")
+                    y_args = np.argwhere(np.isfinite(y) & (y > 0)).T[0]
+                    if len(y_args) == 0:
+                        logger.warning("No data left on y-axis")
+                        return
+                    y_limit = [np.min(y_args), np.max(y_args)]
+                    y_slice = slice(y_limit[0], y_limit[1]+1)
+                    y_valid = y[y_slice]
                 y_valid = np.log10(y_valid)
 
             x_edges = self._get_edges(x_valid)
@@ -198,6 +218,9 @@ class Plot2D(BasePlot):
             z = data.data[x_slice, y_slice]
             self.mesh.setData(x_grid, y_grid, z)
 
+            # Calculate min/max values to show data with small empty border.
+            # Default behavior of pyqtgraph is to select 'notural' values on axis.
+            # This behavior can result in a big white space around the data.
             x_min, x_max = self._get_axis_limits(x_edges)
             y_min, y_max = self._get_axis_limits(y_edges)
 

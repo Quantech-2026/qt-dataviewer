@@ -1,7 +1,13 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.2.7] - 2024-02-06
+
+- Remove values <= 0 when plotting on logarithmic scale.
+
 ## \[0.2.6] - 2024-02-06
+
+- Fix formatting in case the value is a DataArray element (old version of xarray)
 
 ## \[0.2.5] - 2024-02-05
 
