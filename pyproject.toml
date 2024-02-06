@@ -19,7 +19,7 @@ classifiers = [
 dependencies = [
     "pyqt5",
     "pyqtgraph",
-    "matplotlib",
+    "matplotlib >= 3.5.3",
     "numpy",
     "xarray",
 ]
