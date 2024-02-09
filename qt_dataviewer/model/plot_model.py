@@ -104,7 +104,7 @@ class PlotModel:
                 y_axis = x_axis
                 self.set_axis_mode(i, AxisMode.XAxis)
                 x_axis = i
-            data.attrs['scale'] = self._detect_axis_scale(data) # @@@ This can be done on Dataset..
+            data.attrs['scale'] = self._detect_axis_scale(data)
 
     def _detect_axis_scale(self, axis):
         data = axis.data
@@ -123,6 +123,7 @@ class PlotModel:
 
         if delta_ratio <= 0:
             logger.error(f"Unsorted data on axis {axis.name}")
+            # TODO unsorted, lin/log, regular/irregular
             return 'unsorted'
 
         data_finite = data + 1e-100
@@ -133,7 +134,7 @@ class PlotModel:
                 and (mean_ratio < 0.99 or mean_ratio > 1.01))
         if is_log:
             return 'log'
-        # TODO log_irregular / log irregular? => auto log
+        # TODO lin_irregular / log_irregular? => auto log
         return 'irregular'
 
     @plot_changer
@@ -159,7 +160,7 @@ class PlotModel:
 
     @property
     def var_name(self):
-        return self._data.name # format_var_name(self._data)
+        return self._data.name
 
     def set_plotter(self, plotter):
         self._plotter = plotter
