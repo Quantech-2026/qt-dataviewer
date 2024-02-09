@@ -129,7 +129,7 @@ class Plot2D(BasePlot):
 
             x_offset = np.min(x[x_args])
             y_offset = np.min(y[y_args])
-            with np.errstate(divide='ignore'): # @@@ check negative axis
+            with np.errstate(divide='ignore'):
                 x_scale = abs(x_limit_num[1] - x_limit_num[0])/(x_limit[1] - x_limit[0])
                 y_scale = abs(y_limit_num[1] - y_limit_num[0])/(y_limit[1] - y_limit[0])
 
