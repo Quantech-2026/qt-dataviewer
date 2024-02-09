@@ -50,7 +50,7 @@ class PlotSettings(QtWidgets.QWidget):
         irow += 1
         for axis in range(plot_model.n_axis):
             settings = plot_model.get_axis_settings(axis)
-            ax_name = settings.data.name # @@@ format_var_name(settings.data)
+            ax_name = settings.data.name
             layout.addWidget(QtWidgets.QLabel(ax_name), irow, 0)
             dim_label = QtWidgets.QLabel(f"{len(settings.data)}")
             dim_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
