@@ -4,6 +4,8 @@ All notable changes to QT-DataViewer will be documented in this file.
 ## \[0.3.0] - 2024-02-@@@
 
 - Changed DatasetList to get a cleaner interface.
+- Added DataBrowser base
+- Added CoreToolsDataBrowser
 
 ## \[0.2.7] - 2024-02-06
 
