@@ -5,6 +5,7 @@ import numpy as np
 from core_tools.data.ds.data_set_core import data_set
 from core_tools.data.ds.ds2xarray import ds2xarray
 from PyQt5 import QtCore
+from PyQt5.QtWidgets import QMessageBox
 
 from qt_dataviewer import DatasetViewer, DatasetList
 from qt_dataviewer.utils.qt_utils import qt_log_exception
@@ -13,13 +14,27 @@ from qt_dataviewer.utils.qt_utils import qt_log_exception
 logger = logging.getLogger(__name__)
 
 
-# @@@ require core-tools > 1.4.42
-
 class CoreToolsDatasetViewer(DatasetViewer):
+    coretools_upgrade_message_shown = False
+
     def __init__(self, ds: data_set, datalist: DatasetList = None):
         ds_fullqualname = type(ds).__module__ +'.' + type(ds).__qualname__
         if ds_fullqualname != "core_tools.data.ds.data_set_core.data_set":
             raise Exception(f"Expected coretools data_set got '{ds_fullqualname}'")
+
+        if (datalist is not None
+                and hasattr(datalist, 'select_next')
+                and not hasattr(datalist, 'get_next')):
+            if not CoreToolsDatasetViewer.coretools_upgrade_message_shown:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Upgrade core-tools to v1.4.44+ to use next/previous buttons")
+                msg.setWindowTitle("Core-tools upgrade")
+                msg.setStandardButtons(QMessageBox.Ok)
+                msg.exec_()
+                CoreToolsDatasetViewer.coretools_upgrade_message_shown = True
+
+            datalist = None
 
         try:
             ds_xr = ds2xarray(ds, snapshot=None)

@@ -92,21 +92,21 @@ class PlotWindow:
 
         self.btnPrevious = QtWidgets.QPushButton('Previous')
         self.btnPrevious.setMinimumSize(QtCore.QSize(80, 0))
-        self.btnPrevious.setVisible(self.datalist is not None) # And has_next not abstract. @@@ YUK!
-        self.btnPrevious.clicked.connect(self._select_previous)
+        # TODO cleanup interface PlotWindow vs DataViewer.
+        self.btnPrevious.setVisible(self.datalist is not None) # And get_next not abstract.
+        self.btnPrevious.clicked.connect(self._get_previous)
         top_layout.addWidget(self.btnPrevious)
         self.btnNext = QtWidgets.QPushButton('Next')
         self.btnNext.setMinimumSize(QtCore.QSize(80, 0))
         self.btnNext.setVisible(self.datalist is not None)
-        self.btnNext.clicked.connect(self._select_next)
+        self.btnNext.clicked.connect(self._get_next)
         top_layout.addWidget(self.btnNext)
-        # @@@ hamburger
         # @@@ add star
         # @@@ allow change name
         return top_layout
 
     @qt_log_exception
-    def _select_next(self, checked: bool):
+    def _get_next(self, checked: bool):
         if self.datalist is not None:
             if not self.datalist.has_next():
                 QtWidgets.QToolTip.showText(self.mapToGlobal(self.btnNext.pos() + QtCore.QPoint(0, 10)),
@@ -116,14 +116,15 @@ class PlotWindow:
                 try:
                     t0 = time.perf_counter()
                     self.setCursor(QtCore.Qt.WaitCursor)
-                    self.datalist.select_next()
+                    ds = self.datalist.get_next()
+                    self.set_ds(ds)
                 finally:
                     self.setCursor(QtCore.Qt.ArrowCursor)
                     t1 = time.perf_counter()
                     # print(f"Next {(t1-t0)*1000:.1f} ms")
 
     @qt_log_exception
-    def _select_previous(self, checked: bool):
+    def _get_previous(self, checked: bool):
         if self.datalist is not None:
             if not self.datalist.has_previous():
                 QtWidgets.QToolTip.showText(self.mapToGlobal(self.btnPrevious.pos() + QtCore.QPoint(0, 10)),
@@ -133,7 +134,8 @@ class PlotWindow:
                 try:
                     t0 = time.perf_counter()
                     self.setCursor(QtCore.Qt.WaitCursor)
-                    self.datalist.select_previous()
+                    ds = self.datalist.get_previous()
+                    self.set_ds(ds)
                 finally:
                     self.setCursor(QtCore.Qt.ArrowCursor)
                     t1 = time.perf_counter()
@@ -229,8 +231,6 @@ class PlotWindow:
         selected = self.lb_variables.selectedIndexes()[0].row()
         layout = self.plots_layout
 
-        # self.plots_widget.setUpdatesEnabled(False)
-
         nplots = 0
         for seq_nr, widget in sorted(self._plot_widgets.items()):
             if (int(seq_nr) == selected) or not checked:
@@ -242,7 +242,6 @@ class PlotWindow:
                 widget.setVisible(False)
 
         self._update_grid_stretch()
-        # self.plots_widget.setUpdatesEnabled(True)
 
     @qt_log_exception
     def _variable_selection_changed(self):
@@ -255,7 +254,6 @@ class PlotWindow:
         self._update_plot_borders()
         if self.cb_only_selected.isChecked():
             layout = self.plots_layout
-            # self.plots_widget.setUpdatesEnabled(False) # @@@ decorator for nested updates?
             selected_row
             nplots = 0
             for seq_nr, widget in self._plot_widgets.items():
@@ -267,7 +265,6 @@ class PlotWindow:
                 else:
                     widget.setVisible(False)
             self._update_grid_stretch()
-            # self.plots_widget.setUpdatesEnabled(True)
 
     def _update_plot_borders(self):
         # Highlight plot
@@ -386,7 +383,6 @@ class PlotWindow:
         if seq_nr in self._plot_widgets:
             raise Exception(f"Duplicate plot {seq_nr}")
         layout = self.plots_layout
-        # self.plots_widget.setUpdatesEnabled(False) # @@@ decorator for nested updates
 
         # Move plots to insert at right position
         seq_nrs = sorted(self._plot_widgets.keys())
@@ -421,7 +417,7 @@ class PlotWindow:
 
         if self.cb_only_selected.isChecked():
             selected = self.lb_variables.selectedIndexes()[0].row()
-            plot_index = 0 # @@@ not correct with sub-plots
+            plot_index = 0 # TODO not correct with sub-plots (cross-hair slicing)
             if int(seq_nr) != selected:
                 widget.setVisible(False)
         irow, icol = divmod(plot_index, N_PLOT_COLUMNS)
@@ -431,7 +427,6 @@ class PlotWindow:
 
         self._update_grid_stretch()
         self._update_plot_borders()
-        # self.plots_widget.setUpdatesEnabled(True)
 
         return plot_layout
 
@@ -442,7 +437,6 @@ class PlotWindow:
         if seq_nr not in self._plot_widgets:
             return
         layout = self.plots_layout
-        # self.plots_widget.setUpdatesEnabled(False)
 
         widget = self._plot_widgets[seq_nr]
         widget.deleteLater()
@@ -457,7 +451,6 @@ class PlotWindow:
                 layout.addWidget(widget, irow, icol)
 
         self._update_grid_stretch()
-        # self.plots_widget.setUpdatesEnabled(True)
 
     def _update_grid_stretch(self):
         if self.cb_only_selected.isChecked():
