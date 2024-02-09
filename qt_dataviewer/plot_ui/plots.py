@@ -10,7 +10,7 @@ class BasePlot:
         self.dims = plot_model.dims
         self.ndim = plot_model.ndim
         self.one_d_is_vertical = plot_model.one_d_is_vertical
-        # @@@ add title and action buttons
+        # TODO add title and action buttons
         self.create()
 
     @abstractmethod
