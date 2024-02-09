@@ -63,6 +63,8 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
 
         self._set_info(ds, snapshot)
 
+        # Disabling updates speeds up plot creation and drawing
+        self.setUpdatesEnabled(False)
         for plotter in self._plotters:
             plotter.set_layout(None)
 
@@ -74,7 +76,6 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
             seq_nr = len(self._plotters)
             plotter = DataArrayPlotter(var, seq_nr)
             self._plotters.append(plotter)
-        self.setUpdatesEnabled(False)
         for var_name, var in ds.data_vars.items():
             hidden = False
             self.add_variable(var.name, hidden)
