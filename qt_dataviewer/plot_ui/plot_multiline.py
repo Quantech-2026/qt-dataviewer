@@ -42,7 +42,7 @@ class PlotMultiline(BasePlot):
         self._layout.addWidget(self.label)
 
         self.curves = {}
-        self.colormap = colormaps.get_cmap('turbo')
+        self.colormap = colormaps['turbo']
 
         plot = self.plot
         plot.addLegend()

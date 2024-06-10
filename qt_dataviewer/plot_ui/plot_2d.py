@@ -3,7 +3,7 @@ import pyqtgraph as pg
 import numpy as np
 
 from PyQt5 import QtCore, QtWidgets
-from matplotlib.pyplot import get_cmap
+from matplotlib import colormaps
 
 from qt_dataviewer.utils.qt_utils import qt_log_exception
 from .plots import BasePlot
@@ -43,8 +43,11 @@ class Plot2D(BasePlot):
         self._log_mode = {}
 
         self.proxy = pg.SignalProxy(self.plot.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
-        self.update()
-        self.plot.setAspectLocked(False)
+        try:
+            self.update()
+            self.plot.setAspectLocked(False)
+        except Exception:
+            logger.error("Failed to create plot", exc_info=True)
 
     def show_sidebar(self, show):
         if self.img_view is not None:
@@ -115,7 +118,6 @@ class Plot2D(BasePlot):
                 img_view.ui.histogram.autoHistogramRange()
                 self._plot_mode = 'uniform'
 
-
             log_mode = {}
             if x_array.attrs.get('scale') == 'log':
                 log_mode['x'] = True
@@ -129,7 +131,7 @@ class Plot2D(BasePlot):
 
             x_offset = np.min(x[x_args])
             y_offset = np.min(y[y_args])
-            with np.errstate(divide='ignore'):
+            with np.errstate(divide='ignore', invalid='ignore'):
                 x_scale = abs(x_limit_num[1] - x_limit_num[0])/(x_limit[1] - x_limit[0])
                 y_scale = abs(y_limit_num[1] - y_limit_num[0])/(y_limit[1] - y_limit[0])
 
@@ -282,9 +284,7 @@ class Plot2D(BasePlot):
 
 def get_color_map():
     numofLines = 5
-    cMapType = 'viridis'
-    colorMap = get_cmap(cMapType) # get_cmap is matplotlib object
-
+    colorMap = colormaps['viridis']
     colorList = np.linspace(0, 1, numofLines)
     lineColors = colorMap(colorList)
 

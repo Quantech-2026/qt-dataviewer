@@ -80,7 +80,7 @@ class Plot1D(BasePlot):
         plot.setLogMode(**log_mode)
 
         value_range = self._plot_model.value_range
-        if value_range is not None:
+        if value_range is not None and not np.isnan(value_range[0]):
             mn, mx = value_range
             if self.one_d_is_vertical:
                 mn *= x_formatter.scale
