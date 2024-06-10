@@ -139,17 +139,29 @@ class PlotModel:
 
     @plot_changer
     def update_data(self, data: xr.DataArray):
-        # @@@ This works only with core-tools database !! But still has bugs!
         try:
             if data.name != self._data.name:
                 raise Exception(f"OOPS!! name of array doesn't match {data.name} <> {self._data.name}")
-            # self._data.data = data.data
-            for i, axis_name in enumerate(data.coords.keys()):
+
+            if self._data.dims != data.dims:
+                logger.error(f"Dims differ {data.dims} <> {self._data.dims}")
+
+            old_labels = [settings.data.attrs.get('long_name', settings.data.name) for settings in self._axis_settings]
+            new_labels = [data[dim].attrs.get('long_name', data[dim].name) for dim in data.dims]
+            if old_labels != new_labels:
+                logger.error(f"Labels differ {new_labels} <> {old_labels} {data.dims} {self._data.dims}")
+
+            self._data = data
+            for i, dim in enumerate(data.dims):
+                axis_data = data[dim]
                 settings = self._axis_settings[i]
-                if axis_name != settings.data.name:
+                # labels must be equal. The name can change due to xarray conversion.
+                new_axis_label = axis_data.attrs.get('long_name', axis_data.name)
+                old_axis_label = settings.data.attrs.get('long_name', settings.data.name)
+                if new_axis_label != old_axis_label:
                     raise Exception(f"OOPS!! name of coordinate {i} doesn't match "
-                                    f"{axis_name} <> {settings.data.name}")
-                # settings.data = data[axis_name]
+                                    f"{new_axis_label} <> {old_axis_label}")
+                settings.data = axis_data
             self._changed = True
         except Exception:
             logger.error('update failed', exc_info=True)
