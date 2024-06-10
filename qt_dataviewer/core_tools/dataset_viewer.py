@@ -89,9 +89,6 @@ class CoreToolsDatasetViewer(DatasetViewer):
 
     @qt_log_exception
     def update_ds(self):
-        if self._ds.completed:
-            self._timer.stop()
-
         ds = self._ds
         logger.info('Update ds')
         ds.sync()
@@ -101,7 +98,9 @@ class CoreToolsDatasetViewer(DatasetViewer):
             plotter = self._plotters[i]
             logger.info(f"Update {var.name}")
             plotter.update_data(var)
-        self._timer.start()
+
+        if not self._ds.completed:
+            self._timer.start()
 
     def closeEvent(self, event):
         """ Override of QT closeEvent. """
