@@ -59,15 +59,6 @@ def plot_changer(func):
     return _wrapped
 
 
-# def format_var_name(data: xr.DataArray):
-#     unit = data.attrs['units']
-#     name = data.attrs['long_name']
-#     if unit:
-#         return f"{name} ({unit})"
-#     else:
-#         return data.name
-
-
 class PlotModel:
     def __init__(self, data: xr.DataArray, seq_nr: float):
         self._data = data
@@ -142,9 +133,6 @@ class PlotModel:
         try:
             if data.name != self._data.name:
                 raise Exception(f"OOPS!! name of array doesn't match {data.name} <> {self._data.name}")
-
-            if self._data.dims != data.dims:
-                logger.error(f"Dims differ {data.dims} <> {self._data.dims}")
 
             old_labels = [settings.data.attrs.get('long_name', settings.data.name) for settings in self._axis_settings]
             new_labels = [data[dim].attrs.get('long_name', data[dim].name) for dim in data.dims]
