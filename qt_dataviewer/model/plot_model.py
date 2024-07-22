@@ -11,6 +11,7 @@ from .histograms import histogram
 
 logger = logging.getLogger(__name__)
 
+
 class AxisMode:
     XAxis = 0
     YAxis = 1
@@ -100,7 +101,8 @@ class PlotModel:
     def _detect_axis_scale(self, axis):
         data = axis.data
         ind = np.argwhere(np.isfinite(data)).T[0]
-        if len(ind) < 3:
+        n = len(ind)
+        if n < 3:
             # need at least 3 points to check for logarithmic axis
             return 'lin'
         # remove NaN
@@ -108,6 +110,7 @@ class PlotModel:
 
         deltas = data[1:] - data[:-1]
         delta_ratio = np.min(deltas)/np.max(deltas)
+        delta_ratio = (delta_ratio - 1) / n + 1
         is_lin = 0.999 < delta_ratio < 1.001
         if is_lin:
             return 'lin'
@@ -120,8 +123,10 @@ class PlotModel:
         data_finite = data + 1e-100
         ratio = data_finite[:-1] / data_finite[1:]
         mean_ratio = np.mean(ratio)
+        ratio_ratio = np.min(ratio)/np.max(ratio)
+        ratio_ratio = (ratio_ratio - 1) / n + 1
         is_log = (
-                0.999 < np.min(ratio)/np.max(ratio) < 1.001
+                0.999 < ratio_ratio < 1.001
                 and (mean_ratio < 0.99 or mean_ratio > 1.01))
         if is_log:
             return 'log'

@@ -1,5 +1,5 @@
 import logging
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 from PyQt5 import QtCore, QtWidgets
 from qt_dataviewer.abstract.dataset_description import DatasetDescription
@@ -18,6 +18,7 @@ class DatasetListView(QtWidgets.QTreeWidget):
     def __init__(self,
                  parent: QtWidgets.QWidget,
                  column_definitions: Tuple[str, str, int],
+                 label_keys: Dict[str, str],
                  sort_by_column: int):
         super().__init__(parent)
 
@@ -31,12 +32,13 @@ class DatasetListView(QtWidgets.QTreeWidget):
             )
 
         self.column_definitions = column_definitions
+        self.label_keys = label_keys
 
         self.setColumnCount(len(column_definitions))
         self.setHeaderLabels([col[0] for col in column_definitions])
         for index, col in enumerate(column_definitions):
-            if len(col) > 2:
-                self.setColumnWidth(index, col[2])
+            if len(col) > 1:
+                self.setColumnWidth(index, col[1])
 
         self.itemActivated.connect(self._dataset_activated)
 
@@ -70,7 +72,7 @@ class DatasetListView(QtWidgets.QTreeWidget):
             ds_description (DatasetDescription): description of dataset.
         """
         texts = [
-            ds_description.get_text(col[1])
+            ds_description.get_text(self.label_keys[col[0]])
             for col in self.column_definitions
             ]
         item = QtWidgets.QTreeWidgetItem(texts)
@@ -91,7 +93,7 @@ class DatasetListView(QtWidgets.QTreeWidget):
         # Re-enable sorting and resize the columns
         self.setSortingEnabled(True)
         for i, col in enumerate(self.column_definitions):
-            if len(col) <= 2:
+            if len(col) <= 1:
                 self.resizeColumnToContents(i)
 
     @QtCore.pyqtSlot(QtWidgets.QTreeWidgetItem, int)

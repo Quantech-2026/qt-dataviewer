@@ -1,26 +1,23 @@
-import gzip
 import logging
 from datetime import datetime
-from typing import List, Dict, Any, Union
+from typing import Any, Dict, List,  Optional, Union
 
-import xarray as xr
 from PyQt5 import QtCore, QtWidgets
 
 from qt_dataviewer.plot_ui.plot_window import PlotWindow, EventHandler
-from qt_dataviewer.xarray_adapters.quantify_xarray import convert_quantify
 from qt_dataviewer.utils.qt_utils import qt_log_exception
 
 from .dataarray_plotter import DataArrayPlotter
 from .dataset_list import DatasetList
+from .abstract.dataset import Dataset
 
 
 logger = logging.getLogger(__name__)
 
 
 class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
-    def __init__(self, ds: xr.Dataset, *,
-                 snapshot: Union[None, str, Dict[str, Any]] = None,
-                 datalist: DatasetList = None):
+    def __init__(self, ds: Dataset, *,
+                 datalist: Optional[DatasetList] = None):
         try:
             self.app = QtCore.QCoreApplication.instance()
             self.instance_ready = True
@@ -35,7 +32,12 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
             self._plotters: List[DataArrayPlotter] = []
             self.alive = True
 
-            self._set_ds(ds, snapshot)
+            self._timer = QtCore.QTimer()
+            self._timer.timeout.connect(self._update_ds)
+            self._timer.setSingleShot(True)
+            self._timer.setInterval(500)
+
+            self.set_ds(ds)
 
             self.show()
 
@@ -45,23 +47,27 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
             logger.error('Dataset viewer', exc_info=True)
             raise
 
-    def set_ds(self, ds: xr.Dataset, snapshot: Union[None, str, Dict[str, Any]] = None) -> None:
-        self._set_ds(ds, snapshot)
+    def set_ds(self, ds: Dataset) -> None:
+        if ds is not None:
+            self._set_ds(ds)
+        else:
+            logger.error("", exc_info=True)
 
     @qt_log_exception
-    def _set_ds(self, ds: xr.Dataset, snapshot: Union[None, str, Dict[str, Any]] = None):
+    def _set_ds(self, ds: Dataset):
+        self._timer.stop()
+        try:
+            if ds != self._ds:
+                self._ds.close()
+        except AttributeError:
+            pass
+
+        self._ds = ds
         if ds is None:
             self.clear_variables()
             return
 
-        if not isinstance(ds, xr.Dataset):
-            raise Exception(f"Unknown dataset class: {type(ds)}")
-
-        if "tuid" in ds.attrs:
-            # Quantify: set measurement time and make 2D
-            ds = convert_quantify(ds)
-
-        self._set_info(ds, snapshot)
+        self._set_info(ds)
 
         # Disabling updates speeds up plot creation and drawing
         self.setUpdatesEnabled(False)
@@ -72,51 +78,56 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
 
         # Create plot model for every variable
         self._plotters = []
-        for var_name, var in ds.data_vars.items():
+        ds_xr = ds.data
+        if len(ds_xr.data_vars) == 0:
+            self.set_no_data_message()
+
+        for var_name, var in ds_xr.data_vars.items():
             seq_nr = len(self._plotters)
             plotter = DataArrayPlotter(var, seq_nr)
             self._plotters.append(plotter)
-        for var_name, var in ds.data_vars.items():
+        for var_name, var in ds_xr.data_vars.items():
             hidden = False
             self.add_variable(var.name, hidden)
         self.setUpdatesEnabled(True)
 
-    def _set_info(self, ds: xr.Dataset, snapshot: Union[None, str, Dict[str, Any]] = None):
-        if snapshot is not None:
-            pass
-        elif 'snapshot' in ds.attrs:
-            snapshot = ds.attrs['snapshot']
-        elif 'snapshot-gzip' in ds.attrs:
-            snapshot = gzip.decompress(ds.attrs['snapshot-gzip']).decode("utf-8")
+        if not ds.is_complete:
+            self._timer.start()
 
-        if 'uuid' in ds.attrs:
-            # core-tools:
-            s = str(ds.attrs['uuid'])
-            uuid_str = s[:-14] + '_' + s[-14:-9] + '_' + s[-9:]
-            self.set_dataset_info(
-                ds.attrs['title'],
-                uuid_str=uuid_str,
-                start_time=datetime.fromisoformat(ds.attrs['measurement_time'])
-                )
-            self.set_details_info(
-                [(name, ds.attrs[name])
-                 for name in ['project', 'set_up', 'sample_name']]
-                )
-            self.set_snapshot(snapshot)
-        elif 'tuid' in ds.attrs:
-            # Quantify
-            self.set_dataset_info(
-                ds.attrs.get('name', '<no-name>'),
-                uuid_str=ds.attrs['tuid'],
-                start_time=datetime.fromisoformat(ds.attrs.get('measurement_time'))
-                )
-            self.set_snapshot(snapshot)
-        else:
-            logger.warning(f"Unknown xarray format. Attrs:{[name for name in ds.attrs]}")
+    def _set_info(self, ds: Dataset):
+
+        self.set_dataset_info(
+            ds.name,
+            uuid_str = ds.formatted_uid,
+            start_time = ds.collected_datetime
+            )
+        self.set_details_info(ds.info)
+        self.set_snapshot(ds.snapshot)
+
+    @qt_log_exception
+    def _update_ds(self):
+        logger.info('Update dataset')
+        ds = self._ds
+        was_empty = len(ds.data.data_vars) == 0
+        ds.reload()
+        if was_empty and len(ds.data.data_vars) > 0:
+            self._set_ds(ds)
+            return
+        ds_xr = ds.data
+        # Update every plot
+        for i, var in enumerate(ds_xr.data_vars.values()):
+            plotter = self._plotters[i]
+            logger.info(f"Update {var.name}")
+            plotter.update_data(var)
+
+        if not ds.is_complete:
+            self._timer.start()
 
     def closeEvent(self, event):
         """ Override of QT closeEvent. """
         self.alive = False
+        self._timer.stop()
+        self._ds.close()
 
     def variable_selection_changed(self, index: int, hidden: bool):
         plotter = self._plotters[index]

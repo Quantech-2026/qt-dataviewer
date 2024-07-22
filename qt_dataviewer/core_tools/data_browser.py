@@ -7,15 +7,25 @@ class CoreToolsDataBrowser(DataBrowserBase):
     def __init__(self):
         self.data_store = CoreToolsDatasetStore()
         super().__init__(
+            "CoreTools",
             self.data_store,
             "Database",
-            menu_actions=None,
+            label_keys={
+                "Project": "project",
+                "Setup": "setup",
+                "Sample": "sample",
+                "Starred": "rating",
+                "UUID": "uid",
+                "Time": "time",
+                "Name": "name",
+                "Keywords": "keywords",
+                },
             column_definitions=[
-                ("Starred", "rating", 44),
-                ("UUID", "uid", 140),
-                ("Time", "time", 56),
-                ("Name", "name"),
-                ("Keywords", "Keywords"),
+                ("Starred",  44),
+                ("UUID", 140),
+                ("Time", 56),
+                ("Name", ),
+                ("Keywords", ),
              ],
             sort_by_column=1,
             filters=[
@@ -29,7 +39,6 @@ class CoreToolsDataBrowser(DataBrowserBase):
                 ],
             )
 
-        self.set_data_source(self.data_store.get_source_name())
-
-    # TODO Check for updates
+    def get_menu_actions(self):
+        return None
 

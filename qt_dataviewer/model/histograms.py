@@ -50,6 +50,7 @@ def _loop(da, data, dims, binedges):
     else:
         data[:] = np.histogram(da.data, binedges)[0]/data.shape[0]
 
-        # @@@ A[~np.isnan(A)]
+        # TODO: check for NaN?
+        # A[~np.isnan(A)]
         # np.count_nonzero(np.isnan(data))
 

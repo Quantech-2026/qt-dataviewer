@@ -1,7 +1,5 @@
-import xarray as xr
 from qt_dataviewer.dataset_list import DatasetList
-from qt_dataviewer.abstract.dataset_description import DatasetDescription
-from qt_dataviewer.abstract.dataset_store import DatasetStore
+from qt_dataviewer.abstract import Dataset, DatasetDescription, DatasetStore
 
 class BrowserDatasetList(DatasetList):
     def __init__(self, ds_store: DatasetStore, ds_description: DatasetDescription):
@@ -15,7 +13,7 @@ class BrowserDatasetList(DatasetList):
             return False
         return True
 
-    def get_next(self) -> xr.Dataset:
+    def get_next(self) -> Dataset:
         dd = self.ds_store.get_next(self.current_dd)
         self.current_dd = dd
         return self.ds_store.get_dataset(dd)
@@ -27,8 +25,17 @@ class BrowserDatasetList(DatasetList):
             return False
         return True
 
-    def get_previous(self) -> xr.Dataset:
+    def get_previous(self) -> Dataset:
         dd = self.ds_store.get_previous(self.current_dd)
+        self.current_dd = dd
+        return self.ds_store.get_dataset(dd)
+
+    def is_latest(self) -> bool:
+        dd = self.ds_store.get_latest()
+        return self.current_dd.uid == dd.uid
+
+    def get_latest(self) -> Dataset:
+        dd = self.ds_store.get_latest()
         self.current_dd = dd
         return self.ds_store.get_dataset(dd)
 

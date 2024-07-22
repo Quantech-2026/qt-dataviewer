@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Any
+
+from .abstract import Dataset
 
 class DatasetList:
     """
@@ -11,7 +12,10 @@ class DatasetList:
         ...
 
     @abstractmethod
-    def get_next(self) -> Any:
+    def get_next(self) -> Dataset:
+        '''
+        Raises: StopIteration if no next dataset
+        '''
         ...
 
     @abstractmethod
@@ -19,7 +23,24 @@ class DatasetList:
         ...
 
     @abstractmethod
-    def get_previous(self) -> Any:
+    def get_previous(self) -> Dataset:
+        '''
+        Raises: StopIteration if no previous dataset
+        '''
+        ...
+
+    @abstractmethod
+    def get_latest(self) -> Dataset:
+        '''
+        Raises: StopIteration if no dataset
+        '''
+        ...
+
+    @abstractmethod
+    def is_latest(self) -> bool:
+        '''
+        Raises: StopIteration if no dataset
+        '''
         ...
 
     @abstractmethod
@@ -35,4 +56,4 @@ class DatasetList:
         if method is None:
             return False
         # Abstract methods have the attribute __isabstractmethod__
-        return getattr(method, "__isabstractmethod__", False)
+        return not getattr(method, "__isabstractmethod__", False)

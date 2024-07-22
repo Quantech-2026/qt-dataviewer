@@ -1,8 +1,10 @@
 import logging
 import os
 import threading
+import traceback
 
 from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 
 try:
     import IPython.lib.guisupport as gs
@@ -41,6 +43,19 @@ def qt_log_exception(func):
                 is_wrapped.val = False
 
     return wrapped
+
+
+def qt_show_exception(message, ex):
+    logger.error(message, exc_info=ex)
+    msg = QMessageBox(
+        QMessageBox.Critical,
+        "QT-DataViewer: " + message,
+        message + f"\n{type(ex).__name__}: {ex}",
+        QMessageBox.Ok,
+        )
+    msg.setDetailedText("\n".join(traceback.format_exception(ex)))
+    msg.setStyleSheet("QTextEdit{min-width:600px}")
+    msg.exec_()
 
 
 _qt_app = None

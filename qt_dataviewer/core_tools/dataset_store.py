@@ -8,19 +8,18 @@ from PyQt5.QtCore import QTimer
 
 # TODO: Add abstraction in core-tools?
 from core_tools import __version__ as ct_version
+from core_tools.data.SQL.connect import SQL_conn_info_local, SQL_conn_info_remote
 from core_tools.data.ds.data_set import load_by_uuid
-from core_tools.data.ds.ds2xarray import ds2xarray
-from core_tools.data.SQL.connect import SQL_conn_info_local, SQL_conn_info_remote, sample_info
 from core_tools.data.SQL.queries.dataset_gui_queries import (
     query_for_samples,
     query_for_measurement_results,
     measurement_results)
 
-from qt_dataviewer.abstract.dataset_description import DatasetDescription
-from qt_dataviewer.abstract.dataset_store import DatasetStore, Filter
-from qt_dataviewer.abstract.types import LabelsDict
+from qt_dataviewer.abstract import (
+    Dataset, DatasetDescription, DatasetStore, Filter, LabelsDict
+    )
 from qt_dataviewer.utils.qt_utils import qt_log_exception
-
+from .dataset import CoreToolsDataset
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,6 @@ class CoreToolsDatasetStore(DatasetStore):
         self._project: str = None
         self._setup: str = None
         self._sample: str = None
-        self._labels: Dict[str, List[str]] = {}
         # Cache is used for easy next/previous lookup.
         self._ds_descriptions_cache: Dict[date, List[DatasetDescription]] = {}
         # max_db_id is used to detect new measurements.
@@ -58,22 +56,16 @@ class CoreToolsDatasetStore(DatasetStore):
             return 'Remote'
         return '---'
 
-    def get_labels(self) -> LabelsDict:
-        if not self._labels:
-            self._fetch_labels()
-        return self._labels
-
     def set_filter(self, filter: Filter):
         # check if project, setup or sample changed.
         old_labels = self._filter.labels
         new_labels = filter.labels
         self._filter = copy.deepcopy(filter)
-        print(filter)
-        for name in ["Project", "Setup", "Sample"]:
+        for name in ["project", "setup", "sample"]:
             if old_labels.get(name) != new_labels.get(name):
-                self._project = new_labels.get("Project")
-                self._setup = new_labels.get("Setup")
-                self._sample = new_labels.get("Sample")
+                self._project = new_labels.get("project")
+                self._setup = new_labels.get("setup")
+                self._sample = new_labels.get("sample")
                 self._fetch_labels()
                 break
         _, self._db_max_id = query_for_measurement_results.detect_new_meaurements(
@@ -87,6 +79,8 @@ class CoreToolsDatasetStore(DatasetStore):
     def refresh(self):
         self._ds_descriptions_cache = {}
         self._set_dates(self._fetch_dates())
+        self._set_labels(self._fetch_labels())
+        self.datasets_changed.emit()
 
     def get_dataset_descriptions(self, date: date) -> List[DatasetDescription]:
         try:
@@ -96,13 +90,33 @@ class CoreToolsDatasetStore(DatasetStore):
             self._ds_descriptions_cache[date] = ds_descriptions
             return ds_descriptions
 
-    def _fetch_labels(self):
-        self._labels = {
-            "Project": query_for_samples.get_projects(set_up=self._setup, sample=self._sample),
-            "Setup": query_for_samples.get_set_ups(project=self._project, sample=self._sample),
-            "Sample": query_for_samples.get_samples(project=self._project, set_up=self._setup),
+    def get_dataset_description_for_uid(self, uid: str) -> Optional[DatasetDescription]:
+        ds = load_by_uuid(int(uid))
+        s = str(ds.exp_uuid)
+        uuid_str = s[:-14] + '_' + s[-14:-9] + '_' + s[-9:]
+        labels = {
+            "project": ds.project,
+            "setup": ds.set_up,
+            "sample": ds.sample_name,
+            "keywords": ds.keywords,
             }
-        print(self._labels)
+        ds_description = DatasetDescription(
+            uid=uuid_str,
+            name=ds.exp_name,
+            collected_datetime=ds.run_timestamp,
+            rating=ds.starred,
+            labels=labels,
+            )
+        # Hack to prevent duplicate loading of dataset
+        ds_description.ds_ct = ds
+        return ds_description
+
+    def _fetch_labels(self):
+        return {
+            "project": query_for_samples.get_projects(set_up=self._setup, sample=self._sample),
+            "setup": query_for_samples.get_set_ups(project=self._project, sample=self._sample),
+            "sample": query_for_samples.get_samples(project=self._project, set_up=self._setup),
+            }
 
     def _fetch_dates(self) -> List[date]:
         starred = self._filter.rating is not None and self._filter.rating > 0
@@ -112,7 +126,7 @@ class CoreToolsDatasetStore(DatasetStore):
                 set_up=self._setup,
                 name=self._filter.name_contains,
                 starred=starred,
-                keywords=self._filter.labels.get("Keywords"),
+                keywords=self._filter.labels.get("keywords"),
                 )
 
     def _fetch_dataset_descriptions(self, date: date):
@@ -124,17 +138,14 @@ class CoreToolsDatasetStore(DatasetStore):
                 set_up=self._setup,
                 name=self._filter.name_contains,
                 starred=starred,
-                keywords=self._filter.labels.get("Keywords"),
+                keywords=self._filter.labels.get("keywords"),
                 )
         ds_descriptions = self._query_measurement2ds_descr(results)
         return ds_descriptions
 
-    def get_dataset(self, ds_description: DatasetDescription):
-        ds_ct = load_by_uuid(int(ds_description.uid))
-        ds_xr = ds2xarray(ds_ct)
-        # store ds_ct reference in 'hidden' attribute.
-        ds_xr.attrs["__ds_ct"] = ds_ct
-        return ds_xr
+    @qt_log_exception
+    def get_dataset(self, ds_description: DatasetDescription) -> Dataset:
+        return CoreToolsDataset(ds_description)
 
     @qt_log_exception
     def _check_for_updates(self):
@@ -154,7 +165,7 @@ class CoreToolsDatasetStore(DatasetStore):
                 set_up=self._setup,
                 name=self._filter.name_contains,
                 starred=starred,
-                keywords=self._filter.labels.get("Keywords"),
+                keywords=self._filter.labels.get("keywords"),
                 )
             new_ds_descriptions = self._query_measurement2ds_descr(results)
             if new_ds_descriptions:
@@ -168,10 +179,10 @@ class CoreToolsDatasetStore(DatasetStore):
         ds_descriptions = []
         for r in query_results:
             labels = {
-                "Project": r.project,
-                "Setup": r.set_up,
-                "Sample": r.sample,
-                "Keywords": r._keywords,
+                "project": r.project,
+                "setup": r.set_up,
+                "sample": r.sample,
+                "keywords": r._keywords,
                 }
             s = str(r.uuid)
             uuid_str = s[:-14] + '_' + s[-14:-9] + '_' + s[-9:]
@@ -184,7 +195,7 @@ class CoreToolsDatasetStore(DatasetStore):
                 labels=labels,
                 )
             ds_descriptions.append(ds)
-        ds_descriptions.sort(key=lambda ds: ds.collected_datetime)
+        ds_descriptions.sort(key=lambda ds: ds.collected_datetime, reverse=True)
         return ds_descriptions
 
     def _emit_updates(self, new_ds_descriptions: List[DatasetDescription]):
@@ -194,15 +205,15 @@ class CoreToolsDatasetStore(DatasetStore):
                 del self._ds_descriptions_cache[ds.collected_date]
             if ds.collected_date not in self._dates:
                 update_dates = True
-            for label, value in ds.labels.items():
-                try:
-                    values = self._labels[label]
-                except KeyError:
-                    self._labels[label] = [value]
-                else:
-                    if value not in values:
-                        self._labels[label] = sorted(values + [value])
-                # TODO emit label change ??
+            # for label, value in ds.labels.items():
+            #     try:
+            #         values = self._labels[label]
+            #     except KeyError:
+            #         self._labels[label] = [value]
+            #     else:
+            #         if value not in values:
+            #             self._labels[label] = sorted(values + [value])
+            #     # TODO emit label change ??
             if update_dates:
                 self._set_dates(self._fetch_dates())
         self.new_datasets.emit(new_ds_descriptions)
@@ -246,6 +257,14 @@ class CoreToolsDatasetStore(DatasetStore):
                 return dds[0]
             else:
                 raise StopIteration('No more datasets') from None
+
+    def get_latest(self) -> DatasetDescription:
+        if not self.dates:
+            raise StopIteration('No datasets') from None
+        dds = self.get_dataset_descriptions(self.dates[0])
+        if not dds:
+            raise StopIteration('No datasets') from None
+        return dds[0]
 
     def _index(self, ds_description: DatasetDescription, ds_descriptions: List[DatasetDescription]):
         for i, ds in enumerate(ds_descriptions):

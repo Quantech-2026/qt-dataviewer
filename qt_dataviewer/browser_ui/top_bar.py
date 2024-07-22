@@ -13,12 +13,14 @@ class TopBar(QtWidgets.QWidget):
 
     liveplotting_changed = QtCore.pyqtSignal(bool)
     close_all_plots = QtCore.pyqtSignal()
+    open_uid = QtCore.pyqtSignal(str)
 
     def __init__(
         self,
         parent: QtWidgets.QWidget,
         source_type: str,
         option_liveplotting: bool = False,
+        uid_label_text: str = 'UID',
     ):
         """Initializes top bar
 
@@ -33,8 +35,19 @@ class TopBar(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
         )
 
-        hbox = QtWidgets.QHBoxLayout(self)
+        vbox = QtWidgets.QVBoxLayout(self)
+        vbox.setContentsMargins(0, 0, 0, 0)
+
+        hbox = QtWidgets.QHBoxLayout()
         hbox.setContentsMargins(0, 0, 0, 0)
+        vbox.addLayout(hbox, 1)
+
+        filters_layout = QtWidgets.QHBoxLayout()
+        filters_layout.setContentsMargins(0, 0, 0, 0)
+        # filters_layout.addStretch(1)
+
+        self.filters_layout = filters_layout
+        vbox.addLayout(filters_layout, 1)
 
         self.source_type_label = QtWidgets.QLabel(f"{source_type}:")
         hbox.addWidget(self.source_type_label)
@@ -51,13 +64,15 @@ class TopBar(QtWidgets.QWidget):
         self.source_label = source_label
         hbox.addWidget(self.source_label)
 
-        filters_layout = QtWidgets.QHBoxLayout()
-        self.filters_layout = filters_layout
-
-        hbox.addLayout(filters_layout, 1)
-
         hbox.addSpacerItem(
             QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
+
+        hbox.addWidget(QtWidgets.QLabel(uid_label_text))
+        uid_edit = QtWidgets.QLineEdit()
+        uid_edit.setMinimumWidth(120)
+        self.uid_edit = uid_edit
+        hbox.addWidget(uid_edit)
+        uid_edit.returnPressed.connect(self._uid_entered)
 
         checkbox = QtWidgets.QCheckBox("Live updating")
         checkbox.stateChanged.connect(self._on_checkbox_changed)
@@ -97,3 +112,10 @@ class TopBar(QtWidgets.QWidget):
         """
         self.liveplotting_changed.emit(state == QtCore.Qt.Checked)
 
+    @QtCore.pyqtSlot()
+    def _uid_entered(self):
+        text = self.uid_edit.text()
+        if not text:
+            return
+        print(f"uid: '{text}'")
+        self.open_uid.emit(text)

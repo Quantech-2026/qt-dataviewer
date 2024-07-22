@@ -101,6 +101,20 @@ class PlotWindow:
         self.btnNext.setVisible(self.datalist is not None)
         self.btnNext.clicked.connect(self._get_next)
         top_layout.addWidget(self.btnNext)
+
+        self.btnLatest = QtWidgets.QPushButton('Latest')
+        self.btnLatest.setMinimumSize(QtCore.QSize(80, 0))
+        self.btnLatest.setVisible(self.datalist is not None and self.datalist.implements("get_latest"))
+        self.btnLatest.setCheckable(True)
+        self.btnLatest.clicked.connect(self._latest_clicked)
+        top_layout.addWidget(self.btnLatest)
+
+        self._timer_latest = QtCore.QTimer()
+        self._timer_latest.timeout.connect(self._get_latest)
+        self._timer_latest.setSingleShot(True)
+        self._timer_latest.setInterval(100)
+
+
         # @@@ add star
         # @@@ allow change name
         return top_layout
@@ -108,6 +122,7 @@ class PlotWindow:
     @qt_log_exception
     def _get_next(self, checked: bool):
         if self.datalist is not None:
+            self._update_buttons()
             if not self.datalist.has_next():
                 QtWidgets.QToolTip.showText(self.mapToGlobal(self.btnNext.pos() + QtCore.QPoint(0, 10)),
                                             'No more data', self.btnNext,
@@ -126,6 +141,7 @@ class PlotWindow:
     @qt_log_exception
     def _get_previous(self, checked: bool):
         if self.datalist is not None:
+            self._update_buttons()
             if not self.datalist.has_previous():
                 QtWidgets.QToolTip.showText(self.mapToGlobal(self.btnPrevious.pos() + QtCore.QPoint(0, 10)),
                                             'No more data', self.btnPrevious,
@@ -140,6 +156,37 @@ class PlotWindow:
                     self.setCursor(QtCore.Qt.ArrowCursor)
                     t1 = time.perf_counter()
                     # print(f"Prev {(t1-t0)*1000:.1f} ms")
+
+    @qt_log_exception
+    def _latest_clicked(self, checked: bool):
+        if self.datalist is not None:
+            self._update_buttons(uncheck_latest=False)
+
+    @QtCore.pyqtSlot()
+    def _get_latest(self):
+        if self.btnLatest.isChecked():
+            try:
+                retrieve_latest = not self.datalist.is_latest()
+            except StopIteration:
+                retrieve_latest = False
+            if retrieve_latest:
+                try:
+                    self.setCursor(QtCore.Qt.WaitCursor)
+                    ds = self.datalist.get_latest()
+                    self.set_ds(ds)
+                finally:
+                    self.setCursor(QtCore.Qt.ArrowCursor)
+            self._timer_latest.start()
+
+    def _update_buttons(self, uncheck_latest=True):
+        if uncheck_latest:
+            self.btnLatest.setChecked(False)
+        if self.btnLatest.isChecked():
+            self.btnLatest.setStyleSheet("QPushButton{ background-color: yellow }")
+            self._timer_latest.start()
+        else:
+            self.btnLatest.setStyleSheet("")
+            self._timer_latest.stop()
 
     def create_plots_tab(self, tabs): # @@@ Move to separate class
         plots_widget = QtWidgets.QWidget()
@@ -368,6 +415,23 @@ class PlotWindow:
             item.setSelected(True)
         item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsUserCheckable)
         item.setCheckState(QtCore.Qt.Unchecked if hidden else QtCore.Qt.Checked)
+
+    def set_no_data_message(self):
+        widget = QtWidgets.QFrame(self)
+        widget.setMinimumWidth(250)
+        widget.setMinimumHeight(250)
+        widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        widget.setFrameStyle(QtWidgets.QFrame.StyledPanel)
+        widget_layout = QtWidgets.QVBoxLayout(widget)
+        widget_layout.setContentsMargins(5, 5, 7, 5)
+        widget_layout.setSpacing(0)
+
+        label_msg = QtWidgets.QLabel("No measurement data (yet)")
+        label_msg.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        label_msg.setFont(get_font(12))
+        widget_layout.addWidget(label_msg)
+        self.plots_layout.addWidget(widget, 0, 0)
+        self._update_grid_stretch()
 
     def show_settings(self, index: int, plot_model: PlotModel, hidden: bool):
         if self.current_settings_widget is not None:
