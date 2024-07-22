@@ -23,6 +23,8 @@ graph_color += [{"pen":(126,47,142), 'symbolBrush':(126,47,142), 'symbolPen':'w'
 
 
 class Plot1D(BasePlot):
+
+    @qt_log_exception
     def create(self):
         plot_model = self._plot_model
         data = plot_model.get_data()
@@ -49,6 +51,7 @@ class Plot1D(BasePlot):
         label = data.attrs['long_name']
         x = data[data.dims[0]]
         y = data
+
         if self.one_d_is_vertical:
             x, y = y, x
 
@@ -80,7 +83,7 @@ class Plot1D(BasePlot):
         plot.setLogMode(**log_mode)
 
         value_range = self._plot_model.value_range
-        if value_range is not None:
+        if value_range is not None and not np.isnan(value_range[0]):
             mn, mx = value_range
             if self.one_d_is_vertical:
                 mn *= x_formatter.scale

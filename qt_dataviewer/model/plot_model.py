@@ -11,6 +11,7 @@ from .histograms import histogram
 
 logger = logging.getLogger(__name__)
 
+
 class AxisMode:
     XAxis = 0
     YAxis = 1
@@ -59,15 +60,6 @@ def plot_changer(func):
     return _wrapped
 
 
-# def format_var_name(data: xr.DataArray):
-#     unit = data.attrs['units']
-#     name = data.attrs['long_name']
-#     if unit:
-#         return f"{name} ({unit})"
-#     else:
-#         return data.name
-
-
 class PlotModel:
     def __init__(self, data: xr.DataArray, seq_nr: float):
         self._data = data
@@ -104,12 +96,13 @@ class PlotModel:
                 y_axis = x_axis
                 self.set_axis_mode(i, AxisMode.XAxis)
                 x_axis = i
-            data.attrs['scale'] = self._detect_axis_scale(data) # @@@ This can be done on Dataset..
+            data.attrs['scale'] = self._detect_axis_scale(data)
 
     def _detect_axis_scale(self, axis):
         data = axis.data
         ind = np.argwhere(np.isfinite(data)).T[0]
-        if len(ind) < 3:
+        n = len(ind)
+        if n < 3:
             # need at least 3 points to check for logarithmic axis
             return 'lin'
         # remove NaN
@@ -117,38 +110,51 @@ class PlotModel:
 
         deltas = data[1:] - data[:-1]
         delta_ratio = np.min(deltas)/np.max(deltas)
+        delta_ratio = (delta_ratio - 1) / n + 1
         is_lin = 0.999 < delta_ratio < 1.001
         if is_lin:
             return 'lin'
 
         if delta_ratio <= 0:
             logger.error(f"Unsorted data on axis {axis.name}")
+            # TODO unsorted, lin/log, regular/irregular
             return 'unsorted'
 
         data_finite = data + 1e-100
         ratio = data_finite[:-1] / data_finite[1:]
         mean_ratio = np.mean(ratio)
+        ratio_ratio = np.min(ratio)/np.max(ratio)
+        ratio_ratio = (ratio_ratio - 1) / n + 1
         is_log = (
-                0.999 < np.min(ratio)/np.max(ratio) < 1.001
+                0.999 < ratio_ratio < 1.001
                 and (mean_ratio < 0.99 or mean_ratio > 1.01))
         if is_log:
             return 'log'
-        # TODO log_irregular / log irregular? => auto log
+        # TODO lin_irregular / log_irregular? => auto log
         return 'irregular'
 
     @plot_changer
     def update_data(self, data: xr.DataArray):
-        # @@@ This works only with core-tools database !! But still has bugs!
         try:
             if data.name != self._data.name:
                 raise Exception(f"OOPS!! name of array doesn't match {data.name} <> {self._data.name}")
-            # self._data.data = data.data
-            for i, axis_name in enumerate(data.coords.keys()):
+
+            old_labels = [settings.data.attrs.get('long_name', settings.data.name) for settings in self._axis_settings]
+            new_labels = [data[dim].attrs.get('long_name', data[dim].name) for dim in data.dims]
+            if old_labels != new_labels:
+                logger.error(f"Labels differ {new_labels} <> {old_labels} {data.dims} {self._data.dims}")
+
+            self._data = data
+            for i, dim in enumerate(data.dims):
+                axis_data = data[dim]
                 settings = self._axis_settings[i]
-                if axis_name != settings.data.name:
+                # labels must be equal. The name can change due to xarray conversion.
+                new_axis_label = axis_data.attrs.get('long_name', axis_data.name)
+                old_axis_label = settings.data.attrs.get('long_name', settings.data.name)
+                if new_axis_label != old_axis_label:
                     raise Exception(f"OOPS!! name of coordinate {i} doesn't match "
-                                    f"{axis_name} <> {settings.data.name}")
-                # settings.data = data[axis_name]
+                                    f"{new_axis_label} <> {old_axis_label}")
+                settings.data = axis_data
             self._changed = True
         except Exception:
             logger.error('update failed', exc_info=True)
@@ -159,7 +165,7 @@ class PlotModel:
 
     @property
     def var_name(self):
-        return self._data.name # format_var_name(self._data)
+        return self._data.name
 
     def set_plotter(self, plotter):
         self._plotter = plotter

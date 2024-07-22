@@ -1,33 +1,54 @@
 from abc import abstractmethod
 
+from .abstract import Dataset
+
 class DatasetList:
     """
     All methods are optional.
     DataViewer checks whether a method is implemented before a button is enabled or made visible.
-
     """
     @abstractmethod
-    def has_next(self):
+    def has_next(self) -> bool:
         ...
 
     @abstractmethod
-    def select_next(self):
+    def get_next(self) -> Dataset:
+        '''
+        Raises: StopIteration if no next dataset
+        '''
         ...
 
     @abstractmethod
-    def has_previous(self):
+    def has_previous(self) -> bool:
         ...
 
     @abstractmethod
-    def select_previous(self):
+    def get_previous(self) -> Dataset:
+        '''
+        Raises: StopIteration if no previous dataset
+        '''
         ...
 
     @abstractmethod
-    def rate_current(self, rate: int):
+    def get_latest(self) -> Dataset:
+        '''
+        Raises: StopIteration if no dataset
+        '''
         ...
 
     @abstractmethod
-    def rename_current(self, name: str):
+    def is_latest(self) -> bool:
+        '''
+        Raises: StopIteration if no dataset
+        '''
+        ...
+
+    @abstractmethod
+    def rate_current_dataset(self, rate: int) -> None:
+        ...
+
+    @abstractmethod
+    def rename_current_dataset(self, name: str) -> None:
         ...
 
     def implements(self, method_name: str) -> bool:
@@ -35,4 +56,4 @@ class DatasetList:
         if method is None:
             return False
         # Abstract methods have the attribute __isabstractmethod__
-        return getattr(method, "__isabstractmethod__", False)
+        return not getattr(method, "__isabstractmethod__", False)

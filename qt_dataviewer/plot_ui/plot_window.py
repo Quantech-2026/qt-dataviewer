@@ -92,22 +92,37 @@ class PlotWindow:
 
         self.btnPrevious = QtWidgets.QPushButton('Previous')
         self.btnPrevious.setMinimumSize(QtCore.QSize(80, 0))
-        self.btnPrevious.setVisible(self.datalist is not None) # And has_next not abstract. @@@ YUK!
-        self.btnPrevious.clicked.connect(self._select_previous)
+        # TODO cleanup interface PlotWindow vs DataViewer.
+        self.btnPrevious.setVisible(self.datalist is not None) # And get_next not abstract.
+        self.btnPrevious.clicked.connect(self._get_previous)
         top_layout.addWidget(self.btnPrevious)
         self.btnNext = QtWidgets.QPushButton('Next')
         self.btnNext.setMinimumSize(QtCore.QSize(80, 0))
         self.btnNext.setVisible(self.datalist is not None)
-        self.btnNext.clicked.connect(self._select_next)
+        self.btnNext.clicked.connect(self._get_next)
         top_layout.addWidget(self.btnNext)
-        # @@@ hamburger
+
+        self.btnLatest = QtWidgets.QPushButton('Latest')
+        self.btnLatest.setMinimumSize(QtCore.QSize(80, 0))
+        self.btnLatest.setVisible(self.datalist is not None and self.datalist.implements("get_latest"))
+        self.btnLatest.setCheckable(True)
+        self.btnLatest.clicked.connect(self._latest_clicked)
+        top_layout.addWidget(self.btnLatest)
+
+        self._timer_latest = QtCore.QTimer()
+        self._timer_latest.timeout.connect(self._get_latest)
+        self._timer_latest.setSingleShot(True)
+        self._timer_latest.setInterval(100)
+
+
         # @@@ add star
         # @@@ allow change name
         return top_layout
 
     @qt_log_exception
-    def _select_next(self, checked: bool):
+    def _get_next(self, checked: bool):
         if self.datalist is not None:
+            self._update_buttons()
             if not self.datalist.has_next():
                 QtWidgets.QToolTip.showText(self.mapToGlobal(self.btnNext.pos() + QtCore.QPoint(0, 10)),
                                             'No more data', self.btnNext,
@@ -116,15 +131,17 @@ class PlotWindow:
                 try:
                     t0 = time.perf_counter()
                     self.setCursor(QtCore.Qt.WaitCursor)
-                    self.datalist.select_next()
+                    ds = self.datalist.get_next()
+                    self.set_ds(ds)
                 finally:
                     self.setCursor(QtCore.Qt.ArrowCursor)
                     t1 = time.perf_counter()
                     # print(f"Next {(t1-t0)*1000:.1f} ms")
 
     @qt_log_exception
-    def _select_previous(self, checked: bool):
+    def _get_previous(self, checked: bool):
         if self.datalist is not None:
+            self._update_buttons()
             if not self.datalist.has_previous():
                 QtWidgets.QToolTip.showText(self.mapToGlobal(self.btnPrevious.pos() + QtCore.QPoint(0, 10)),
                                             'No more data', self.btnPrevious,
@@ -133,11 +150,43 @@ class PlotWindow:
                 try:
                     t0 = time.perf_counter()
                     self.setCursor(QtCore.Qt.WaitCursor)
-                    self.datalist.select_previous()
+                    ds = self.datalist.get_previous()
+                    self.set_ds(ds)
                 finally:
                     self.setCursor(QtCore.Qt.ArrowCursor)
                     t1 = time.perf_counter()
                     # print(f"Prev {(t1-t0)*1000:.1f} ms")
+
+    @qt_log_exception
+    def _latest_clicked(self, checked: bool):
+        if self.datalist is not None:
+            self._update_buttons(uncheck_latest=False)
+
+    @QtCore.pyqtSlot()
+    def _get_latest(self):
+        if self.btnLatest.isChecked():
+            try:
+                retrieve_latest = not self.datalist.is_latest()
+            except StopIteration:
+                retrieve_latest = False
+            if retrieve_latest:
+                try:
+                    self.setCursor(QtCore.Qt.WaitCursor)
+                    ds = self.datalist.get_latest()
+                    self.set_ds(ds)
+                finally:
+                    self.setCursor(QtCore.Qt.ArrowCursor)
+            self._timer_latest.start()
+
+    def _update_buttons(self, uncheck_latest=True):
+        if uncheck_latest:
+            self.btnLatest.setChecked(False)
+        if self.btnLatest.isChecked():
+            self.btnLatest.setStyleSheet("QPushButton{ background-color: yellow }")
+            self._timer_latest.start()
+        else:
+            self.btnLatest.setStyleSheet("")
+            self._timer_latest.stop()
 
     def create_plots_tab(self, tabs): # @@@ Move to separate class
         plots_widget = QtWidgets.QWidget()
@@ -229,8 +278,6 @@ class PlotWindow:
         selected = self.lb_variables.selectedIndexes()[0].row()
         layout = self.plots_layout
 
-        # self.plots_widget.setUpdatesEnabled(False)
-
         nplots = 0
         for seq_nr, widget in sorted(self._plot_widgets.items()):
             if (int(seq_nr) == selected) or not checked:
@@ -242,7 +289,6 @@ class PlotWindow:
                 widget.setVisible(False)
 
         self._update_grid_stretch()
-        # self.plots_widget.setUpdatesEnabled(True)
 
     @qt_log_exception
     def _variable_selection_changed(self):
@@ -255,7 +301,6 @@ class PlotWindow:
         self._update_plot_borders()
         if self.cb_only_selected.isChecked():
             layout = self.plots_layout
-            # self.plots_widget.setUpdatesEnabled(False) # @@@ decorator for nested updates?
             selected_row
             nplots = 0
             for seq_nr, widget in self._plot_widgets.items():
@@ -267,7 +312,6 @@ class PlotWindow:
                 else:
                     widget.setVisible(False)
             self._update_grid_stretch()
-            # self.plots_widget.setUpdatesEnabled(True)
 
     def _update_plot_borders(self):
         # Highlight plot
@@ -372,6 +416,23 @@ class PlotWindow:
         item.setFlags(item.flags() | QtCore.Qt.ItemFlag.ItemIsUserCheckable)
         item.setCheckState(QtCore.Qt.Unchecked if hidden else QtCore.Qt.Checked)
 
+    def set_no_data_message(self):
+        widget = QtWidgets.QFrame(self)
+        widget.setMinimumWidth(250)
+        widget.setMinimumHeight(250)
+        widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        widget.setFrameStyle(QtWidgets.QFrame.StyledPanel)
+        widget_layout = QtWidgets.QVBoxLayout(widget)
+        widget_layout.setContentsMargins(5, 5, 7, 5)
+        widget_layout.setSpacing(0)
+
+        label_msg = QtWidgets.QLabel("No measurement data (yet)")
+        label_msg.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
+        label_msg.setFont(get_font(12))
+        widget_layout.addWidget(label_msg)
+        self.plots_layout.addWidget(widget, 0, 0)
+        self._update_grid_stretch()
+
     def show_settings(self, index: int, plot_model: PlotModel, hidden: bool):
         if self.current_settings_widget is not None:
             self.current_settings_widget.deleteLater()
@@ -386,7 +447,6 @@ class PlotWindow:
         if seq_nr in self._plot_widgets:
             raise Exception(f"Duplicate plot {seq_nr}")
         layout = self.plots_layout
-        # self.plots_widget.setUpdatesEnabled(False) # @@@ decorator for nested updates
 
         # Move plots to insert at right position
         seq_nrs = sorted(self._plot_widgets.keys())
@@ -421,7 +481,7 @@ class PlotWindow:
 
         if self.cb_only_selected.isChecked():
             selected = self.lb_variables.selectedIndexes()[0].row()
-            plot_index = 0 # @@@ not correct with sub-plots
+            plot_index = 0 # TODO not correct with sub-plots (cross-hair slicing)
             if int(seq_nr) != selected:
                 widget.setVisible(False)
         irow, icol = divmod(plot_index, N_PLOT_COLUMNS)
@@ -431,7 +491,6 @@ class PlotWindow:
 
         self._update_grid_stretch()
         self._update_plot_borders()
-        # self.plots_widget.setUpdatesEnabled(True)
 
         return plot_layout
 
@@ -442,7 +501,6 @@ class PlotWindow:
         if seq_nr not in self._plot_widgets:
             return
         layout = self.plots_layout
-        # self.plots_widget.setUpdatesEnabled(False)
 
         widget = self._plot_widgets[seq_nr]
         widget.deleteLater()
@@ -457,7 +515,6 @@ class PlotWindow:
                 layout.addWidget(widget, irow, icol)
 
         self._update_grid_stretch()
-        # self.plots_widget.setUpdatesEnabled(True)
 
     def _update_grid_stretch(self):
         if self.cb_only_selected.isChecked():

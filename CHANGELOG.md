@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.0] - 2024-07-22
+
+- Changed DatasetList to get a cleaner interface.
+- Added QT-Dataset Browser for core-tools and sQDL.
+- Added sQDL and core-tools backends.
+
 ## \[0.2.7] - 2024-02-06
 
 - Remove values <= 0 when plotting on logarithmic scale.
