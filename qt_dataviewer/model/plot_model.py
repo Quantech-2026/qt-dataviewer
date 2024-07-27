@@ -88,10 +88,10 @@ class PlotModel:
             # if total_axis > 1 and axis_name == 'repetition':
             #     self.set_axis_mode(i, AxisMode.Average)
             #     continue
-            if x_axis is None:
+            if x_axis is None and len(data) > 1:
                 self.set_axis_mode(i, AxisMode.XAxis)
                 x_axis = i
-            elif y_axis is None:
+            elif y_axis is None and len(data) > 1:
                 self.set_axis_mode(x_axis, AxisMode.YAxis)
                 y_axis = x_axis
                 self.set_axis_mode(i, AxisMode.XAxis)
