@@ -22,6 +22,7 @@ class SqdlDataset(Dataset):
         self._s3session = s3session
         self._snapshot = None
         self.ds_xr = None
+        self.file_md5_sum = None
         self.reload()
 
     def reload(self) -> None:
@@ -41,8 +42,13 @@ class SqdlDataset(Dataset):
             if not file.has_data:
                 logger.warning(f"HDF5 file '{file.name}' for uid '{self.uid}' is not uploaded")
                 return
+            if file.md5_sum == self.file_md5_sum:
+                logger.debug('file not changed')
+                return
             url = file.presigned_url
             self.ds_xr = self._load_hdf5_from_url(url)
+            self.is_mutable = file.is_mutable
+            self.file_md5_sum = file.md5_sum
         except Exception as ex:
             qt_show_exception("Dataset load failed", ex)
 
@@ -72,8 +78,7 @@ class SqdlDataset(Dataset):
     def is_complete(self) -> bool:
         if self.ds_xr is None:
             return False
-        # @@@ TODO check if ds is complete
-        return True
+        return not self.is_mutable
 
     @property
     def formatted_uid(self) -> str:
