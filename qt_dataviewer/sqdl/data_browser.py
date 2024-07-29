@@ -50,6 +50,17 @@ class SqdlDataBrowser(DataBrowserBase):
         if scope_name is not None:
             self.set_scope(scope_name)
         else:
+            self._post_init_timer = QtCore.QTimer(self)
+            self._post_init_timer.timeout.connect(self._post_init)
+            self._post_init_timer.setSingleShot(True)
+            self._post_init_timer.setInterval(10)
+            self._post_init_timer.start()
+
+    @QtCore.pyqtSlot()
+    def _post_init(self):
+            self._post_init_timer.stop()
+            self._post_init_timer.deleteLater()
+            self._post_init_timer = None
             self._select_scope()
 
     def get_menu_actions(self):
