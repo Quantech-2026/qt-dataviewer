@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 import xarray as xr
 
@@ -23,6 +25,14 @@ _auto_si_units = {
     for prefix, scale in _si_prefixes.items()
     for unit in _si_units
     }
+
+
+def get_unit_and_scale(units: str) -> Tuple[str, float]:
+    try:
+        scale = _auto_si_units[units]
+        return units[1:], scale
+    except KeyError:
+        return units, 1.0
 
 
 class SmartFormatter:

@@ -106,9 +106,13 @@ class Plot1D(BasePlot):
     def update(self):
         plot_model = self._plot_model
         data = plot_model.get_data()
-        self._data = data
         x = data[data.dims[0]]
+        if x.attrs['scale'].endswith("_unsorted"):
+            data = data.sortby(x.name)
+            x = data[data.dims[0]]
+        self._data = data
         y = data
+
         if self.one_d_is_vertical:
             x, y = y, x
         self._update_axis(x, y)

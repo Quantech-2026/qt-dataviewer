@@ -70,6 +70,17 @@ class Plot2D(BasePlot):
         self._data = data
         x_array = data[data.dims[0]]
         y_array = data[data.dims[1]]
+        x_scale = x_array.attrs.get('scale', '')
+        y_scale = y_array.attrs.get('scale', '')
+        if x_scale.endswith("_unsorted"):
+            x_scale = x_scale[:-9]
+            data = data.sortby(x_array.name)
+            x_array = data[data.dims[0]]
+        if y_scale.endswith("_unsorted"):
+            y_scale = y_scale[:-9]
+            data = data.sortby(y_array.name)
+            y_array = data[data.dims[0]]
+
         x = x_array.data
         y = y_array.data
 
@@ -98,7 +109,7 @@ class Plot2D(BasePlot):
         x_slice = slice(x_limit[0], x_limit[1]+1)
         y_slice = slice(y_limit[0], y_limit[1]+1)
 
-        if x_array.attrs.get('scale') == 'irregular' or y_array.attrs.get('scale') == 'irregular':
+        if x_scale == 'irregular' or y_scale == 'irregular':
             plot_mode = 'irregular'
         else:
             plot_mode = 'uniform'
@@ -119,10 +130,10 @@ class Plot2D(BasePlot):
                 self._plot_mode = 'uniform'
 
             log_mode = {}
-            if x_array.attrs.get('scale') == 'log':
+            if x_scale == 'log':
                 log_mode['x'] = True
                 x = np.log10(x)
-            if y_array.attrs.get('scale') == 'log':
+            if y_scale == 'log':
                 log_mode['y'] = True
                 y = np.log10(y)
 
@@ -154,7 +165,7 @@ class Plot2D(BasePlot):
             plot.setLogMode(**log_mode)
             self._log_mode = log_mode
 
-            # flip axis is postive to negative scan
+            # flip axis if scan from postive to negative value
             if x_limit_num[0] > x_limit_num[1]:
                 z = z[::-1, :]
                 x_offset -= (len(x)-x_limit[1]-1)*x_scale
@@ -167,8 +178,8 @@ class Plot2D(BasePlot):
                 y_offset -= y_limit[0]*y_scale
 
             self.plot.invertY(False)
-            self.img.setRect(rect)
             self.img.setImage(z)
+            self.img.setRect(rect)
 
         # TODO Cleanup !!
         if plot_mode == 'irregular':

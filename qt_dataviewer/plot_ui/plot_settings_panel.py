@@ -15,7 +15,7 @@ class PlotSettings(QtWidgets.QWidget):
         super().__init__()
         self._plot_model = plot_model
 
-        max_column = 7
+        max_column = 8
 
         layout = QtWidgets.QGridLayout(self)
         layout.setColumnMinimumWidth(0, 120)
@@ -28,6 +28,7 @@ class PlotSettings(QtWidgets.QWidget):
 
         self._rb_groups = {}
         self._cb_log = {}
+        self._cb_fft = {}
         self._sliders = {}
         irow = 0
         btn_col = 1
@@ -41,7 +42,7 @@ class PlotSettings(QtWidgets.QWidget):
         layout.addWidget(self._height_filler(), irow, 0)
         irow += 1
 
-        for i, text in enumerate(['x', 'y', 'avg', 'slice', 'log', 'len'], btn_col):
+        for i, text in enumerate(['x', 'y', 'avg', 'slice', 'log', 'fft', 'len'], btn_col):
             label_name = QtWidgets.QLabel(text)
             label_name.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
             layout.addWidget(label_name, irow, i)
@@ -68,9 +69,17 @@ class PlotSettings(QtWidgets.QWidget):
             cb.setChecked(settings.logarithmic)
             cb.toggled.connect(partial(self._set_log, index=axis))
             self._cb_log[axis] = cb
+            layout.addWidget(cb, irow, max_column-3, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+
+            cb = QtWidgets.QCheckBox()
+            cb.setChecked(settings.fft)
+            cb.toggled.connect(partial(self._set_fft, index=axis))
+            self._cb_fft[axis] = cb
             layout.addWidget(cb, irow, max_column-2, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+
             irow += 1
 
+            # Slider ROW
             layout.addWidget(self._height_filler(), irow, 0)
 
             slider = Slider(axis, settings, partial(self._set_slice, index=axis))
@@ -79,6 +88,7 @@ class PlotSettings(QtWidgets.QWidget):
             layout.addWidget(slider.widget, irow, 0, 1, max_column)
             # layout.setRowMinimumHeight(irow, 10)
             irow += 1
+
 
         # Histogram
         axis = 'histogram'
@@ -168,6 +178,11 @@ class PlotSettings(QtWidgets.QWidget):
         self._plot_model.set_axis_log(index, checked)
 
     @qt_log_exception
+    def _set_fft(self, checked, index):
+        logger.debug(f"set fft {index}")
+        self._plot_model.set_axis_fft(index, checked)
+
+    @qt_log_exception
     def _set_slice(self, slice_index, index):
         logger.debug(f"set log {index}")
         self._plot_model.set_axis_slice(index, slice_index)
@@ -194,6 +209,7 @@ class PlotSettings(QtWidgets.QWidget):
             mode = settings.mode
             self._rb_groups[axis].button(mode).setChecked(True)
             self._cb_log[axis].setEnabled(mode in [AxisMode.XAxis, AxisMode.YAxis])
+            self._cb_fft[axis].setEnabled(mode in [AxisMode.XAxis, AxisMode.YAxis])
         # histogram
         hist_btns = self._rb_groups['histogram']
         hist_btns.setExclusive(False)

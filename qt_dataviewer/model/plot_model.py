@@ -5,7 +5,9 @@ from typing import List, Optional, Tuple
 
 import numpy as np
 import xarray as xr
+from numpy.fft import rfft, rfftfreq
 
+from qt_dataviewer.plot_ui.smart_format import get_unit_and_scale
 from .histograms import histogram
 
 
@@ -25,6 +27,7 @@ class AxisSettings:
     mode: AxisMode
     logarithmic: bool = False
     slice_index: int = 0
+    fft: bool = False
 
 
 @dataclass
@@ -108,20 +111,35 @@ class PlotModel:
         # remove NaN
         data = data[ind]
 
+        unsorted_postfix = ""
+
         deltas = data[1:] - data[:-1]
         delta_ratio = np.min(deltas)/np.max(deltas)
-        delta_ratio = (delta_ratio - 1) / n + 1
+        if delta_ratio <= 0:
+            logger.warning(f"Unsorted data on axis {axis.name} will be sorted")
+            unsorted_postfix = '_unsorted'
+            data = np.sort(data)
+            deltas = data[1:] - data[:-1]
+
         is_lin = 0.999 < delta_ratio < 1.001
         if is_lin:
-            return 'lin'
+            return 'lin' + unsorted_postfix
 
-        if delta_ratio <= 0:
-            logger.error(f"Unsorted data on axis {axis.name}")
-            # TODO unsorted, lin/log, regular/irregular
-            return 'unsorted'
+        # Scale ratio by number of points. Accept some irregularity if it is small w.r.t. total axis.
+        # E.g. max step is twice min step gives ratio 0.5. For 1000 points the ratio becomes 0.9995.
+        # It's linear enough to be plotted as linear if the midpoint is also close to the middle of the plot.
+        delta_ratio2 = (delta_ratio - 1) / n + 1
+        mid = (len(data)-1)//2
+        mid_ratio = (data[0]-data[mid])/(data[mid]-data[2*mid])
+        is_lin = (0.9 < mid_ratio < 1.1
+                  and 0.999 < delta_ratio2 < 1.001)
+        if is_lin:
+            return 'lin' + unsorted_postfix
 
+        # Add small number to void 0.0 in division.
         data_finite = data + 1e-100
         ratio = data_finite[:-1] / data_finite[1:]
+        # the mean ratio must differ from 1.0
         mean_ratio = np.mean(ratio)
         ratio_ratio = np.min(ratio)/np.max(ratio)
         ratio_ratio = (ratio_ratio - 1) / n + 1
@@ -129,9 +147,9 @@ class PlotModel:
                 0.999 < ratio_ratio < 1.001
                 and (mean_ratio < 0.99 or mean_ratio > 1.01))
         if is_log:
-            return 'log'
+            return 'log' + unsorted_postfix
         # TODO lin_irregular / log_irregular? => auto log
-        return 'irregular'
+        return 'irregular' + unsorted_postfix
 
     @plot_changer
     def update_data(self, data: xr.DataArray):
@@ -154,6 +172,7 @@ class PlotModel:
                 if new_axis_label != old_axis_label:
                     raise Exception(f"OOPS!! name of coordinate {i} doesn't match "
                                     f"{new_axis_label} <> {old_axis_label}")
+                axis_data.attrs['scale'] = self._detect_axis_scale(axis_data)
                 settings.data = axis_data
             self._changed = True
         except Exception:
@@ -251,6 +270,13 @@ class PlotModel:
             self._axis_settings[index].slice_index = slice_index
             self._changed = True
 
+    @plot_changer
+    def set_axis_fft(self, index, fft_on):
+        old_setting = self._axis_settings[index].fft
+        if old_setting != fft_on:
+            self._axis_settings[index].fft = fft_on
+            self._changed = True
+
     @property
     def histogram_mode(self):
         return self._var_settings.histogram_mode
@@ -310,37 +336,39 @@ class PlotModel:
         histogram_mode = self._var_settings.histogram_mode
         da = self._data
         dims = [settings.data.name for settings in self._axis_settings]
-        if histogram_mode is None:
-            for settings in reversed(self._axis_settings):
-                if settings.mode == AxisMode.Average:
-                    dim_name = settings.data.name
+        for settings in reversed(self._axis_settings):
+            dim_name = settings.data.name
+            da[dim_name].attrs['log'] = settings.logarithmic
+            if settings.mode == AxisMode.Average:
+                if histogram_mode is None:
                     da = da.mean(dim_name)
-                    dims.remove(dim_name)
+                dims.remove(dim_name)
+                continue
+
+        # Note: order of Average and FFT matter, because of np.abs() of FFT.
+        # First average than FFT.
+        for settings in reversed(self._axis_settings):
+            dim_name = settings.data.name
+            if settings.fft and settings.mode in [AxisMode.XAxis, AxisMode.YAxis]:
+                da = apply_fft(da, dim_name)
 
         value_range = (float(da.min()), float(da.max()))
-        # if histogram_mode is not None:
-        #     da = histogram(da, dims, 40, value_range) # TODO bins, range
-        #     da['histogram'].attrs['log'] = False
-        #     value_range = (float(da.min()), float(da.max()))
+        if histogram_mode is not None:
+            da = histogram(da, dims + ['histogram'], 50, value_range) # TODO bins, range
+            da['histogram'].attrs['log'] = False
+            value_range = (float(da.min()), float(da.max()))
 
         has_slice = False
         for settings in self._axis_settings:
             dim_name = settings.data.name
-            if dim_name in da.coords:
-                da[dim_name].attrs['log'] = settings.logarithmic
             if settings.mode == AxisMode.Slice:
                 has_slice = True
                 da = da[{dim_name:settings.slice_index}].drop(dim_name)
+                continue
 
-        self._var_settings.slice_value_range = value_range if has_slice and histogram_mode is None else None
+        self._var_settings.slice_value_range = value_range if has_slice else None
 
-        if histogram_mode is not None:
-            da = histogram(da, self.dims, 50, value_range) # TODO bins, range
-            da['histogram'].attrs['log'] = False
-            # TODO: set slice_value_range
-            # if has_slice:
-            #     self._var_settings.slice_value_range = value_range
-        else:
+        if histogram_mode is None:
             for name in ['units', 'long_name']:
                 da.attrs[name] = self._data.attrs[name]
 
@@ -353,3 +381,49 @@ class PlotModel:
         duration = time.perf_counter() - start
         logger.info(f"Updated {self.var_name} {duration*1000:.1f} ms")
         return da
+
+
+def apply_fft(da: xr.DataArray, dim_name: str):
+    axis = da.coords[dim_name]
+    if axis.attrs['scale'] != 'lin':
+        logger.error(f"{dim_name} is not linear. FFT can only be applied to linear range")
+        # TODO @@@: report error in GUI
+    index = list(da.coords).index(dim_name)
+    r = rfft(da, axis=index, norm="forward")
+    r = (np.abs(r) * 2)
+
+    t_data = axis.values
+    freq = rfftfreq(len(t_data), t_data[1] - t_data[0])
+    units, scale = get_unit_and_scale(axis.attrs['units'])
+    if units == 's':
+        new_units = 'Hz'
+    else:
+        new_units = f"1/({units})"
+    freq /= scale
+
+    new_axis = xr.DataArray(
+        freq,
+        dims=(dim_name,),
+        name=dim_name,
+        attrs={
+            'units': new_units,
+            'long_name': 'Frequency',
+            'log': False,
+            }
+        )
+
+    coords = []
+    for name in da.coords:
+        if name != dim_name:
+            coords.append(da.coords[name])
+        else:
+            coords.append(new_axis)
+
+    # name, units and long_name will be set later.
+    da2 = xr.DataArray(
+        data = r,
+        coords=coords,
+        )
+    da2 = da2.isel({dim_name:slice(1,None)})
+    return da2
+
