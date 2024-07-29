@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.1] - 2024-07-29
+
+- Added FFT
+- Added auto-sorting of unsorted axis
+- Added live data updates to sQDL data plotting
+- Only use axis of dataset for x or y if it has > 1 value.
+- Fixed pulse plotting for MW pulses and sine.
+
 ## \[0.3.0] - 2024-07-22
 
 - Changed DatasetList to get a cleaner interface.
