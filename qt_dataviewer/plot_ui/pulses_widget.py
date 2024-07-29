@@ -106,8 +106,7 @@ class PulsesWidget(QtWidgets.QWidget):
                     try:
                         lo_frequency = lo_freqs[name[:-7]]
                     except:
-                        logger.warning('No baseband frequency found, assuming 0')
-                        lo_frequency = 0
+                        lo_frequency = None
                     self._plot_mw_pulses(pulses, pc_keys, end_times, name, color_list[j%len(color_list)], lo_frequency)
 
             self.pulses_layout.addWidget(pulse_plot, 1)
@@ -232,11 +231,16 @@ class PulsesWidget(QtWidgets.QWidget):
             x = []
             y = []
             for seg_name, seg_dict in seg_pulses.items():
-                x_ar = np.arange(seg_dict['start'], seg_dict['stop'])
-                xx_ar = x_ar-seg_dict['start']
-                f_rl = (seg_dict['frequency'] - lo_frequency)/1e9
-                y_ar = np.sin(2*np.pi*f_rl*xx_ar+seg_dict['start_phase'])*seg_dict['amplitude']
-                x = x + [seg_dict['start']] + list(x_ar) + [seg_dict['stop']]
+                x_ar = np.arange(seg_dict['start'], seg_dict['stop']) + t0
+                if lo_frequency is not None:
+                    f_rl = (seg_dict['frequency'] - lo_frequency)/1e9
+                    y_ar = np.sin(2*np.pi*f_rl*x_ar+seg_dict['start_phase'])*seg_dict['amplitude']
+                else:
+                    f_rl = seg_dict['frequency']/1e9
+                    xx_ar = x_ar-seg_dict['start']-t0
+                    y_ar = np.sin(2*np.pi*f_rl*xx_ar+seg_dict['start_phase'])*seg_dict['amplitude']
+
+                x = x + [seg_dict['start']+t0] + list(x_ar) + [seg_dict['stop']+t0]
                 y = y + [0] + list(y_ar) + [0]
                 x_plot = x
                 y_plot = y
