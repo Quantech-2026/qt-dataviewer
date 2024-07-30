@@ -56,8 +56,8 @@ class DataArrayPlotter:
                 ...
                 # plot = NoData
                 # plot = Plot0D
-        self._plot = plot
-        if plot is not None:
+            self._plot = plot
+        else:
             plot.update()
 
     def update_data(self, data: xr.DataArray):
