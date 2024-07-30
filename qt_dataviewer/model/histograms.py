@@ -19,6 +19,7 @@ def histogram(da: xr.DataArray,
     res.coords['histogram'].attrs = {
             'units': da.attrs['units'],
             'long_name': da.attrs['long_name'],
+            'scale': 'lin',
             }
     shape = []
     loop_dims = []

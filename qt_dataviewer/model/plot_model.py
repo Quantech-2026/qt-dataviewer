@@ -326,7 +326,6 @@ class PlotModel:
     def update(self):
         if self._changed and self._plotter:
             self._plotter.update()
-            # self._changed = False
 
     def get_data(self):
         if not self._changed and self._last_selected_data is not None:
@@ -409,6 +408,7 @@ def apply_fft(da: xr.DataArray, dim_name: str):
             'units': new_units,
             'long_name': 'Frequency',
             'log': False,
+            'scale': 'lin',
             }
         )
 
