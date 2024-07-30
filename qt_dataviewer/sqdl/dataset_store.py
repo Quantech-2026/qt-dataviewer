@@ -65,7 +65,7 @@ class SqdlDatasetStore(DatasetStore):
         except Exception as ex:
             qt_show_exception("Failure retrieving scopes", ex)
             return []
-        return [scope.name for scope in sqdl_scopes]
+        return sorted(scope.name for scope in sqdl_scopes)
 
     def _init_scope(self):
         self._filter = Filter()
