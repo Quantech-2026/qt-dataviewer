@@ -117,5 +117,4 @@ class TopBar(QtWidgets.QWidget):
         text = self.uid_edit.text()
         if not text:
             return
-        print(f"uid: '{text}'")
         self.open_uid.emit(text)
