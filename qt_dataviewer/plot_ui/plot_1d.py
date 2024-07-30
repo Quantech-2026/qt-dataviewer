@@ -107,7 +107,7 @@ class Plot1D(BasePlot):
         plot_model = self._plot_model
         data = plot_model.get_data()
         x = data[data.dims[0]]
-        if x.attrs['scale'].endswith("_unsorted"):
+        if x.attrs.get('scale', '').endswith("_unsorted"):
             data = data.sortby(x.name)
             x = data[data.dims[0]]
         self._data = data

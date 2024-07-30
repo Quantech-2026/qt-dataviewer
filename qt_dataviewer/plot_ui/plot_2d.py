@@ -70,6 +70,7 @@ class Plot2D(BasePlot):
         self._data = data
         x_array = data[data.dims[0]]
         y_array = data[data.dims[1]]
+
         x_scale = x_array.attrs.get('scale', '')
         y_scale = y_array.attrs.get('scale', '')
         if x_scale.endswith("_unsorted"):
@@ -79,7 +80,7 @@ class Plot2D(BasePlot):
         if y_scale.endswith("_unsorted"):
             y_scale = y_scale[:-9]
             data = data.sortby(y_array.name)
-            y_array = data[data.dims[0]]
+            y_array = data[data.dims[1]]
 
         x = x_array.data
         y = y_array.data
@@ -101,7 +102,7 @@ class Plot2D(BasePlot):
 
         x_args = np.argwhere(np.isfinite(x)).T[0]
         y_args = np.argwhere(np.isfinite(y)).T[0]
-        if len(x_args) == 0:
+        if len(x_args) == 0 or len(y_args) == 0:
             # No data yet. Nothing to update.
             return
         x_limit = [np.min(x_args), np.max(x_args)]
@@ -184,8 +185,10 @@ class Plot2D(BasePlot):
         # TODO Cleanup !!
         if plot_mode == 'irregular':
             if self._plot_mode != 'irregular':
+                self.img_view.clear()
                 self.plot.removeItem(self.img_view)
                 self.img_view = None
+                self.img = None
                 self.mesh = pg.PColorMeshItem()
                 self.plot.addItem(self.mesh)
                 self._plot_mode = 'irregular'
@@ -228,8 +231,13 @@ class Plot2D(BasePlot):
 
             x_grid = x_edges[:, None] * np.ones(len(y_edges))
             y_grid = y_edges * np.ones(len(x_edges))[:, None]
+
             z = data.data[x_slice, y_slice]
-            self.mesh.setData(x_grid, y_grid, z)
+            # determine z-levels.
+            if np.any(np.isfinite(z)):
+                self.mesh.setLevels((np.nanmin(z), np.nanmax(z)), update=False)
+
+            self.mesh.setData(x_grid, y_grid, z, autoLevels=False)
 
             # Calculate min/max values to show data with small empty border.
             # Default behavior of pyqtgraph is to select 'notural' values on axis.
