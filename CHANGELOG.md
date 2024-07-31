@@ -1,6 +1,16 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.2] - 2024-07-31
+
+- Sort sQDL scopes
+- Fixed sorting of datasets with unsorted axes in 1D and 2D plots.
+- Fixed duplicate drawing of new figure.
+- Fixed 2D plots with irregular spaced axis.
+- Show focus on slider with dotted outline.
+
+NOTE: uses patched version of pyqtgraph: 0.13.7.1 !!
+
 ## \[0.3.1] - 2024-07-29
 
 - Added FFT
