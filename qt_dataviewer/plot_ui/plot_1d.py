@@ -48,8 +48,12 @@ class Plot1D(BasePlot):
         # plot.addLegend()
         plot.showGrid(True, True)
 
+        # TODO: @@@ cleanup. Merge with update()
         label = data.attrs['long_name']
         x = data[data.dims[0]]
+        if x.attrs.get('scale', '').endswith("_unsorted"):
+            data = data.sortby(x.name)
+            x = data[data.dims[0]]
         y = data
 
         if self.one_d_is_vertical:
