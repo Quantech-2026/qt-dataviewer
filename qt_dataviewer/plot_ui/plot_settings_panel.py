@@ -251,6 +251,9 @@ class Slider:
                 margin: -6px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
                 border-radius: 3px;
             }
+            QSlider:focus {
+                border: 1px dotted #404040;
+            }
             """)
 
         label = QtWidgets.QLabel()
