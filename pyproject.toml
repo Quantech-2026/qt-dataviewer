@@ -18,7 +18,7 @@ classifiers = [
 ]
 dependencies = [
     "pyqt5 >= 5.15",
-    "pyqtgraph == 0.13.7.1",
+    "pyqtgraph == 0.13.7.2",
     "matplotlib >= 3.5.3",
     "numpy",
     "xarray",
