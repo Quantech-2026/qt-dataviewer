@@ -109,7 +109,11 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
         logger.info('Update dataset')
         ds = self._ds
         was_empty = len(ds.data.data_vars) == 0
-        ds.reload()
+        try:
+            self.setCursor(QtCore.Qt.WaitCursor)
+            ds.reload()
+        finally:
+            self.setCursor(QtCore.Qt.ArrowCursor)
         if was_empty and len(ds.data.data_vars) > 0:
             self._set_ds(ds)
             return
