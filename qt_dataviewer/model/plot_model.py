@@ -350,6 +350,7 @@ class PlotModel:
             dim_name = settings.data.name
             if settings.fft and settings.mode in [AxisMode.XAxis, AxisMode.YAxis]:
                 da = apply_fft(da, dim_name)
+                da[dim_name].attrs['log'] = settings.logarithmic
 
         value_range = (float(da.min()), float(da.max()))
         if histogram_mode is not None:
@@ -407,7 +408,6 @@ def apply_fft(da: xr.DataArray, dim_name: str):
         attrs={
             'units': new_units,
             'long_name': 'Frequency',
-            'log': False,
             'scale': 'lin',
             }
         )
