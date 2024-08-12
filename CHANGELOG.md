@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.4] - 2024-08-12
+
+- Added shortcuts Ctrl-Left and Ctrl-Right for browsing through datasets
+- Show busy cursor when reloading changed dataset
+- Only reload data and redraw plots when data has changed
+
 ## \[0.3.3] - 2024-08-07
 
 - Fixed FFT log frequency axis
