@@ -85,6 +85,7 @@ class SqdlDataBrowser(DataBrowserBase):
         if dlg.exec():
             logger.info(f"Select scope: {dlg.selected_scope}")
             self.data_store.set_scope(dlg.selected_scope)
+            self.activateWindow()
 
 
 class SelectScopeDialog(QtWidgets.QDialog):
