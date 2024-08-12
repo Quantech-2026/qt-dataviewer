@@ -91,12 +91,15 @@ class PlotWindow:
         top_layout.addWidget(self.label_datetime)
 
         self.btnPrevious = QtWidgets.QPushButton('Previous')
+        self.btnPrevious.setToolTip("Load previous dataset (Ctrl+Left)")
         self.btnPrevious.setMinimumSize(QtCore.QSize(80, 0))
         # TODO cleanup interface PlotWindow vs DataViewer.
         self.btnPrevious.setVisible(self.datalist is not None) # And get_next not abstract.
         self.btnPrevious.clicked.connect(self._get_previous)
         top_layout.addWidget(self.btnPrevious)
+
         self.btnNext = QtWidgets.QPushButton('Next')
+        self.btnNext.setToolTip("Load next dataset (Ctrl+Right)")
         self.btnNext.setMinimumSize(QtCore.QSize(80, 0))
         self.btnNext.setVisible(self.datalist is not None)
         self.btnNext.clicked.connect(self._get_next)
@@ -115,12 +118,17 @@ class PlotWindow:
         self._timer_latest.setInterval(100)
 
 
+        self._shortcut_next = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Right"), self)
+        self._shortcut_next.activated.connect(self._get_next)
+        self._shortcut_previous = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Left"), self)
+        self._shortcut_previous.activated.connect(self._get_previous)
+
         # @@@ add star
         # @@@ allow change name
         return top_layout
 
     @qt_log_exception
-    def _get_next(self, checked: bool):
+    def _get_next(self, checked: bool = None):
         if self.datalist is not None:
             self._update_buttons()
             if not self.datalist.has_next():
@@ -139,7 +147,7 @@ class PlotWindow:
                     # print(f"Next {(t1-t0)*1000:.1f} ms")
 
     @qt_log_exception
-    def _get_previous(self, checked: bool):
+    def _get_previous(self, checked: bool = None):
         if self.datalist is not None:
             self._update_buttons()
             if not self.datalist.has_previous():
