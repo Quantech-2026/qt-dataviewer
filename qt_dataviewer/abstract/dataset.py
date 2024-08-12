@@ -21,6 +21,11 @@ class Dataset:
     def is_complete(self) -> bool:
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def is_modified(self) -> bool:
+        raise NotImplementedError()
+
     @abstractmethod
     def reload(self) -> None:
         raise NotImplementedError()

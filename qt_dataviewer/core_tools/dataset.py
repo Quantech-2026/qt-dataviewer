@@ -24,6 +24,8 @@ class CoreToolsDataset(Dataset):
         """
         super().__init__(ds_description)
         self.uuid = int(ds_description.uid)
+        self._last_sync = None
+        self._ct_total_written = 0
         if ds_ct is None:
             ds_ct = getattr(ds_description, 'ds_ct', None)
         if ds_ct is None:
@@ -35,10 +37,11 @@ class CoreToolsDataset(Dataset):
             self.ds_xr = ds2xarray(self.ds_ct, snapshot=None)
 
     def reload(self) -> None:
-        self.ds_ct.sync()
+        self._sync_data()
         if len(self.ds_ct) == 0:
             self.ds_xr = xr.Dataset()
         else:
+            self._ct_total_written = self._get_total_written()
             self.ds_xr = ds2xarray(self.ds_ct, snapshot=None)
 
     @property
@@ -66,6 +69,29 @@ class CoreToolsDataset(Dataset):
                             logger.info(f"Incomplete {ds.exp_uuid} NaN")
                             return False
         return True
+
+    @property
+    def is_modified(self) -> bool:
+        self.ds_ct.sync()
+        return self._ct_total_written != self._get_total_written()
+
+    def _sync_data(self) -> None:
+        if (self._last_sync is None
+            or datetime.now() - self._last_sync > timedelta(milliseconds=100)):
+            self.ds_ct.sync()
+            self._last_sync = datetime.now()
+
+    def _get_total_written(self) -> int:
+        total = 0
+        ds = self.ds_ct
+        self._sync_data()
+        for m_param_set in ds:
+            for m_param in m_param_set:
+                param = m_param[1]
+                written = param.written()
+                if written is not None:
+                    total +=  written
+        return total
 
     @property
     def formatted_uid(self) -> str:

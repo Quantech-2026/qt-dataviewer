@@ -108,21 +108,22 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
     def _update_ds(self):
         logger.info('Update dataset')
         ds = self._ds
-        was_empty = len(ds.data.data_vars) == 0
-        try:
-            self.setCursor(QtCore.Qt.WaitCursor)
-            ds.reload()
-        finally:
-            self.setCursor(QtCore.Qt.ArrowCursor)
-        if was_empty and len(ds.data.data_vars) > 0:
-            self._set_ds(ds)
-            return
-        ds_xr = ds.data
-        # Update every plot
-        for i, var in enumerate(ds_xr.data_vars.values()):
-            plotter = self._plotters[i]
-            logger.info(f"Update {var.name}")
-            plotter.update_data(var)
+        if ds.is_modified:
+            was_empty = len(ds.data.data_vars) == 0
+            try:
+                self.setCursor(QtCore.Qt.WaitCursor)
+                ds.reload()
+            finally:
+                self.setCursor(QtCore.Qt.ArrowCursor)
+            if was_empty and len(ds.data.data_vars) > 0:
+                self._set_ds(ds)
+                return
+            ds_xr = ds.data
+            # Update every plot
+            for i, var in enumerate(ds_xr.data_vars.values()):
+                plotter = self._plotters[i]
+                logger.info(f"Update {var.name}")
+                plotter.update_data(var)
 
         if not ds.is_complete:
             self._timer.start()
