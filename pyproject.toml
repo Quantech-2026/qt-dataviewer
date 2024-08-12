@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "qt_dataviewer"
-version = "0.3.3" # tbump: version
+version = "0.3.4" # tbump: version
 authors = [
   { name="Sander de Snoo", email="s.l.desnoo@tudelft.nl" },
 ]
@@ -35,7 +35,7 @@ dependencies = [
 # github_url = "https://github.com/<user or organization>/<project>/"
 
 [tool.tbump.version]
-current = "0.3.3"
+current = "0.3.4"
 
 # Example of a semver regexp.
 # Make sure this matches current_version before
