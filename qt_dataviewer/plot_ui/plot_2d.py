@@ -95,6 +95,9 @@ class Plot2D(BasePlot):
         x = x * x_formatter.scale
         y = y * y_formatter.scale
         z = data.data
+        if not np.any(np.isfinite(z)):
+            logger.info("no valid data to plot")
+            return
 
         plot = self.plot
         x_formatter.set_plot_axis(plot.getAxis('bottom'))
