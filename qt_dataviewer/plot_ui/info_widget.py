@@ -111,11 +111,12 @@ class InfoWidget(QtWidgets.QWidget):
                     self._add_items(item, value, depth-1)
             elif not isinstance(value, str) and isinstance(value, Sequence):
                 item.setData(0, QtCore.Qt.UserRole, (value, True))
-                for e in value:
-                    li = QtWidgets.QTreeWidgetItem()
-                    li.setText(0, '-')
-                    li.setText(1, str(e))
-                    item.addChild(li)
+                if expand_children:
+                    for e in value:
+                        li = QtWidgets.QTreeWidgetItem()
+                        li.setText(0, '-')
+                        li.setText(1, str(e))
+                        item.addChild(li)
             else:
                 item.setText(1, str(value))
                 # if hasattr(value, 'dtype') and value.dtype <= float:
@@ -150,8 +151,9 @@ def reduce_snaphot(data):
                     "qcodes.data.data_set.DataSet",
                     "qcodes.data.data_array.DataArray"]:
                 for name in ['submodules', 'parameters', 'value', 'unit', 'label',
-                             'names', 'units', 'labels', 'setpoints',
-                             'setpoint_names', 'setpoint_units', 'setpoint_labels']:
+                              'names', 'units', 'labels', 'setpoints',
+                              'setpoint_names', 'setpoint_units', 'setpoint_labels',
+                              'metadata']:
                     try:
                         value = data[name]
                     except KeyError:
