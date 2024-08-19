@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.5] - 2024-08-19
+
+- Fixed duplicate entries in snapshot presentation
+
 ## \[0.3.4] - 2024-08-12
 
 - Added shortcuts Ctrl-Left and Ctrl-Right for browsing through datasets

@@ -10,7 +10,7 @@ authors = [
 ]
 description = "QuTech Viewer for xarray Datasets."
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -18,9 +18,9 @@ classifiers = [
 ]
 dependencies = [
     "pyqt5 >= 5.15",
-    "pyqtgraph == 0.13.7.2",
+    "pyqtgraph == 0.13.7.4",
     "matplotlib >= 3.5.3",
-    "numpy",
+    "numpy >= 1.24",
     "xarray",
 ]
 
