@@ -84,7 +84,8 @@ class PlotModel:
         x_axis = None
         y_axis = None
         # total_axis = len(self._data.coords)
-        for i, (axis_name, data) in enumerate(self._data.coords.items()):
+        for i, axis_name in enumerate(self._data.dims):
+            data = self._data[axis_name]
             settings = AxisSettings(data, AxisMode.Average)
             self._axis_settings.append(settings)
 
@@ -368,13 +369,12 @@ class PlotModel:
 
         self._var_settings.slice_value_range = value_range if has_slice else None
 
-        if histogram_mode is None:
-            for name in ['units', 'long_name']:
-                da.attrs[name] = self._data.attrs[name]
+        for name in ['units', 'long_name']:
+            da.attrs[name] = self._data.attrs[name]
 
         da.attrs['log'] = self._var_settings.logarithmic
         logger.debug(f"Done get_data {self.var_name}")
-        dims = [da[coord].dims[0] for coord in self.dims]
+        dims = [da[dim].name for dim in self.dims]
         da = da.transpose(*dims)
         self._last_selected_data = da
         self._changed = False
@@ -388,7 +388,7 @@ def apply_fft(da: xr.DataArray, dim_name: str):
     if axis.attrs['scale'] != 'lin':
         logger.error(f"{dim_name} is not linear. FFT can only be applied to linear range")
         # TODO @@@: report error in GUI
-    index = list(da.coords).index(dim_name)
+    index = list(da.dims).index(dim_name)
     r = rfft(da, axis=index, norm="forward")
     r = (np.abs(r) * 2)
 
@@ -413,16 +413,20 @@ def apply_fft(da: xr.DataArray, dim_name: str):
         )
 
     coords = []
-    for name in da.coords:
+    for name in da.dims:
         if name != dim_name:
             coords.append(da.coords[name])
         else:
             coords.append(new_axis)
 
-    # name, units and long_name will be set later.
     da2 = xr.DataArray(
+        name = da.name,
         data = r,
         coords=coords,
+        attrs = {
+            'units': da.attrs['units'],
+            'long_name': da.attrs['long_name'],
+            }
         )
     da2 = da2.isel({dim_name:slice(1,None)})
     return da2
