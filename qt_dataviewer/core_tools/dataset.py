@@ -66,7 +66,7 @@ class CoreToolsDataset(Dataset):
                         # length written is unknown, check if last value is not None
                         data = param()
                         if np.isnan(data.flat[-1]):
-                            logger.info(f"Incomplete {ds.exp_uuid} NaN")
+                            logger.info(f"Incomplete {ds.exp_uuid} (NaN at end)")
                             return False
         return True
 
