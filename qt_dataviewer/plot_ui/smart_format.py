@@ -11,7 +11,7 @@ _si_prefixes = {
     "G": 1e9,
     "M": 1e6,
     "k": 1e3,
-    "" : 1,
+    "": 1.0,
     "m": 1e-3,
     "u": 1e-6,
     "\u03BC": 1e-6,  # mu
@@ -21,7 +21,7 @@ _si_prefixes = {
     }
 _si_units = ["s", "Hz", "A", "V", "Ohm", "\u03A9", "H", "T"]
 _auto_si_units = {
-    prefix+unit: scale
+    prefix+unit: (unit, scale)
     for prefix, scale in _si_prefixes.items()
     for unit in _si_units
     }
@@ -29,8 +29,7 @@ _auto_si_units = {
 
 def get_unit_and_scale(units: str) -> Tuple[str, float]:
     try:
-        scale = _auto_si_units[units]
-        return units[1:], scale
+        return _auto_si_units[units]
     except KeyError:
         return units, 1.0
 
@@ -40,17 +39,13 @@ class SmartFormatter:
         self.label = attrs['long_name']
         units = attrs['units']
         try:
-            self.scale = _auto_si_units[units]
+            self.units, self.scale = _auto_si_units[units]
         except KeyError:
             self.scale = 1.0
             self.auto_si_prefix = False
             self.units = units
         else:
             self.auto_si_prefix = True
-            if self.scale != 1.0:
-                self.units = units[1:]
-            else:
-                self.units = units
 
     def get_precision(self, data: xr.DataArray):
         n = len(data)
