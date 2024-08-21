@@ -13,7 +13,7 @@ from sqdl_client.exceptions import ObjectNotFoundException
 from qt_dataviewer.abstract import (
     Dataset, DatasetDescription, DatasetStore, Filter
     )
-from qt_dataviewer.utils.qt_utils import qt_log_exception, qt_show_exception
+from qt_dataviewer.utils.qt_utils import qt_log_exception, qt_show_exception, qt_show_error
 from .dataset import SqdlDataset
 
 
@@ -46,7 +46,9 @@ class SqdlDatasetStore(DatasetStore):
             try:
                 self.scope = sqdl_api.scope.retrieve_from_name(scope_name)
             except Exception as ex:
-                qt_show_exception("Failure retrieving scope", ex)
+                qt_show_exception("Failure retrieving scope",
+                                  ex,
+                                  extra_line="Are you authorized for scope '{scope_name}'?")
                 self.scope = None
                 self.scope_name = ""
         else:
@@ -62,6 +64,9 @@ class SqdlDatasetStore(DatasetStore):
         sqdl_api = self._client.api
         try:
             sqdl_scopes = sqdl_api.scope.list()
+            if not sqdl_scopes:
+                qt_show_error("No scopes found",
+                              "No scopes found. Ask administrator to assign scopes.")
         except Exception as ex:
             qt_show_exception("Failure retrieving scopes", ex)
             return []
