@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 class SqdlDataBrowser(DataBrowserBase):
     def __init__(self, scope_name: str = None):
         self.data_store = SqdlDatasetStore()
+        self.scope_name = scope_name
         super().__init__(
             "sQDL",
             self.data_store,
@@ -47,21 +48,12 @@ class SqdlDataBrowser(DataBrowserBase):
                 ],
             )
 
-        if scope_name is not None:
-            self.set_scope(scope_name)
+    def browser_started(self):
+        if self.scope_name is not None:
+            self.set_scope(self.scope_name)
         else:
-            self._post_init_timer = QtCore.QTimer(self)
-            self._post_init_timer.timeout.connect(self._post_init)
-            self._post_init_timer.setSingleShot(True)
-            self._post_init_timer.setInterval(10)
-            self._post_init_timer.start()
-
-    @QtCore.pyqtSlot()
-    def _post_init(self):
-            self._post_init_timer.stop()
-            self._post_init_timer.deleteLater()
-            self._post_init_timer = None
             self._select_scope()
+        super().browser_started()
 
     def get_menu_actions(self):
         actions = []
@@ -73,6 +65,7 @@ class SqdlDataBrowser(DataBrowserBase):
 
     @QtCore.pyqtSlot(str)
     def set_scope(self, scope_name):
+        self.scope_name = scope_name
         self.dataset_store.set_scope(scope_name)
 
     @QtCore.pyqtSlot()
