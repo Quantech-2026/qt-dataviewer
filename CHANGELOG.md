@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.6] - 2024-08-21
+
+- Fixed missing Qt5 event loop start.
+- Fixed auto formatting of units without SI prefix.
+- Fixed missing h5netcdf dependency.
+- Improved error messages.
+
 ## \[0.3.5] - 2024-08-19
 
 - Fixed duplicate entries in snapshot presentation
