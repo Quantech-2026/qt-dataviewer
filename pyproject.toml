@@ -22,6 +22,7 @@ dependencies = [
     "matplotlib >= 3.5.3",
     "numpy >= 1.24",
     "xarray",
+    "h5netcdf",
 ]
 
 # [project.urls]
