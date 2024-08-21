@@ -81,10 +81,12 @@ class TopBar(QtWidgets.QWidget):
         hbox.addWidget(checkbox, alignment=QtCore.Qt.AlignRight)
 
         close_all_button = QtWidgets.QPushButton("Close all plots")
+        close_all_button.setToolTip("Closes all plots (Ctrl+K)")
         close_all_button.clicked.connect(self.close_all_plots)
+        self._shortcut_close_all = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+K"), self)
+        self._shortcut_close_all.activated.connect(self.close_all_plots)
         hbox.addWidget(close_all_button)
 
-        self.setLayout(hbox)
 
     def set_live_plotting(self, checked: bool):
         self.cb_live_plotting.setChecked(checked)
