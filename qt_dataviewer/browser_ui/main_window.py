@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QDesktopWidget
 from qt_dataviewer import DatasetViewer
 from qt_dataviewer.abstract.dataset_store import DatasetStore, Filter
 from qt_dataviewer.abstract.dataset_description import DatasetDescription
-from qt_dataviewer.utils.qt_utils import qt_log_exception
+from qt_dataviewer.utils.qt_utils import qt_log_exception, qt_init
 from .browser_dataset_list import BrowserDatasetList
 from .dataset_list import DatasetListView
 from .datelist import DateListView
@@ -16,6 +16,9 @@ from .filters import TextFilterWidget, ListFilterWidget, KeywordFilterWidget
 from .top_bar import TopBar
 
 logger = logging.getLogger(__name__)
+
+
+_app = None
 
 
 class DataBrowserBase(QtWidgets.QMainWindow):
@@ -35,7 +38,16 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         sort_by_column: int,
         filters: List[Union[str, Tuple[str, str]]],
     ):
+        global _app
         logger.debug("Init QT data browser")
+
+        qt_app_runing = qt_init()
+        if not qt_app_runing:
+            logger.info("Create Qt application")
+            # note: store reference to avoid garbage collection.
+            # reference is also used to restart browser 2nd time in Python console.
+            _app = QtWidgets.QApplication([])
+
         super().__init__()
 
         self.dataset_store = dataset_store
@@ -103,22 +115,12 @@ class DataBrowserBase(QtWidgets.QMainWindow):
             for action in menu_actions:
                 file_menu.addAction(action)
 
-            # open_action = QtWidgets.QAction("&Open", self)
-            # open_action.setShortcut("Ctrl+O")
-            # open_action.triggered.connect(self.configure_datadir)
-            # file_menu.addAction(open_action)
-
             reload_action = QtWidgets.QAction("&Reload", self)
-            reload_action.setShortcut("Ctrl+R")
+            reload_action.setShortcut("F5")
             reload_action.triggered.connect(self.reload)
             file_menu.addAction(reload_action)
 
-            close_plots_action = QtWidgets.QAction("&Close all plots", self)
-            close_plots_action.setShortcut("Ctrl+C")
-            close_plots_action.triggered.connect(self.close_all_plots)
-            file_menu.addAction(close_plots_action)
-
-            exit_action = QtWidgets.QAction("&Exit", self)
+            exit_action = QtWidgets.QAction("&Quit", self)
             exit_action.setShortcut("Ctrl+Q")
             exit_action.triggered.connect(self.close)
             file_menu.addAction(exit_action)
@@ -143,6 +145,14 @@ class DataBrowserBase(QtWidgets.QMainWindow):
 
         self.setCentralWidget(content)
         self.show()
+        self.browser_started()
+
+        if _app is not None:
+            logger.info("Run Qt Application")
+            _app.exec()
+            logger.info("Qt Application event loop exited")
+
+    def browser_started(self):
         logger.debug("load data")
         self.dataset_store.refresh()
 
