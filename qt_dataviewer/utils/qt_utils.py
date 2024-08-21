@@ -45,12 +45,16 @@ def qt_log_exception(func):
     return wrapped
 
 
-def qt_show_exception(message, ex):
+def qt_show_exception(message, ex, extra_line: str = None):
     logger.error(message, exc_info=ex)
+    text = message
+    if extra_line:
+        text += "\n" + extra_line
+    text += f"\n{type(ex).__name__}: {ex}"
     msg = QMessageBox(
         QMessageBox.Critical,
         "QT-DataViewer: " + message,
-        message + f"\n{type(ex).__name__}: {ex}",
+        text,
         QMessageBox.Ok,
         )
     msg.setDetailedText("\n".join(traceback.format_exception(ex)))
@@ -58,19 +62,33 @@ def qt_show_exception(message, ex):
     msg.exec_()
 
 
+def qt_show_error(title, message):
+    logger.error(message)
+    msg = QMessageBox(
+        QMessageBox.Critical,
+        "QT-DataViewer: " + title,
+        message,
+        QMessageBox.Ok,
+        )
+    msg.exec_()
+
+
 _qt_app = None
 
 
-def qt_init():
-    '''Starts the QT application if not yet started.
+def qt_init() -> bool:
+    '''Tries to start the QT application if not yet started.
     Most of the cases the QT backend is already started
     by IPython, but sometimes it is not.
+
+    Returns:
+        False if QT backend is not running.
     '''
     # application reference must be held in global scope
     global _qt_app
 
     if _qt_app is not None:
-        return
+        return True
 
 #    print(QtCore.QCoreApplication.testAttribute(QtCore.Qt.AA_EnableHighDpiScaling))
 #    print(QtCore.QCoreApplication.testAttribute(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough))
@@ -96,3 +114,9 @@ def qt_init():
             _qt_app = QtWidgets.QApplication([])
         else:
             logger.debug('Qt application already created')
+
+        return True
+
+    else:
+        _qt_app = QtCore.QCoreApplication.instance()
+        return _qt_app is not None
