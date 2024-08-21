@@ -12,10 +12,14 @@ logger = logging.getLogger(__name__)
 
 class SqdlDataBrowser(DataBrowserBase):
     def __init__(self, scope_name: str = None):
-        self.data_store = SqdlDatasetStore()
+        self.data_store = SqdlDatasetStore() # TODO @@@ change construction order to show pop-up notification for login..
         self.scope_name = scope_name
+        if self.data_store.user_name:
+            title_extra = "sQDL - " + self.data_store.user_name
+        else:
+            title_extra = "sQDL"
         super().__init__(
-            "sQDL",
+            title_extra,
             self.data_store,
             "Scope",
             label_keys={
@@ -61,6 +65,11 @@ class SqdlDataBrowser(DataBrowserBase):
         open_action.setShortcut("Ctrl+O")
         open_action.triggered.connect(self._select_scope)
         actions.append(open_action)
+
+        logout_action = QtWidgets.QAction("&Log out && exit", self)
+        logout_action.triggered.connect(self._logout)
+        actions.append(logout_action)
+
         return actions
 
     @QtCore.pyqtSlot(str)
@@ -80,6 +89,10 @@ class SqdlDataBrowser(DataBrowserBase):
             self.data_store.set_scope(dlg.selected_scope)
             self.activateWindow()
 
+    @QtCore.pyqtSlot()
+    def _logout(self):
+        self.data_store.logout()
+        self.close()
 
 class SelectScopeDialog(QtWidgets.QDialog):
     def __init__(self, scopes: List[str], current_scope: Optional[str]):

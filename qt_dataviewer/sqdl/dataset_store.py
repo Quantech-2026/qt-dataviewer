@@ -30,6 +30,10 @@ class SqdlDatasetStore(DatasetStore):
 
         self._client = QDLClient()
         self._client.login()
+        try:
+            self.user_name = self._client.user_info.get('name')
+        except:
+            self.user_name = None
         self.s3_session = requests.Session()
 
         # Use single shot timer and restart timer after performing queries
@@ -38,6 +42,10 @@ class SqdlDatasetStore(DatasetStore):
         self._update_timer.timeout.connect(self._check_for_updates)
         self._update_timer.setSingleShot(True)
         self._update_timer.setInterval(300)
+
+    def logout(self):
+        # This will automatically trigger a new login
+        self._client.logout()
 
     def set_scope(self, scope_name):
         self.scope_name = scope_name

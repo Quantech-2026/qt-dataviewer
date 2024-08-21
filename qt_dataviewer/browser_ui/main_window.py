@@ -120,11 +120,6 @@ class DataBrowserBase(QtWidgets.QMainWindow):
             reload_action.triggered.connect(self.reload)
             file_menu.addAction(reload_action)
 
-            exit_action = QtWidgets.QAction("&Quit", self)
-            exit_action.setShortcut("Ctrl+Q")
-            exit_action.triggered.connect(self.close)
-            file_menu.addAction(exit_action)
-
         # connect signals and slots
         self.dataset_list_view.dataset_activated.connect(self.show_dataset)
         self.date_list_view.dates_selected.connect(self.set_date_selection)
