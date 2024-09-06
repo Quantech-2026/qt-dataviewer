@@ -32,8 +32,7 @@ class CoreToolsDataBrowser(DataBrowserBase):
                 ("Project", "list"),
                 ("Setup", "list"),
                 ("Sample", "list"),
-                # TODO rating
-                # "Rating",
+                ("Starred", "star"),
                 "Name",
                 ("Keywords", "keywords"),
                 ],

@@ -117,3 +117,55 @@ class KeywordFilterWidget(QtWidgets.QWidget):
                 keywords.append(word)
 
         self.filter_changed.emit(self.key, keywords)
+
+class RatingFilterWidget(QtWidgets.QWidget):
+    filter_changed = QtCore.pyqtSignal(int)
+
+    def __init__(self, name: str, star: bool = False, hide: bool = False):
+        super().__init__()
+        self.name = name
+        self._rating = 0
+
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+
+        label = QtWidgets.QLabel(name)
+        layout.addWidget(label, 0)
+
+        if star:
+            cb_star = QtWidgets.QCheckBox("Star")
+            cb_star.stateChanged.connect(self._star_changed)
+            self.cb_star = cb_star
+            layout.addWidget(cb_star)
+        else:
+            self.cb_star = None
+        if hide:
+            cb_hide = QtWidgets.QCheckBox("Hide")
+            cb_hide.stateChanged.connect(self._hide_changed)
+            self.cb_hide = cb_hide
+            layout.addWidget(cb_hide)
+        else:
+            self.cb_hide = None
+
+    @QtCore.pyqtSlot(int)
+    def _star_changed(self, state: QtCore.Qt.CheckState) -> None:
+        if state == QtCore.Qt.Checked:
+            self._rating = +1
+            self.filter_changed.emit(self._rating)
+            if self.cb_hide:
+                self.cb_hide.setCheckState(QtCore.Qt.Unchecked)
+        elif self._rating == +1:
+            self._rating = 0
+            self.filter_changed.emit(self._rating)
+
+    @QtCore.pyqtSlot(int)
+    def _hide_changed(self, state: QtCore.Qt.CheckState) -> None:
+        if state == QtCore.Qt.Checked:
+            self._rating = -1
+            if self.cb_star:
+                self.cb_star.setCheckState(QtCore.Qt.Unchecked)
+            self.filter_changed.emit(self._rating)
+        elif self._rating == -1:
+            self._rating = 0
+            self.filter_changed.emit(self._rating)

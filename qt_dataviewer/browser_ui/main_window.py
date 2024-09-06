@@ -11,7 +11,12 @@ from qt_dataviewer.utils.qt_utils import qt_log_exception, qt_init
 from .browser_dataset_list import BrowserDatasetList
 from .dataset_list import DatasetListView
 from .datelist import DateListView
-from .filters import TextFilterWidget, ListFilterWidget, KeywordFilterWidget
+from .filters import (
+    TextFilterWidget,
+    ListFilterWidget,
+    KeywordFilterWidget,
+    RatingFilterWidget,
+    )
 from .top_bar import TopBar
 
 logger = logging.getLogger(__name__)
@@ -92,6 +97,12 @@ class DataBrowserBase(QtWidgets.QMainWindow):
                 elif ftype == 'keywords':
                     fw = KeywordFilterWidget(name, label_keys[name])
                     fw.filter_changed.connect(self._set_filter_label_values)
+                elif ftype == 'star-hide':
+                    fw = RatingFilterWidget(name, star=True, hide=True)
+                    fw.filter_changed.connect(self._set_filter_rating)
+                elif ftype == 'star':
+                    fw = RatingFilterWidget(name, star=True)
+                    fw.filter_changed.connect(self._set_filter_rating)
                 else:
                     raise Exception(f"Unknown filter {f}")
 
@@ -256,6 +267,11 @@ class DataBrowserBase(QtWidgets.QMainWindow):
     @QtCore.pyqtSlot(str, list)
     def _set_filter_label_values(self, key: str, values: str):
         self._filter.labels[key] = values
+        self._filter_datasets()
+
+    @QtCore.pyqtSlot(int)
+    def _set_filter_rating(self, rating: int):
+        self._filter.rating = rating
         self._filter_datasets()
 
     def _filter_datasets(self):

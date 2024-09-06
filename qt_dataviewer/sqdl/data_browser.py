@@ -23,7 +23,7 @@ class SqdlDataBrowser(DataBrowserBase):
             self.data_store,
             "Scope",
             label_keys={
-                "Starred": "rating",
+                "Rating": "rating",
                 "UUID": "uid",
                 "Time": "time",
                 "Name": "name",
@@ -44,8 +44,7 @@ class SqdlDataBrowser(DataBrowserBase):
             filters=[
                 ("Setup", "list"),
                 ("Sample", "list"),
-                # TODO rating
-                # "Rating",
+                ("Rating", "star-hide"),
                 "Name",
                 ("Variables", "list"),
                 ("Axes", "list"),
