@@ -131,6 +131,19 @@ class QuantifyDatasetStore(DatasetStore):
     def get_dataset_descriptions(self, date: date) -> list[DatasetDescription]:
         return self._filtered_ds_descriptions.get(date, [])
 
+    def get_dataset_description_for_uid(self, uid: str) -> DatasetDescription | None:
+        tuid = uid
+        if len(tuid) < 26:
+            # TODO @@@ Show error in GUI
+            raise Exception(f"'{tuid}' is too short for value TUID")
+        date = datetime.strptime(tuid[0:19], "%Y%m%d-%H%M%S-%f").date()
+        if date not in self._ds_descriptions:
+            return None
+        for dsd in self._ds_descriptions[date]:
+            if dsd.uid == tuid:
+                return dsd
+        return None
+
     @qt_log_exception
     def get_dataset(self, ds_description: DatasetDescription) -> Dataset:
         return QuantifyDataset(ds_description)
