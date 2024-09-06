@@ -38,6 +38,8 @@ class SmartFormatter:
     def __init__(self, attrs):
         self.label = attrs['long_name']
         units = attrs['units']
+        if units == "no_label":
+            units = ""
         try:
             self.units, self.scale = _auto_si_units[units]
         except KeyError:
