@@ -94,7 +94,7 @@ class DatasetStore(QObject):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_latest(self, ds_description: DatasetDescription) -> DatasetDescription:
+    def get_latest(self) -> DatasetDescription:
         raise NotImplementedError()
 
     @abstractmethod
