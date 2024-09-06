@@ -1,4 +1,3 @@
-from typing import List
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -34,7 +33,7 @@ class ListFilterWidget(QtWidgets.QWidget):
     filter_changed = QtCore.pyqtSignal(str, str)
     no_filtering_text = "-- All --"
 
-    def __init__(self, name: str, key: str, items: List[str], width: int = 100):
+    def __init__(self, name: str, key: str, items: list[str], width: int = 100):
         super().__init__()
         self.name = name
         self.key = key
@@ -68,7 +67,7 @@ class ListFilterWidget(QtWidgets.QWidget):
             # NOTE: emit None doesn't work.
             self.filter_changed.emit(self.key, "")
 
-    def set_items(self, items: List[str]):
+    def set_items(self, items: list[str]):
         items.sort(key=lambda x:x.lower())
         combo_box = self.combo_box
         old_text = combo_box.currentText()

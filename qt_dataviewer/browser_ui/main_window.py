@@ -1,6 +1,5 @@
 import logging
 from datetime import date
-from typing import Dict, List, Tuple, Union
 
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.QtWidgets import QDesktopWidget
@@ -33,10 +32,10 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         storage_type_name: str,
         dataset_store: DatasetStore,
         source_type_name: str,
-        label_keys: Dict[str, str],
-        column_definitions: Tuple[str, int],
+        label_keys: dict[str, str],
+        column_definitions: tuple[str, int],
         sort_by_column: int,
-        filters: List[Union[str, Tuple[str, str]]],
+        filters: list[str | tuple[str, str]],
     ):
         global _app
         logger.debug("Init QT data browser")
@@ -51,7 +50,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         super().__init__()
 
         self.dataset_store = dataset_store
-        self._selected_dates: List[date] = []
+        self._selected_dates: list[date] = []
         self.viewers = []
         self._filter = Filter()
         self._auto_open_plots = False # TODO Configurable.
@@ -221,7 +220,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         self.date_list_view.date_selection_changed()
 
     @QtCore.pyqtSlot(list)
-    def set_date_selection(self, dates: List[date]) -> None:
+    def set_date_selection(self, dates: list[date]) -> None:
         self._selected_dates = dates.copy()
         ds_descriptions = []
         for d in dates:
@@ -229,7 +228,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         self.dataset_list_view.set_datasets(ds_descriptions)
 
     @QtCore.pyqtSlot(list)
-    def _new_datasets(self, ds_descriptions: List[DatasetDescription]) -> None:
+    def _new_datasets(self, ds_descriptions: list[DatasetDescription]) -> None:
         for dd in ds_descriptions:
             if dd.collected_date in self._selected_dates:
                 self.dataset_list_view.add_dataset(dd)

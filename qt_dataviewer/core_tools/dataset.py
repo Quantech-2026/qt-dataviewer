@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from typing import Any, Dict, Optional, Union
 import logging
 
 import numpy as np
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 class CoreToolsDataset(Dataset):
     def __init__(self,
                  ds_description: DatasetDescription,
-                 ds_ct: Optional[data_set] = None):
+                 ds_ct: data_set | None = None):
         """
         Note: ds_ct is passed as optimization to avoid duplicate loading.
         """
@@ -100,7 +99,7 @@ class CoreToolsDataset(Dataset):
         # return s[:-14] + '_' + s[-14:-9] + '_' + s[-9:]
 
     @property
-    def info(self) -> Dict[str, str]:
+    def info(self) -> dict[str, str]:
         labels = self.ds_description.labels
         return [
             ("Project", labels.get("project")),
@@ -109,7 +108,7 @@ class CoreToolsDataset(Dataset):
             ]
 
     @property
-    def snapshot(self) -> Union[None, str, Dict[str, Any]]:
+    def snapshot(self) -> None | str | dict[str, any]:
         return self.ds_ct.snapshot
 
     def close(self):

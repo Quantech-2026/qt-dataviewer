@@ -5,7 +5,6 @@ import time
 from abc import abstractmethod
 from datetime import datetime
 from functools import partial
-from typing import List, Tuple, Union, Dict, Any
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -369,10 +368,10 @@ class PlotWindow:
         start_time_str = f"{start_time:%Y-%m-%d %H:%M:%S}" if start_time else "____-__-__ --:--:--"
         self.label_datetime.setText(f'{start_time_str}')
 
-    def set_details_info(self, details_list: List[Tuple[str, str]]):
+    def set_details_info(self, details_list: list[tuple[str, str]]):
         self.info_widget.set_info(details_list)
 
-    def set_snapshot(self, snapshot: Union[None, str, Dict[str, Any]]):
+    def set_snapshot(self, snapshot: None | str | dict[str, any]):
         if isinstance(snapshot, str):
             tree_data = json.loads(snapshot)
         elif isinstance(snapshot, dict):

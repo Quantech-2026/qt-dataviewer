@@ -1,5 +1,4 @@
 import logging
-from typing import Union
 
 from core_tools.data.ds.data_set_core import data_set
 from PyQt5.QtWidgets import QMessageBox
@@ -57,7 +56,7 @@ class CoreToolsDatasetViewer(DatasetViewer):
 
         return CoreToolsDataset(ds_description, ds)
 
-    def set_ds(self, ds: Union[Dataset, data_set]) -> None:
+    def set_ds(self, ds: Dataset | data_set) -> None:
         # Hack for integration with old core-tools data browser.
         if ds is not None and not isinstance(ds, Dataset):
             ds = self._to_qt_ds(ds)

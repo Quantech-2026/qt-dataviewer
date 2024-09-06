@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import xarray as xr
 
@@ -27,7 +25,7 @@ _auto_si_units = {
     }
 
 
-def get_unit_and_scale(units: str) -> Tuple[str, float]:
+def get_unit_and_scale(units: str) -> tuple[str, float]:
     try:
         return _auto_si_units[units]
     except KeyError:

@@ -1,5 +1,4 @@
 import logging
-from typing import Dict, List, Tuple
 
 from PyQt5 import QtCore, QtWidgets
 from qt_dataviewer.abstract.dataset_description import DatasetDescription
@@ -17,8 +16,8 @@ class DatasetListView(QtWidgets.QTreeWidget):
 
     def __init__(self,
                  parent: QtWidgets.QWidget,
-                 column_definitions: Tuple[str, str, int],
-                 label_keys: Dict[str, str],
+                 column_definitions: tuple[str, str, int],
+                 label_keys: dict[str, str],
                  sort_by_column: int):
         super().__init__(parent)
 
@@ -79,7 +78,7 @@ class DatasetListView(QtWidgets.QTreeWidget):
         item.setData(0, QtCore.Qt.UserRole, ds_description)
         self.addTopLevelItem(item)
 
-    def set_datasets(self, datasets: List[DatasetDescription]) -> None:
+    def set_datasets(self, datasets: list[DatasetDescription]) -> None:
         # TODO @@@ Keep selected dataset (if possible)
         # Clear the existing items in the list
         self.clear()

@@ -3,7 +3,6 @@ import logging
 import time
 from collections import defaultdict
 from datetime import date, timedelta
-from typing import Dict, List, Optional
 
 import requests
 from PyQt5.QtCore import QTimer
@@ -83,7 +82,7 @@ class SqdlDatasetStore(DatasetStore):
     def _init_scope(self):
         self._filter = Filter()
         # Cache is used for easy next/previous lookup.
-        self._ds_descriptions_cache: Dict[date, List[DatasetDescription]] = {}
+        self._ds_descriptions_cache: dict[date, list[DatasetDescription]] = {}
         # max_dataset_id is used to detect new measurements.
         self._max_dataset_id: int = -1
 
@@ -109,7 +108,7 @@ class SqdlDatasetStore(DatasetStore):
         except Exception as ex:
             qt_show_exception("Failure loading datasets", ex)
 
-    def get_dataset_descriptions(self, date: date) -> List[DatasetDescription]:
+    def get_dataset_descriptions(self, date: date) -> list[DatasetDescription]:
         try:
             return self._ds_descriptions_cache[date]
         except KeyError:
@@ -123,7 +122,7 @@ class SqdlDatasetStore(DatasetStore):
             return ds_descriptions
 
     @qt_log_exception
-    def get_dataset_description_for_uid(self, uid: str) -> Optional[DatasetDescription]:
+    def get_dataset_description_for_uid(self, uid: str) -> DatasetDescription | None:
         try:
             ds = self.scope.retrieve_dataset_from_uid(uid)
         except ObjectNotFoundException:
@@ -154,7 +153,7 @@ class SqdlDatasetStore(DatasetStore):
 
         return di_dict.copy()
 
-    def _fetch_dates(self) -> List[date]:
+    def _fetch_dates(self) -> list[date]:
         if self.scope is None:
             return []
 
@@ -279,7 +278,7 @@ class SqdlDatasetStore(DatasetStore):
         # restart timer.
         self._update_timer.start()
 
-    def _emit_updates(self, new_ds_descriptions: List[DatasetDescription]):
+    def _emit_updates(self, new_ds_descriptions: list[DatasetDescription]):
         update_dates = False
         for ds in new_ds_descriptions:
             if ds.collected_date in self._ds_descriptions_cache:
@@ -356,7 +355,7 @@ class SqdlDatasetStore(DatasetStore):
         last_ds_description = dds[0]
         return last_ds_description
 
-    def _index(self, ds_description: DatasetDescription, ds_descriptions: List[DatasetDescription]):
+    def _index(self, ds_description: DatasetDescription, ds_descriptions: list[DatasetDescription]):
         for i, ds in enumerate(ds_descriptions):
             if ds.uid == ds_description.uid:
                 return i

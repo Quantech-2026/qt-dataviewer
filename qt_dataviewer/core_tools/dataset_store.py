@@ -2,7 +2,6 @@ import copy
 import logging
 from datetime import date
 from packaging.version import Version
-from typing import Dict, List, Optional
 
 from PyQt5.QtCore import QTimer
 
@@ -16,7 +15,7 @@ from core_tools.data.SQL.queries.dataset_gui_queries import (
     measurement_results)
 
 from qt_dataviewer.abstract import (
-    Dataset, DatasetDescription, DatasetStore, Filter, LabelsDict
+    Dataset, DatasetDescription, DatasetStore, Filter
     )
 from qt_dataviewer.utils.qt_utils import qt_log_exception
 from .dataset import CoreToolsDataset
@@ -37,9 +36,9 @@ class CoreToolsDatasetStore(DatasetStore):
         self._setup: str = None
         self._sample: str = None
         # Cache is used for easy next/previous lookup.
-        self._ds_descriptions_cache: Dict[date, List[DatasetDescription]] = {}
+        self._ds_descriptions_cache: dict[date, list[DatasetDescription]] = {}
         # max_db_id is used to detect new measurements.
-        self._db_max_id: Optional[int] = None
+        self._db_max_id: int | None = None
 
         # Use single shot timer and restart timer after performing queries
         # This avoids updates being triggered faster than queries can be executed.
@@ -82,7 +81,7 @@ class CoreToolsDatasetStore(DatasetStore):
         self._update_timer.start()
         self.datasets_changed.emit()
 
-    def get_dataset_descriptions(self, date: date) -> List[DatasetDescription]:
+    def get_dataset_descriptions(self, date: date) -> list[DatasetDescription]:
         try:
             return self._ds_descriptions_cache[date]
         except KeyError:
@@ -90,7 +89,7 @@ class CoreToolsDatasetStore(DatasetStore):
             self._ds_descriptions_cache[date] = ds_descriptions
             return ds_descriptions
 
-    def get_dataset_description_for_uid(self, uid: str) -> Optional[DatasetDescription]:
+    def get_dataset_description_for_uid(self, uid: str) -> DatasetDescription | None:
         ds = load_by_uuid(int(uid))
         s = str(ds.exp_uuid)
         uuid_str = s[:-14] + '_' + s[-14:-9] + '_' + s[-9:]
@@ -118,7 +117,7 @@ class CoreToolsDatasetStore(DatasetStore):
             "sample": query_for_samples.get_samples(project=self._project, set_up=self._setup),
             }
 
-    def _fetch_dates(self) -> List[date]:
+    def _fetch_dates(self) -> list[date]:
         starred = self._filter.rating is not None and self._filter.rating > 0
         return query_for_measurement_results.get_all_dates_with_meaurements(
                 project=self._project,
@@ -131,7 +130,7 @@ class CoreToolsDatasetStore(DatasetStore):
 
     def _fetch_dataset_descriptions(self, date: date):
         starred = self._filter.rating is not None and self._filter.rating > 0
-        results: List[measurement_results] = query_for_measurement_results.get_results_for_date(
+        results: list[measurement_results] = query_for_measurement_results.get_results_for_date(
                 date=date,
                 project=self._project,
                 sample=self._sample,
@@ -159,7 +158,7 @@ class CoreToolsDatasetStore(DatasetStore):
 
             if max_id is not None and self._db_max_id is not None and max_id > self._db_max_id:
                 starred = self._filter.rating is not None and self._filter.rating > 0
-                results: List[measurement_results] = query_for_measurement_results.get_new_results(
+                results: list[measurement_results] = query_for_measurement_results.get_new_results(
                     self._db_max_id,
                     project=self._project,
                     sample=self._sample,
@@ -177,7 +176,7 @@ class CoreToolsDatasetStore(DatasetStore):
             self._update_timer.start()
 
     @staticmethod
-    def _query_measurement2ds_descr(query_results: List[measurement_results]) -> List[DatasetDescription]:
+    def _query_measurement2ds_descr(query_results: list[measurement_results]) -> list[DatasetDescription]:
         ds_descriptions = []
         for r in query_results:
             labels = {
@@ -200,7 +199,7 @@ class CoreToolsDatasetStore(DatasetStore):
         ds_descriptions.sort(key=lambda ds: ds.collected_datetime, reverse=True)
         return ds_descriptions
 
-    def _emit_updates(self, new_ds_descriptions: List[DatasetDescription]):
+    def _emit_updates(self, new_ds_descriptions: list[DatasetDescription]):
         update_dates = False
         for ds in new_ds_descriptions:
             if ds.collected_date in self._ds_descriptions_cache:
@@ -268,7 +267,7 @@ class CoreToolsDatasetStore(DatasetStore):
             raise StopIteration('No datasets') from None
         return dds[0]
 
-    def _index(self, ds_description: DatasetDescription, ds_descriptions: List[DatasetDescription]):
+    def _index(self, ds_description: DatasetDescription, ds_descriptions: list[DatasetDescription]):
         for i, ds in enumerate(ds_descriptions):
             if ds.uid == ds_description.uid:
                 return i

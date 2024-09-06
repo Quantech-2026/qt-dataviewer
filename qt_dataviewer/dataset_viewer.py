@@ -1,6 +1,4 @@
 import logging
-from datetime import datetime
-from typing import Any, Dict, List,  Optional, Union
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -17,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
     def __init__(self, ds: Dataset, *,
-                 datalist: Optional[DatasetList] = None):
+                 datalist: DatasetList | None = None):
         try:
             self.app = QtCore.QCoreApplication.instance()
             self.instance_ready = True
@@ -29,7 +27,7 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
             super(QtWidgets.QMainWindow, self).__init__()
             self.setup_ui(self, self)
 
-            self._plotters: List[DataArrayPlotter] = []
+            self._plotters: list[DataArrayPlotter] = []
             self.alive = True
 
             self._timer = QtCore.QTimer()

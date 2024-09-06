@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import List, Optional, Tuple
 
 from .types import LabelsDict
 
@@ -9,8 +8,8 @@ from .types import LabelsDict
 @dataclass
 class ArrayDescription:
     name: str
-    shape: Optional[Tuple[int, ...]] = None
-    min_max: Optional[Tuple[float, float]] = None
+    shape: tuple[int, ...] | None = None
+    min_max: tuple[float, float] | None = None
 
     @property
     def __str__(self):
@@ -33,9 +32,9 @@ class DatasetDescription:
     labels: LabelsDict = field(default_factory=dict)
     """Labels attached to the dataset"""
 
-    description: Optional[str] = None
-    variables: Optional[List[ArrayDescription]] = None
-    coordinates: Optional[List[ArrayDescription]] = None
+    description: str | None = None
+    variables: list[ArrayDescription] | None = None
+    coordinates: list[ArrayDescription] | None = None
 
     @property
     def collected_date(self) -> date:

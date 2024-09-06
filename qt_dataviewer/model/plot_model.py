@@ -1,7 +1,6 @@
 import logging
 import time
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 import numpy as np
 import xarray as xr
@@ -33,14 +32,14 @@ class VariableSettings:
     logarithmic: bool = False
     histogram_mode: AxisMode = None
     hist_bins: int = 20
-    hist_range: Optional[Tuple[float, float]] = None
-    manual_value_range: Optional[Tuple[float, float]] = None
-    slice_value_range: Optional[Tuple[float, float]] = None
+    hist_range: tuple[float, float] | None = None
+    manual_value_range: tuple[float, float] | None = None
+    slice_value_range: tuple[float, float] | None = None
     show_sidebar: bool = False
     multiline_plot: bool = False
 
     @property
-    def value_range(self) -> Optional[Tuple[float, float]]:
+    def value_range(self) -> tuple[float, float] | None:
         if self.manual_value_range is not None:
             return self.manual_value_range
         return self.slice_value_range
@@ -66,7 +65,7 @@ class PlotModel:
         self._data = data
         self._seq_nr = seq_nr
         self._plotter = None
-        self._axis_settings: List[AxisSettings] = []
+        self._axis_settings: list[AxisSettings] = []
         self._var_settings = VariableSettings()
         self._changed = False
         self._current_x = None
@@ -301,7 +300,7 @@ class PlotModel:
         return self._var_settings.multiline_plot
 
     @plot_changer
-    def set_value_range(self, value_range: Optional[Tuple[float, float]]):
+    def set_value_range(self, value_range: tuple[float, float] | None):
         if self._var_settings.manual_value_range != value_range:
             if value_range is not None and not isinstance(value_range, tuple):
                 raise ValueError(f"Invalid range {value_range}. Expected None or tuple")
@@ -357,11 +356,11 @@ class PlotModel:
 
         value_range = (float(da.min()), float(da.max()))
         if histogram_mode is not None:
-            logger.debug(f"start histogram")
+            logger.debug("start histogram")
             da = histogram(da, dims + ['histogram'], 50, value_range) # TODO bins, range
             da['histogram'].attrs['log'] = False
             value_range = (float(da.min()), float(da.max()))
-            logger.debug(f"done histogram")
+            logger.debug("done histogram")
 
         # @@@ Cache pre-slice value
         # @@@ set attrs['log'] after calc.

@@ -1,7 +1,6 @@
 
 import logging
 from datetime import date
-from typing import List
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -25,7 +24,7 @@ class DateListView(QtWidgets.QListWidget):
         self.itemSelectionChanged.connect(self.date_selection_changed)
 
     @QtCore.pyqtSlot(list)
-    def update_date_list(self, dates: List[date]) -> None:
+    def update_date_list(self, dates: list[date]) -> None:
         dates = [f"{date:%Y-%m-%d}" for date in dates]
         if len(dates) == 0:
             self.clear()

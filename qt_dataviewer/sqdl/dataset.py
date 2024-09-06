@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from typing import Any, Dict, Union, Optional
 import io
 import time
 import logging
@@ -41,7 +40,7 @@ class SqdlDataset(Dataset):
         except Exception as ex:
             qt_show_exception("Dataset load failed", ex)
 
-    def _get_changed_file(self) -> Optional[File]:
+    def _get_changed_file(self) -> File | None:
         if (self._last_refresh is None
             or datetime.now() - self._last_refresh > timedelta(milliseconds=100)):
             sqdl_ds = self.ds_description.sqdl_ds.refresh()
@@ -103,13 +102,13 @@ class SqdlDataset(Dataset):
         return s[:-14] + '_' + s[-14:-9] + '_' + s[-9:]
 
     @property
-    def snapshot(self) -> Union[None, str, Dict[str, Any]]:
+    def snapshot(self) -> None | str | dict[str, any]:
         if self._snapshot is None and self.ds_xr is not None:
             self._snapshot = get_snapshot(self.ds_xr)
         return self._snapshot
 
     @property
-    def info(self) -> Dict[str, str]:
+    def info(self) -> dict[str, str]:
         # TODO @@@ Use schema
         info_keys = [
             ("Project", "project"),

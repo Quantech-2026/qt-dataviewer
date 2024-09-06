@@ -1,6 +1,5 @@
 from collections.abc import Mapping, Sequence
 from numbers import Number
-from typing import List, Tuple, Union, Dict, Any
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -57,7 +56,7 @@ class InfoWidget(QtWidgets.QWidget):
         h_layout.addSpacerItem(
             QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
 
-    def set_info(self, details_list: List[Tuple[str, str]]):
+    def set_info(self, details_list: list[tuple[str, str]]):
         for i in range(self.details_layout.count()):
             widget = self.details_layout.itemAt(i).widget()
             widget.deleteLater()
@@ -65,7 +64,7 @@ class InfoWidget(QtWidgets.QWidget):
             self.details_layout.addWidget(QtWidgets.QLabel(name), irow, 0)
             self.details_layout.addWidget(QtWidgets.QLabel(value), irow, 1)
 
-    def set_snapshot(self, snapshot: Union[None, Dict[str, Any]]):
+    def set_snapshot(self, snapshot: dict[str, any] | None):
         self.snapshot = snapshot
         tree = self.snapshot_tree
         tree.clear()

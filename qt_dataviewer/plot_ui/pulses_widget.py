@@ -1,6 +1,5 @@
 import logging
 import traceback
-from typing import Union, Dict, Any
 
 import numpy as np
 import pyqtgraph as pg
@@ -43,7 +42,7 @@ class PulsesWidget(QtWidgets.QWidget):
             self._plot_pulses()
 
     @qt_log_exception
-    def set_pulses(self, pulses: Union[None, Dict[str, Any]]):
+    def set_pulses(self, pulses: dict[str, any] | None):
         for i in range(self.pulses_layout.count()):
             widget = self.pulses_layout.itemAt(i).widget()
             widget.deleteLater()
