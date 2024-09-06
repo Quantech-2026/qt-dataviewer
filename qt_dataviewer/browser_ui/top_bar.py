@@ -55,7 +55,7 @@ class TopBar(QtWidgets.QWidget):
         source_label = QtWidgets.QLabel("<none>")
         source_label.setWordWrap(True) # @@@ Path !!
         source_label.setSizePolicy(
-            QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
         )
         font = QtGui.QFont()
         font.setPointSize(8)
