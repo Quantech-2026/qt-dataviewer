@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.8] - 2024-09-06
+
+- Fixed open TUID on QuantifyDataBrowser.
+- Fix CoreToolsDataBrowser (broken in previous release).
+
 ## \[0.3.7] - 2024-09-06
 
 - Added QuantifyDataBrowser.
