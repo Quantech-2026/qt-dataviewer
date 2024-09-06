@@ -148,8 +148,10 @@ class DataBrowserBase(QtWidgets.QMainWindow):
             logger.info("Qt Application event loop exited")
 
     def browser_started(self):
-        logger.debug("load data")
-        self.dataset_store.refresh()
+        ## Currently the derived classes trigger the first load....
+        # logger.debug("load data")
+        # self.dataset_store.refresh()
+        pass
 
     def set_data_source(self, source_name):
         self.top_bar.set_data_source(source_name)

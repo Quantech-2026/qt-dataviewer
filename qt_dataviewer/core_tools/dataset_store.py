@@ -44,10 +44,9 @@ class CoreToolsDatasetStore(DatasetStore):
         # Use single shot timer and restart timer after performing queries
         # This avoids updates being triggered faster than queries can be executed.
         self._update_timer = QTimer(self)
-        self._update_timer.timeout.connect(self._check_for_updates)
+        self._update_timer.timeout.connect(self.check_for_updates)
         self._update_timer.setSingleShot(True)
         self._update_timer.setInterval(300)
-        self._update_timer.start()
 
     def get_source_name(self):
         if SQL_conn_info_local.host == 'localhost':
@@ -148,31 +147,33 @@ class CoreToolsDatasetStore(DatasetStore):
         return CoreToolsDataset(ds_description)
 
     @qt_log_exception
-    def _check_for_updates(self):
-        _, max_id = query_for_measurement_results.detect_new_meaurements(
-                self._db_max_id,
-                project=self._project,
-                sample=self._sample,
-                set_up=self._setup,
-                )
+    def check_for_updates(self):
+        try:
+            _, max_id = query_for_measurement_results.detect_new_meaurements(
+                    self._db_max_id,
+                    project=self._project,
+                    sample=self._sample,
+                    set_up=self._setup,
+                    )
 
-        if max_id is not None and self._db_max_id is not None and max_id > self._db_max_id:
-            starred = self._filter.rating is not None and self._filter.rating > 0
-            results: List[measurement_results] = query_for_measurement_results.get_new_results(
-                self._db_max_id,
-                project=self._project,
-                sample=self._sample,
-                set_up=self._setup,
-                name=self._filter.name_contains,
-                starred=starred,
-                keywords=self._filter.labels.get("keywords"),
-                )
-            new_ds_descriptions = self._query_measurement2ds_descr(results)
-            if new_ds_descriptions:
-                self._emit_updates(new_ds_descriptions)
-        self._db_max_id = max_id
-        # restart timer.
-        self._update_timer.start()
+            if max_id is not None and self._db_max_id is not None and max_id > self._db_max_id:
+                starred = self._filter.rating is not None and self._filter.rating > 0
+                results: List[measurement_results] = query_for_measurement_results.get_new_results(
+                    self._db_max_id,
+                    project=self._project,
+                    sample=self._sample,
+                    set_up=self._setup,
+                    name=self._filter.name_contains,
+                    starred=starred,
+                    keywords=self._filter.labels.get("keywords"),
+                    )
+                new_ds_descriptions = self._query_measurement2ds_descr(results)
+                if new_ds_descriptions:
+                    self._emit_updates(new_ds_descriptions)
+            self._db_max_id = max_id
+        finally:
+            # restart timer.
+            self._update_timer.start()
 
     @staticmethod
     def _query_measurement2ds_descr(query_results: List[measurement_results]) -> List[DatasetDescription]:

@@ -42,3 +42,6 @@ class CoreToolsDataBrowser(DataBrowserBase):
     def get_menu_actions(self):
         return None
 
+    def browser_started(self):
+        self.data_store.check_for_updates()
+        super().browser_started()
