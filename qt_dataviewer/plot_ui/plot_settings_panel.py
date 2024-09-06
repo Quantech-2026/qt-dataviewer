@@ -218,7 +218,7 @@ class PlotSettings(QtWidgets.QWidget):
             hist_btns.button(mode).setChecked(mode == hist_mode)
 
         self._cb_sidebar.setEnabled(plot_model.ndim == 2)
-        self._cb_measured_log.setEnabled(plot_model.ndim == 1)
+        # self._cb_measured_log.setEnabled(plot_model.ndim == 1)
 
 
 class Slider:
