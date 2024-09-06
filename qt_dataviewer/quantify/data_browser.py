@@ -39,7 +39,7 @@ class QuantifyDataBrowser(DataBrowserBase):
         if self._quantify_data_dir is not None:
             self.data_store.open_dir(self._quantify_data_dir)
         else:
-            self._open_dir()
+            self._select_data_dir()
         super().browser_started()
 
     def get_menu_actions(self):
@@ -51,10 +51,6 @@ class QuantifyDataBrowser(DataBrowserBase):
 
         return actions
 
-    def set_datadir(self, path):
-        self._quantify_data_dir = path
-        self.dataset_store.open_dir(path)
-
     @QtCore.pyqtSlot()
     def _select_data_dir(self):
         current = self._quantify_data_dir
@@ -65,4 +61,5 @@ class QuantifyDataBrowser(DataBrowserBase):
             self, 'Dataset directory', current)
 
         if data_dir:
-            self.set_datadir(data_dir)
+            self._quantify_data_dir = data_dir
+            self.dataset_store.open_dir(data_dir)
