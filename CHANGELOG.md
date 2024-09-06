@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.7] - 2024-09-06
+
+- Added QuantifyDataBrowser.
+- Added logout to SqdlDataBrowser.
+- Do not show units "no_label".
+- Improved histogram speed.
+
 ## \[0.3.6] - 2024-08-21
 
 - Fixed missing Qt5 event loop start.
