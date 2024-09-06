@@ -1,5 +1,4 @@
 import logging
-from typing import List, Optional
 from PyQt5 import QtWidgets, QtCore
 
 from qt_dataviewer.browser_ui.main_window import DataBrowserBase
@@ -18,6 +17,7 @@ class SqdlDataBrowser(DataBrowserBase):
             title_extra = "sQDL - " + self.data_store.user_name
         else:
             title_extra = "sQDL"
+        # TODO @@@ make GUI descriptor class
         super().__init__(
             title_extra,
             self.data_store,
@@ -54,7 +54,7 @@ class SqdlDataBrowser(DataBrowserBase):
 
     def browser_started(self):
         if self.scope_name is not None:
-            self.set_scope(self.scope_name)
+            self.dataset_store.set_scope(self.scope_name)
         else:
             self._select_scope()
         super().browser_started()
@@ -72,11 +72,6 @@ class SqdlDataBrowser(DataBrowserBase):
 
         return actions
 
-    @QtCore.pyqtSlot(str)
-    def set_scope(self, scope_name):
-        self.scope_name = scope_name
-        self.dataset_store.set_scope(scope_name)
-
     @QtCore.pyqtSlot()
     def _select_scope(self):
         current_scope = self.data_store.scope_name
@@ -86,7 +81,8 @@ class SqdlDataBrowser(DataBrowserBase):
 
         if dlg.exec():
             logger.info(f"Select scope: {dlg.selected_scope}")
-            self.data_store.set_scope(dlg.selected_scope)
+            self.scope_name = dlg.selected_scope
+            self.data_store.set_scope(self.scope_name)
             self.activateWindow()
 
     @QtCore.pyqtSlot()
@@ -94,8 +90,9 @@ class SqdlDataBrowser(DataBrowserBase):
         self.data_store.logout()
         self.close()
 
+
 class SelectScopeDialog(QtWidgets.QDialog):
-    def __init__(self, scopes: List[str], current_scope: Optional[str]):
+    def __init__(self, scopes: list[str], current_scope: str | None):
         super().__init__()
         self.setWindowTitle("Select scope")
         buttons = QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel

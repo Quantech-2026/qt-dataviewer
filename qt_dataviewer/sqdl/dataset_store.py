@@ -58,7 +58,7 @@ class SqdlDatasetStore(DatasetStore):
                                   ex,
                                   extra_line="Are you authorized for scope '{scope_name}'?")
                 self.scope = None
-                self.scope_name = ""
+                self.scope_name = None
         else:
             self.scope = None
         self._init_scope()
