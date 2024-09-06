@@ -343,6 +343,10 @@ class PlotModel:
                 dims.remove(dim_name)
                 continue
 
+        # NOTE: attributes get lost during averaging.
+        for name in ['units', 'long_name']:
+            da.attrs[name] = self._data.attrs[name]
+
         # Note: order of Average and FFT matter, because of np.abs() of FFT.
         # First average than FFT.
         for settings in reversed(self._axis_settings):
@@ -353,9 +357,14 @@ class PlotModel:
 
         value_range = (float(da.min()), float(da.max()))
         if histogram_mode is not None:
+            logger.debug(f"start histogram")
             da = histogram(da, dims + ['histogram'], 50, value_range) # TODO bins, range
             da['histogram'].attrs['log'] = False
             value_range = (float(da.min()), float(da.max()))
+            logger.debug(f"done histogram")
+
+        # @@@ Cache pre-slice value
+        # @@@ set attrs['log'] after calc.
 
         has_slice = False
         for settings in self._axis_settings:
@@ -366,9 +375,6 @@ class PlotModel:
                 continue
 
         self._var_settings.slice_value_range = value_range if has_slice else None
-
-        for name in ['units', 'long_name']:
-            da.attrs[name] = self._data.attrs[name]
 
         da.attrs['log'] = self._var_settings.logarithmic
         logger.debug(f"Done get_data {self.var_name}")
