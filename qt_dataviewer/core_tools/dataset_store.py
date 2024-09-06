@@ -79,6 +79,7 @@ class CoreToolsDatasetStore(DatasetStore):
         self._ds_descriptions_cache = {}
         self._set_dates(self._fetch_dates())
         self._set_labels(self._fetch_labels())
+        self._update_timer.start()
         self.datasets_changed.emit()
 
     def get_dataset_descriptions(self, date: date) -> List[DatasetDescription]:

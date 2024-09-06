@@ -43,5 +43,5 @@ class CoreToolsDataBrowser(DataBrowserBase):
         return None
 
     def browser_started(self):
-        self.data_store.check_for_updates()
+        self.data_store.refresh()
         super().browser_started()
