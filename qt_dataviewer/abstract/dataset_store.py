@@ -1,7 +1,6 @@
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from datetime import date
-from typing import List, Optional
 
 
 from PyQt5.QtCore import QObject
@@ -14,11 +13,11 @@ from .dataset import Dataset
 
 @dataclass
 class Filter:
-    name_contains: Optional[str] = None
-    collected_since: Optional[date] = None # ??? datetime?
-    collected_until: Optional[date] = None # ??? datetime?
-    rating: Optional[int] = None
-    labels: Optional[LabelsDict] = field(default_factory=dict)
+    name_contains: str | None = None
+    collected_since: date | None = None # ??? datetime?
+    collected_until: date | None = None # ??? datetime?
+    rating: int | None = None
+    labels: LabelsDict | None = field(default_factory=dict)
 
 
 class DatasetStore(QObject):
@@ -32,7 +31,7 @@ class DatasetStore(QObject):
     def __init__(self, is_dynamic):
         super().__init__()
         self._is_dynamic = is_dynamic
-        self._dates: List[date] = []
+        self._dates: list[date] = []
         self._labels : LabelsDict = {}
 
     @property
@@ -40,7 +39,7 @@ class DatasetStore(QObject):
         return self._is_dynamic
 
     @property
-    def dates(self) -> List[date]:
+    def dates(self) -> list[date]:
         return self._dates
 
     @property
@@ -54,7 +53,7 @@ class DatasetStore(QObject):
     def refresh(self):
         raise NotImplementedError()
 
-    def _set_dates(self, dates: List[date]) -> None:
+    def _set_dates(self, dates: list[date]) -> None:
         if dates != self._dates:
             self._dates = dates
             self.dates_changed.emit(dates)
@@ -65,11 +64,11 @@ class DatasetStore(QObject):
             self.labels_changed.emit(labels)
 
     @abstractmethod
-    def get_dataset_descriptions(self, date: date) -> List[DatasetDescription]:
+    def get_dataset_descriptions(self, date: date) -> list[DatasetDescription]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_dataset_description_for_uid(self, uid: str) -> Optional[DatasetDescription]:
+    def get_dataset_description_for_uid(self, uid: str) -> DatasetDescription | None:
         raise NotImplementedError()
 
     @abstractmethod
