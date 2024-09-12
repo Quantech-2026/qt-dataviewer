@@ -7,15 +7,18 @@ from qt_dataviewer.utils.qt_utils import qt_log_exception
 
 from .dataarray_plotter import DataArrayPlotter
 from .dataset_list import DatasetList
-from .abstract.dataset import Dataset
+from .abstract import Dataset, DatasetDescription
 
 
 logger = logging.getLogger(__name__)
 
 
 class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
+    dataset_rating_changed = QtCore.pyqtSignal(DatasetDescription, int)
+
     def __init__(self, ds: Dataset, *,
-                 datalist: DatasetList | None = None):
+                 datalist: DatasetList | None = None,
+                 rating_options: str | None = None):
         try:
             self.app = QtCore.QCoreApplication.instance()
             self.instance_ready = True
@@ -25,7 +28,7 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
 
             self.datalist = datalist
             super(QtWidgets.QMainWindow, self).__init__()
-            self.setup_ui(self, self)
+            self.setup_ui(self, self, rating_options)
 
             self._plotters: list[DataArrayPlotter] = []
             self.alive = True
@@ -97,7 +100,8 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
         self.set_dataset_info(
             ds.name,
             uuid_str = ds.formatted_uid,
-            start_time = ds.collected_datetime
+            start_time = ds.collected_datetime,
+            rating = ds.ds_description.rating,
             )
         self.set_details_info(ds.info)
         self.set_snapshot(ds.snapshot)
@@ -144,4 +148,12 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
         else:
             plot_layout = self.add_plot(plotter.name, index)
             plotter.set_layout(plot_layout)
+
+    @qt_log_exception
+    def rating_changed(self, rating: int):
+        ds = self._ds
+        if ds is None:
+            return
+        ds.ds_description.rating = rating
+        self.dataset_rating_changed.emit(ds.ds_description, rating)
 

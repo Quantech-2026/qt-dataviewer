@@ -164,11 +164,15 @@ class SqdlDatasetStore(DatasetStore):
             if value is not None:
                 data_identifiers[name] = value
 
+        filter_rating = self._filter.rating
+        if filter_rating is None:
+            filter_rating = 0
+
         dates = [
             date.fromisoformat(d)
             for d in self.scope.search_dates(
                     dataset_name_contains=self._filter.name_contains,
-                    rating=self._filter.rating,
+                    rating=filter_rating,
                     data_identifiers=data_identifiers,
                     limit=1000,
                 )
@@ -189,11 +193,14 @@ class SqdlDatasetStore(DatasetStore):
 
         ds_descriptions = []
         t0 = time.perf_counter()
+        filter_rating = self._filter.rating
+        if filter_rating is None:
+            filter_rating = 0
         datasets = self.scope.search_datasets(
                 collected_since=date.isoformat(),
                 collected_until=(date+timedelta(1)).isoformat(),
                 dataset_name_contains=self._filter.name_contains,
-                rating=self._filter.rating,
+                rating=filter_rating,
                 data_identifiers=data_identifiers,
                 limit=1000,
                 )
@@ -208,7 +215,7 @@ class SqdlDatasetStore(DatasetStore):
             ds_description.sqdl_ds = ds
             ds_descriptions.append(ds_description)
         t1 = time.perf_counter()
-        logger.debug(f"Fetch {len(ds_descriptions)} in {(t1-t0):.3f} s")
+        logger.debug(f"Fetched {len(ds_descriptions)} in {(t1-t0):.3f} s")
         ds_descriptions.sort(key=lambda ds: ds.collected_datetime, reverse=True)
         return ds_descriptions
 
@@ -240,11 +247,14 @@ class SqdlDatasetStore(DatasetStore):
                 else:
                     last_date = date(2020, 1, 1)
                     current_ds_uids = []
+
+                filter_rating = self._filter.rating
+                if filter_rating is None:
+                    filter_rating = 0
                 new_datasets = list(self.scope.search_datasets(
-                        collected_since=last_date.isoformat(),
                         dataset_name_contains=self._filter.name_contains,
-                        rating=self._filter.rating,
-                        # min_id = self._max_dataset_id, # @@@@
+                        rating=filter_rating,
+                        min_id = self._max_dataset_id,
                         data_identifiers=data_identifiers,
                         limit=1000,
                         ))
@@ -307,9 +317,11 @@ class SqdlDatasetStore(DatasetStore):
     def set_name(self, ds_description: DatasetDescription, name: str):
         raise NotImplementedError()
 
-    # TODO
-    def set_rating(self, ds_description: DatasetDescription):
-        raise NotImplementedError()
+    @qt_log_exception
+    def set_rating(self, ds_description: DatasetDescription, rating: int):
+        sqdl_ds = ds_description.sqdl_ds
+        if rating != sqdl_ds.rating:
+            sqdl_ds.update_rating(rating)
 
 # TODO @@@ @Exception
     def get_next(self, ds_description: DatasetDescription) -> DatasetDescription:

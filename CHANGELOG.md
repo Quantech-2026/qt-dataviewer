@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.9] - 2024-09-12
+
+- Added filtering on starred (core-tools) and rating (sQDL)
+- Fixed bug when creating QuantifyDataBrowser without specifying path.
+
 ## \[0.3.8] - 2024-09-06
 
 - Fixed open TUID on QuantifyDataBrowser.

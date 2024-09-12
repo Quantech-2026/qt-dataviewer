@@ -169,13 +169,12 @@ class QuantifyDatasetStore(DatasetStore):
                 self._set_dates(self._fetch_dates())
         self.new_datasets.emit(new_ds_descriptions)
 
-    # TODO
     def set_name(self, ds_description: DatasetDescription, name: str):
-        raise NotImplementedError()
+        raise NotImplementedError("Cannot change name on Quantify")
 
-    # TODO
-    def set_rating(self, ds_description: DatasetDescription):
-        raise NotImplementedError()
+    def set_rating(self, ds_description: DatasetDescription, rating: int):
+        # Cannot set rating
+        raise NotImplementedError("Cannot set rating on Quantify")
 
     def get_next(self, ds_description: DatasetDescription) -> DatasetDescription:
         date = ds_description.collected_date

@@ -38,7 +38,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         dataset_store: DatasetStore,
         source_type_name: str,
         label_keys: dict[str, str],
-        column_definitions: tuple[str, int],
+        column_definitions: tuple[str] | tuple[str, int] | tuple[str, int, str],
         sort_by_column: int,
         filters: list[str | tuple[str, str]],
     ):
@@ -97,16 +97,21 @@ class DataBrowserBase(QtWidgets.QMainWindow):
                 elif ftype == 'keywords':
                     fw = KeywordFilterWidget(name, label_keys[name])
                     fw.filter_changed.connect(self._set_filter_label_values)
-                elif ftype == 'star-hide':
+                elif ftype == 'rating-star-hide':
                     fw = RatingFilterWidget(name, star=True, hide=True)
                     fw.filter_changed.connect(self._set_filter_rating)
-                elif ftype == 'star':
+                elif ftype == 'rating-star':
                     fw = RatingFilterWidget(name, star=True)
                     fw.filter_changed.connect(self._set_filter_rating)
                 else:
                     raise Exception(f"Unknown filter {f}")
 
             top_bar.add_filter(fw)
+
+        self.rating_options = None
+        for col in column_definitions:
+            if len(col) > 2 and col[2] in ['rating-star', 'rating-star-hide']:
+                self.rating_options = col[2]
 
         self.dataset_list_view = DatasetListView(self, column_definitions, label_keys, sort_by_column)
         self.date_list_view = DateListView(self)
@@ -132,6 +137,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
 
         # connect signals and slots
         self.dataset_list_view.dataset_activated.connect(self.show_dataset)
+        self.dataset_list_view.dataset_rating_changed.connect(self._update_rating)
         self.date_list_view.dates_selected.connect(self.set_date_selection)
         self.top_bar.liveplotting_changed.connect(self._liveplotting_changed)
         self.top_bar.close_all_plots.connect(self.close_all_plots)
@@ -177,6 +183,11 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         self._remove_closed_viewers()
         self.setCursor(QtCore.Qt.ArrowCursor)
 
+    @QtCore.pyqtSlot(DatasetDescription, int)
+    def _update_rating(self, ds_description: DatasetDescription, rating: int) -> None:
+        print(f"update {ds_description.uid}: {rating}")
+        self.dataset_store.set_rating(ds_description, rating)
+
     @QtCore.pyqtSlot(str)
     def open_uid(self, uid):
         try:
@@ -206,7 +217,9 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         ds = self.dataset_store.get_dataset(ds_description)
         if ds is not None:
             datalist = BrowserDatasetList(self.dataset_store, ds_description)
-            viewer = DatasetViewer(ds, datalist=datalist)
+            viewer = DatasetViewer(ds, datalist=datalist,
+                                   rating_options=self.rating_options)
+            viewer.dataset_rating_changed.connect(self._update_rating)
             self.viewers.append(viewer)
 
     @QtCore.pyqtSlot()
@@ -217,7 +230,12 @@ class DataBrowserBase(QtWidgets.QMainWindow):
 
     def _remove_closed_viewers(self):
         for i in reversed(range(len(self.viewers))):
-            if not self.viewers[i].alive:
+            viewer = self.viewers[i]
+            if not viewer.alive:
+                try:
+                    viewer.dataset_rating_changed.disconnect(self._update_rating)
+                except:
+                    logger.error("Failure disconnecting signal", exc_info=True)
                 self.viewers.pop(i)
 
     @QtCore.pyqtSlot()
@@ -243,7 +261,6 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         for dd in ds_descriptions:
             if dd.collected_date in self._selected_dates:
                 self.dataset_list_view.add_dataset(dd)
-            # TODO resize columns after adding?
         if self._auto_open_plots:
             for dd in ds_descriptions:
                 self.show_dataset(dd)
@@ -280,7 +297,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         self.date_list_view.date_selection_changed()
 
     def closeEvent(self, event):
+        self.close_all_plots()
         self.dataset_store.dates_changed.disconnect(self.date_list_view.update_date_list)
         self.dataset_store.new_datasets.disconnect(self._new_datasets)
         self.dataset_store.close()
-        self.close_all_plots()

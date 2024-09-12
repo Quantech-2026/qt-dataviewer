@@ -12,7 +12,9 @@ from core_tools.data.ds.data_set import load_by_uuid
 from core_tools.data.SQL.queries.dataset_gui_queries import (
     query_for_samples,
     query_for_measurement_results,
-    measurement_results)
+    measurement_results,
+    alter_dataset,
+    )
 
 from qt_dataviewer.abstract import (
     Dataset, DatasetDescription, DatasetStore, Filter
@@ -223,9 +225,8 @@ class CoreToolsDatasetStore(DatasetStore):
     def set_name(self, ds_description: DatasetDescription, name: str):
         raise NotImplementedError()
 
-    # TODO
-    def set_rating(self, ds_description: DatasetDescription):
-        raise NotImplementedError()
+    def set_rating(self, ds_description: DatasetDescription, rating: int):
+        alter_dataset.star_measurement(int(ds_description.uid), rating > 0)
 
     def get_next(self, ds_description: DatasetDescription) -> DatasetDescription:
         date = ds_description.collected_date

@@ -10,6 +10,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 from qt_dataviewer.model.plot_model import PlotModel
 from qt_dataviewer.utils.qt_utils import qt_log_exception
+from qt_dataviewer.resources.icons import add_icons_to_checkbox
 
 from .info_widget import InfoWidget
 from .plot_settings_panel import PlotSettings
@@ -32,7 +33,8 @@ class EventHandler:
 N_PLOT_COLUMNS = 4
 
 class PlotWindow:
-    def setup_ui(self, main_window, event_handler: EventHandler):
+    def setup_ui(self, main_window, event_handler: EventHandler,
+                 rating_options: str | None = None):
         self._main_window = main_window
         self._event_handler = event_handler
         self._plot_model = None
@@ -40,15 +42,15 @@ class PlotWindow:
 
         main_window.resize(1500, 900)
         main_window.setMinimumSize(QtCore.QSize(1000, 600))
-        self.create_main_layout(main_window)
+        self.create_main_layout(main_window, rating_options)
 
-    def create_main_layout(self, main_window):
+    def create_main_layout(self, main_window, rating_options: str | None = None):
         central_widget = QtWidgets.QWidget(main_window)
         central_layout = QtWidgets.QVBoxLayout(central_widget)
         central_layout.setContentsMargins(2, 2, 2, 2)
         central_layout.setSpacing(0)
 
-        top_layout = self.create_top_layout()
+        top_layout = self.create_top_layout(rating_options)
         central_layout.addLayout(top_layout)
 
         # add tab widget
@@ -63,7 +65,7 @@ class PlotWindow:
         main_window.setCentralWidget(central_widget)
         self.lb_variables.setFocus()
 
-    def create_top_layout(self):
+    def create_top_layout(self, rating_options: str | None = None):
         top_layout = QtWidgets.QHBoxLayout()
         top_layout.addSpacing(10)
         top_layout.setSpacing(4)
@@ -74,6 +76,15 @@ class PlotWindow:
         self.label_name.setFont(font)
         self.label_name.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
         top_layout.addWidget(self.label_name, stretch=10)
+
+        if rating_options:
+            self.rating_widget = RatingWidget(
+                star="star" in rating_options,
+                hide="hide" in rating_options)
+            self.rating_widget.rating_changed.connect(self.rating_changed)
+            top_layout.addWidget(self.rating_widget)
+        else:
+            self.rating_widget = None
 
         font = get_font(10)
 
@@ -122,9 +133,12 @@ class PlotWindow:
         self._shortcut_previous = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Left"), self)
         self._shortcut_previous.activated.connect(self._get_previous)
 
-        # @@@ add star
         # @@@ allow change name
         return top_layout
+
+    @qt_log_exception
+    def rating_changed(self, rating: int):
+        ...
 
     @qt_log_exception
     def _get_next(self, checked: bool = None):
@@ -357,7 +371,7 @@ class PlotWindow:
         self.pulses_widget = pulses_widget
         tabs.addTab(pulses_widget, "Pulses")
 
-    def set_dataset_info(self, name, uuid_str: str, start_time: datetime):
+    def set_dataset_info(self, name, uuid_str: str, start_time: datetime, rating: int):
         if len(name) > 80:
             name = name[:80] + '...'
         start_time_str = f"{start_time:%H:%M:%S %Y-%m-%d}" if start_time else "--:--:-- ____-__-__"
@@ -367,6 +381,8 @@ class PlotWindow:
         self.label_uuid.setText(uuid_str)
         start_time_str = f"{start_time:%Y-%m-%d %H:%M:%S}" if start_time else "____-__-__ --:--:--"
         self.label_datetime.setText(f'{start_time_str}')
+        if self.rating_widget:
+            self.rating_widget.set_rating(rating)
 
     def set_details_info(self, details_list: list[tuple[str, str]]):
         self.info_widget.set_info(details_list)
@@ -565,3 +581,73 @@ class ClickFrame(QtWidgets.QFrame):
         else:
             func(mouseEvent)
         super().mousePressEvent(mouseEvent)
+
+
+class RatingWidget(QtWidgets.QWidget):
+    rating_changed = QtCore.pyqtSignal(int)
+
+    def __init__(self, name: str = "", star: bool = False, hide: bool = False):
+        super().__init__()
+        self.name = name
+        self._rating = 0
+
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        self.setLayout(layout)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+        label = QtWidgets.QLabel(name)
+        layout.addWidget(label, 0)
+
+        self._updating = False
+        if star:
+            cb_star = QtWidgets.QCheckBox("")
+            add_icons_to_checkbox(cb_star, "Starred.png", "StarWhite.png", 24)
+            cb_star.stateChanged.connect(self._star_changed)
+            self.cb_star = cb_star
+            layout.addWidget(cb_star, 0)
+        else:
+            self.cb_star = None
+        if hide:
+            cb_hide = QtWidgets.QCheckBox("")
+            add_icons_to_checkbox(cb_hide, "Hidden.png", "HideWhite.png", 24)
+            cb_hide.stateChanged.connect(self._hide_changed)
+            self.cb_hide = cb_hide
+            layout.addWidget(cb_hide, 0)
+        else:
+            self.cb_hide = None
+
+    def set_rating(self, rating: int):
+        self._updating = True
+        self._rating = rating
+        if self.cb_star:
+            self.cb_star.setCheckState(QtCore.Qt.Checked if rating > 0 else QtCore.Qt.Unchecked)
+        if self.cb_hide:
+            self.cb_hide.setCheckState(QtCore.Qt.Checked if rating < 0 else QtCore.Qt.Unchecked)
+        self._updating = False
+
+    @QtCore.pyqtSlot(int)
+    def _star_changed(self, state: QtCore.Qt.CheckState) -> None:
+        if self._updating:
+            return
+        if state == QtCore.Qt.Checked:
+            self._rating = +1
+            if self.cb_hide:
+                self.cb_hide.setCheckState(QtCore.Qt.Unchecked)
+            self.rating_changed.emit(self._rating)
+        elif self._rating == +1:
+            self._rating = 0
+            self.rating_changed.emit(self._rating)
+
+    @QtCore.pyqtSlot(int)
+    def _hide_changed(self, state: QtCore.Qt.CheckState) -> None:
+        if self._updating:
+            return
+        if state == QtCore.Qt.Checked:
+            self._rating = -1
+            if self.cb_star:
+                self.cb_star.setCheckState(QtCore.Qt.Unchecked)
+            self.rating_changed.emit(self._rating)
+        elif self._rating == -1:
+            self._rating = 0
+            self.rating_changed.emit(self._rating)

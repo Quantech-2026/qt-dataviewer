@@ -2,6 +2,8 @@
 from PyQt5 import QtCore, QtWidgets
 
 from qt_dataviewer.abstract.types import LabelsDict
+from qt_dataviewer.resources.icons import Icons
+
 
 class TextFilterWidget(QtWidgets.QWidget):
     filter_changed = QtCore.pyqtSignal(str, str)
@@ -84,6 +86,7 @@ class ListFilterWidget(QtWidgets.QWidget):
     def set_items_from_dict(self, items: LabelsDict):
         self.set_items(items.get(self.key, []))
 
+
 class KeywordFilterWidget(QtWidgets.QWidget):
     filter_changed = QtCore.pyqtSignal(str, list)  # list[str]
 
@@ -118,6 +121,7 @@ class KeywordFilterWidget(QtWidgets.QWidget):
 
         self.filter_changed.emit(self.key, keywords)
 
+
 class RatingFilterWidget(QtWidgets.QWidget):
     filter_changed = QtCore.pyqtSignal(int)
 
@@ -129,43 +133,33 @@ class RatingFilterWidget(QtWidgets.QWidget):
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
-
+        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         label = QtWidgets.QLabel(name)
         layout.addWidget(label, 0)
 
+        combo_box = QtWidgets.QComboBox()
+        self.combo_box = combo_box
         if star:
-            cb_star = QtWidgets.QCheckBox("Star")
-            cb_star.stateChanged.connect(self._star_changed)
-            self.cb_star = cb_star
-            layout.addWidget(cb_star)
-        else:
-            self.cb_star = None
+            combo_box.addItem(Icons.STARRED, "Starred only")
         if hide:
-            cb_hide = QtWidgets.QCheckBox("Hide")
-            cb_hide.stateChanged.connect(self._hide_changed)
-            self.cb_hide = cb_hide
-            layout.addWidget(cb_hide)
+            combo_box.addItem(Icons.NEUTRAL, "Default")
+            combo_box.addItem(Icons().HIDDEN, "Show hidden")
         else:
-            self.cb_hide = None
+            combo_box.addItem(Icons.NO_STAR, "Default")
+        combo_box.setCurrentText("Default")
 
-    @QtCore.pyqtSlot(int)
-    def _star_changed(self, state: QtCore.Qt.CheckState) -> None:
-        if state == QtCore.Qt.Checked:
+        combo_box.currentTextChanged.connect(self._text_changed)
+        layout.addWidget(combo_box, 1)
+
+    @QtCore.pyqtSlot(str)
+    def _text_changed(self, text: str):
+        if text == "Starred only":
             self._rating = +1
             self.filter_changed.emit(self._rating)
-            if self.cb_hide:
-                self.cb_hide.setCheckState(QtCore.Qt.Unchecked)
-        elif self._rating == +1:
+        elif text == "Default":
             self._rating = 0
+            self.filter_changed.emit(self._rating)
+        elif text == "Show hidden":
+            self._rating = -1
             self.filter_changed.emit(self._rating)
 
-    @QtCore.pyqtSlot(int)
-    def _hide_changed(self, state: QtCore.Qt.CheckState) -> None:
-        if state == QtCore.Qt.Checked:
-            self._rating = -1
-            if self.cb_star:
-                self.cb_star.setCheckState(QtCore.Qt.Unchecked)
-            self.filter_changed.emit(self._rating)
-        elif self._rating == -1:
-            self._rating = 0
-            self.filter_changed.emit(self._rating)
