@@ -81,7 +81,7 @@ class DatasetStore(QObject):
         raise NotImplementedError()
 
     @abstractmethod
-    def set_rating(self, ds_description: DatasetDescription):
+    def set_rating(self, ds_description: DatasetDescription, rating: int):
         raise NotImplementedError()
 
     @abstractmethod
