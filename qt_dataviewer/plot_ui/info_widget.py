@@ -4,6 +4,7 @@ from numbers import Number
 from PyQt5 import QtCore, QtWidgets
 
 from qt_dataviewer.utils.qt_utils import qt_log_exception
+from .smart_format import format_with_units
 
 
 class InfoWidget(QtWidgets.QWidget):
@@ -46,7 +47,7 @@ class InfoWidget(QtWidgets.QWidget):
         tree = QtWidgets.QTreeWidget(self)
         tree.setMinimumSize(QtCore.QSize(340, 600))
         tree.setColumnCount(2)
-        tree.setColumnWidth(0, 240)
+        tree.setColumnWidth(0, 280)
         tree.setHeaderLabels(['Path', 'Value'])
         tree.itemExpanded.connect(self._expand_item)
         self.snapshot_tree = tree
@@ -102,7 +103,11 @@ class InfoWidget(QtWidgets.QWidget):
                         and not (set(value.keys()) - set(["value", "label", "unit"]))):
                     unit = value.get("unit")
                     if unit:
-                        item.setText(1, f"{value['value']}  ({unit})")
+                        v = value["value"]
+                        if isinstance(v, Number):
+                            item.setText(1, format_with_units(value['value'], unit, precision=6))
+                        else:
+                            item.setText(1, f"{value['value']}  ({unit})")
                     else:
                         item.setText(1, str(value["value"]))
                     item.setData(0, QtCore.Qt.UserRole, (value, True))

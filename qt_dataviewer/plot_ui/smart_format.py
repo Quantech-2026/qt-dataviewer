@@ -32,9 +32,29 @@ def get_unit_and_scale(units: str) -> tuple[str, float]:
         return units, 1.0
 
 
+def format_with_units(value: float | None, units: str, precision: int):
+    if value is None:
+        return "None"
+    if not isinstance(value, float):
+        value = float(value)
+    try:
+        units, scale = _auto_si_units[units]
+        auto_si_prefix = True
+    except KeyError:
+        auto_si_prefix = False
+    if units in [None, '', '#']:
+        return f"{value:#.{precision}g}"
+    if auto_si_prefix:
+        value *= scale
+        prefixscale, prefix = siScale(value)
+        value *= prefixscale
+        units = prefix+units
+    return f"{value:#.{precision}g} {units}"
+
+
 class SmartFormatter:
     def __init__(self, attrs):
-        self.label = attrs['long_name']
+        self.label = attrs.get('long_name', '<>')
         units = attrs['units']
         if units == "no_label":
             units = ""
@@ -73,7 +93,7 @@ class SmartFormatter:
             return f"{value:#.{d}g}"
         if self.auto_si_prefix:
             prefixscale, prefix = siScale(value)
-            value = value * prefixscale
+            value *= prefixscale
             units = prefix+units
         return f"{value:#.{d}g} {units}"
 
