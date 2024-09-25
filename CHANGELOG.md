@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.10] - 2024-09-25
+
+- Format values in snapshot in 6 digits.
+- Fixed startup problem due to icons and images.
+
 ## \[0.3.9] - 2024-09-12
 
 - Added filtering on starred (core-tools) and rating (sQDL)

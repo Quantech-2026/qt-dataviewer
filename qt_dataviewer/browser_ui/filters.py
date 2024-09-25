@@ -140,12 +140,12 @@ class RatingFilterWidget(QtWidgets.QWidget):
         combo_box = QtWidgets.QComboBox()
         self.combo_box = combo_box
         if star:
-            combo_box.addItem(Icons.STARRED, "Starred only")
+            combo_box.addItem(Icons.starred(), "Starred only")
         if hide:
-            combo_box.addItem(Icons.NEUTRAL, "Default")
-            combo_box.addItem(Icons().HIDDEN, "Show hidden")
+            combo_box.addItem(Icons.neutral(), "Default")
+            combo_box.addItem(Icons.hidden(), "Show hidden")
         else:
-            combo_box.addItem(Icons.NO_STAR, "Default")
+            combo_box.addItem(Icons.no_star(), "Default")
         combo_box.setCurrentText("Default")
 
         combo_box.currentTextChanged.connect(self._text_changed)

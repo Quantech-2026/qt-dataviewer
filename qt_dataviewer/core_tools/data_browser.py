@@ -1,4 +1,3 @@
-
 from qt_dataviewer.browser_ui.main_window import DataBrowserBase
 
 from .dataset_store import CoreToolsDatasetStore

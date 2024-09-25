@@ -1,3 +1,4 @@
+from functools import cache
 import qt_dataviewer.resources as resources
 import os
 import pathlib
@@ -10,14 +11,19 @@ def add_icon_to_button(button, icon_name):
     button.setIconSize(QtCore.QSize(24, 24))
 
 
+@cache
 def get_icon(icon_name):
     icon_path = os.path.dirname(resources.__file__)
     return QtGui.QIcon(os.path.join(icon_path, icon_name))
 
 
-def get_image(image_name):
+@cache
+def get_image(image_name, height=None):
     icon_path = os.path.dirname(resources.__file__)
-    return QtGui.QImage(os.path.join(icon_path, image_name))
+    image =  QtGui.QImage(os.path.join(icon_path, image_name))
+    if height:
+        image = image.scaledToHeight(height, mode=QtCore.Qt.SmoothTransformation)
+    return image
 
 
 def add_icons_to_checkbox(checkbox, icon_checked: str, icon_unchecked: str, size: int):
@@ -40,14 +46,37 @@ def add_icons_to_checkbox(checkbox, icon_checked: str, icon_unchecked: str, size
 
 
 class Icons:
-    STARRED = get_icon("Starred.png")
-    NO_STAR = get_icon("StarWhite.png")
-    NEUTRAL = get_icon("NeutralCompact.png")
-    HIDDEN = get_icon("Hidden.png")
+
+    @staticmethod
+    def starred():
+        return get_icon("Starred.png")
+
+    @staticmethod
+    def no_star():
+        return get_icon("StarWhite.png")
+
+    @staticmethod
+    def neutral():
+        return get_icon("NeutralCompact.png")
+
+    @staticmethod
+    def hidden():
+        return get_icon("Hidden.png")
 
 
 class Images:
-    STARRED = get_image("Starred.png").scaledToHeight(20, mode=QtCore.Qt.SmoothTransformation)
-    NO_STAR = get_image("StarWhite.png").scaledToHeight(20, mode=QtCore.Qt.SmoothTransformation)
-    NEUTRAL = get_image("Neutral.png").scaledToHeight(20, mode=QtCore.Qt.SmoothTransformation)
-    HIDDEN = get_image("Hidden.png").scaledToHeight(20, mode=QtCore.Qt.SmoothTransformation)
+    @staticmethod
+    def starred():
+        return get_image("Starred.png", height=20)
+
+    @staticmethod
+    def no_star():
+        return get_image("StarWhite.png", height=20)
+
+    @staticmethod
+    def neutral():
+        return get_image("Neutral.png", height=20)
+
+    @staticmethod
+    def hidden():
+        return get_image("Hidden.png", height=20)

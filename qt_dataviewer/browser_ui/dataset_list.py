@@ -102,14 +102,13 @@ class DatasetListView(QtWidgets.QWidget):
             menu = QtWidgets.QMenu()
 
             if self.rating_options == 'rating-star':
-                star_action = menu.addAction(Icons.STARRED, "Star")
-                normal_action = menu.addAction(Icons.NO_STAR, "Default")
+                star_action = menu.addAction(Icons.starred(), "Star")
+                normal_action = menu.addAction(Icons.no_star(), "Default")
                 hide_action = None
             elif self.rating_options == 'rating-star-hide':
-                star_action = menu.addAction(Icons.STARRED, "Star")
-                normal_action = menu.addAction(Icons.NEUTRAL, "Default")
-                hide_action = menu.addAction(Icons().HIDDEN, "Hide")
-
+                star_action = menu.addAction(Icons.starred(), "Star")
+                normal_action = menu.addAction(Icons.neutral(), "Default")
+                hide_action = menu.addAction(Icons.hidden(), "Hide")
 
             # Show menu at cursor and wait for result
             action = menu.exec_(globalCursorPos)
@@ -128,14 +127,14 @@ class DatasetListView(QtWidgets.QWidget):
 
     def _get_rating_image(self, rating):
         if rating == 1:
-            return Images.STARRED
+            return Images.starred()
         if rating == 0:
             if self.rating_options == 'rating-star-hide':
-                return Images.NEUTRAL
+                return Images.neutral()
             else:
-                return Images.NO_STAR
+                return Images.no_star()
         if rating == -1:
-            return Images.HIDDEN
+            return Images.hidden()
 
     def add_dataset(self, ds_description: DatasetDescription) -> None:
         """Adds a new dataset to the list.
