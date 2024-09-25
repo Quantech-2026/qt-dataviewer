@@ -185,7 +185,6 @@ class DataBrowserBase(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot(DatasetDescription, int)
     def _update_rating(self, ds_description: DatasetDescription, rating: int) -> None:
-        print(f"update {ds_description.uid}: {rating}")
         self.dataset_store.set_rating(ds_description, rating)
 
     @QtCore.pyqtSlot(str)
