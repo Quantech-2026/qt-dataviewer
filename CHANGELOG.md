@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.11] - 2024-09-25
+
+- Improved scanning of Quantify directory.
+
 ## \[0.3.10] - 2024-09-25
 
 - Format values in snapshot in 6 digits.
