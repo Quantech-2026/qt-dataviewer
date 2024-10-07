@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
-## \[0.3.11] - 2024-09-25
+## \[0.3.11] - 2024-10-07
 
 - Improved scanning of Quantify directory.
 
