@@ -102,8 +102,11 @@ class QuantifyDatasetStore(DatasetStore):
         for entry in os.scandir(path):
             if entry.path in self._all_ds_paths:
                 continue
-            if DatasetPath.is_quantify_dataset(entry.path):
-                dp = DatasetPath(entry.path)
+            if entry.is_dir():
+                try:
+                    dp = DatasetPath(entry.name, entry.path)
+                except:
+                    continue
                 ds_description = dp.dataset_description
                 self._ds_descriptions[date].append(ds_description)
                 self._ds_descriptions_changed = True

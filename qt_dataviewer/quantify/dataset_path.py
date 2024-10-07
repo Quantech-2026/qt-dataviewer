@@ -1,15 +1,13 @@
-from datetime import datetime, timedelta
 import json
 import logging
 import os
 import shutil
-
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import xarray as xr
 
-from qt_dataviewer.abstract.dataset_description import DatasetDescription, ArrayDescription
+from qt_dataviewer.abstract.dataset_description import DatasetDescription
 
 
 logger = logging.getLogger(__name__)
@@ -19,47 +17,29 @@ class DatasetPath:
     """Path to quantify dataset with TUID and name.
     """
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, full_name: str, path: str) -> None:
         """
         Args:
-            path (str): path to directory containing hdf5 and snapshot files.
+            name: full name of dataset, i.e. TUID+name
+            path: path to directory containing hdf5 and snapshot files.
 
         Notes:
             path contains TUID and name.
         """
         self._path = Path(path)
-        if not self._path.is_dir():
-            raise Exception(f"{self._path} is not a directory")
-        dir_name = self._path.parts[-1]
-        if len(dir_name) < 26:
-            raise Exception(f"{dir_name} too short for TUID")
-        self._tuid = dir_name[:26]
+        if len(full_name) < 26:
+            raise Exception(f"{full_name} too short for TUID")
+        self._tuid = full_name[:26]
         self._timestamp = datetime.strptime(self._tuid[:19], "%Y%m%d-%H%M%S-%f")
-        if len(dir_name) < 28:
+        if len(full_name) < 28:
             self._ds_name = "-- no name --"
         else:
-            self._ds_name = dir_name[27:]
+            self._ds_name = full_name[27:]
 
+        self._dataset_file_path = self._path / "dataset.hdf5"
+        if not self._dataset_file_path.is_file():
+            raise Exception(f"No dataset.hdf5 in {full_name}")
         self._ds_description = self._get_ds_description()
-
-    @staticmethod
-    def is_quantify_dataset(path: str) -> bool:
-        path = Path(path)
-        if not path.is_dir():
-            return False
-        dir_name = path.parts[-1]
-        if len(dir_name) < 26:
-            return False
-        tuid = dir_name[:26]
-        try:
-            datetime.strptime(tuid[0:19], "%Y%m%d-%H%M%S-%f")
-        except Exception:
-            logger.info(f"Couldn't parse datetime from {dir}")
-            return False
-        dataset_file = path / "dataset.hdf5"
-        if not dataset_file.is_file():
-            return False
-        return True
 
     def __str__(self) -> str:
         """Returns full path.
@@ -118,13 +98,13 @@ class DatasetPath:
         return dd
 
     def get_file_mtime(self):
-        return datetime.fromtimestamp(os.path.getmtime(self._path / "dataset.hdf5"))
+        return datetime.fromtimestamp(os.path.getmtime(self._dataset_file_path))
 
     def load_ds(self) -> xr.Dataset:
         now = datetime.now()
         active = now - self.get_file_mtime() < timedelta(minutes=1)
 
-        file_path = self._path / "dataset.hdf5"
+        file_path = self._dataset_file_path
         if active:
             # assume we have write permission!
             tmp_file = str(file_path)[:-5]+".qt_tmp.hdf5"
