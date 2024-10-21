@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.3.12] - 2024-10-21
+
+- Support dark style. (requires installation of qdarkstyle)
+
 ## \[0.3.11] - 2024-10-07
 
 - Improved scanning of Quantify directory.
