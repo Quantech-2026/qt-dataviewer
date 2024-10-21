@@ -15,10 +15,6 @@ logger = logging.getLogger(__name__)
 
 class Plot2D(BasePlot):
     def create(self):
-        pg.setConfigOption('background', None)
-        # pg.setConfigOption('background', 'white')
-        pg.setConfigOption('foreground', 'k')
-
         self.plot = pg.PlotItem()
         self.plot.setDefaultPadding(0.01)
 
@@ -285,7 +281,7 @@ class Plot2D(BasePlot):
             x = data[data.dims[0]] * self._x_formatter.scale
             y = data[data.dims[1]] * self._y_formatter.scale
 
-            # Note: numpy 1.22 has nanargmin, but we're still on python 3.7.
+            # Note: numpy 1.22 has nanargmin, but we're still on python 3.7. # @@@ CHANGE!
             # So use a[isnan(a)] = np.inf to remove nans
             d = np.abs(x.data-x_val)
             d[np.isnan(d)] = np.inf

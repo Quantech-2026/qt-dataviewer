@@ -8,7 +8,7 @@ from .dataset_store import QuantifyDatasetStore
 # @@@ TEST when launched from plain python console
 
 class QuantifyDataBrowser(DataBrowserBase):
-    def __init__(self, path=None, auto_scan: bool = True):
+    def __init__(self, path=None, auto_scan: bool = True, gui_style: str | None = None):
         self._quantify_data_dir = path
         self.data_store = QuantifyDatasetStore()
         self.data_store.enable_auto_scan(auto_scan)
@@ -25,7 +25,7 @@ class QuantifyDataBrowser(DataBrowserBase):
                 },
             column_definitions=[
                 ("TUID", 190),
-                ("Time", 56),
+                ("Time", 58),
                 ("Name", ),
                 ("Keywords", ),
              ],
@@ -33,6 +33,7 @@ class QuantifyDataBrowser(DataBrowserBase):
             filters=[
                 "Name",
                 ],
+            gui_style=gui_style,
             )
 
     def browser_started(self):

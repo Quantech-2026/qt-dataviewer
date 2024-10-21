@@ -119,6 +119,7 @@ class PlotWindow:
         self.btnLatest.setMinimumSize(QtCore.QSize(80, 0))
         self.btnLatest.setVisible(self.datalist is not None and self.datalist.implements("get_latest"))
         self.btnLatest.setCheckable(True)
+        self.btnLatest.setStyleSheet("QPushButton:checked { background-color: #ffc000; color: black }")
         self.btnLatest.clicked.connect(self._latest_clicked)
         top_layout.addWidget(self.btnLatest)
 
@@ -203,10 +204,8 @@ class PlotWindow:
         if uncheck_latest:
             self.btnLatest.setChecked(False)
         if self.btnLatest.isChecked():
-            self.btnLatest.setStyleSheet("QPushButton{ background-color: yellow }")
             self._timer_latest.start()
         else:
-            self.btnLatest.setStyleSheet("")
             self._timer_latest.stop()
 
     def create_plots_tab(self, tabs): # @@@ Move to separate class
@@ -223,8 +222,8 @@ class PlotWindow:
         size_policy.setVerticalStretch(0)
         # size_policy.setHeightForWidth(scroll_area.sizePolicy().hasHeightForWidth())
         scroll_area.setSizePolicy(size_policy)
-        scroll_area.setMinimumWidth(350)
-        scroll_area.setMaximumWidth(350)
+        scroll_area.setMinimumWidth(380)
+        scroll_area.setMaximumWidth(380)
         scroll_area.setWidgetResizable(True)
         scroll_widget = QtWidgets.QWidget()
         scroll_area.setWidget(scroll_widget)
@@ -344,12 +343,11 @@ class PlotWindow:
                 pass
             else:
                 if selected:
-                    widget.setFrameStyle(QtWidgets.QFrame.Panel)
-                    widget.setLineWidth(2)
+                    widget.setStyleSheet('QFrame {border-width: 0} QFrame[frameShape="2"] {border-width: 2}')
                     widget.layout().setContentsMargins(4, 4, 6, 4)
                     self._plot_scroll_area.ensureWidgetVisible(widget)
                 else:
-                    widget.setFrameStyle(QtWidgets.QFrame.StyledPanel)
+                    widget.setStyleSheet('QFrame {border-width: 0} QFrame[frameShape="2"] {border-width: 1}')
                     widget.layout().setContentsMargins(5, 5, 7, 5)
 
     @qt_log_exception
@@ -487,7 +485,7 @@ class PlotWindow:
         widget.setMinimumWidth(250)
         widget.setMinimumHeight(250)
         widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
-        widget.setFrameStyle(QtWidgets.QFrame.StyledPanel)
+        widget.setFrameStyle(QtWidgets.QFrame.Panel)
         widget.onMousePressed(partial(self._mouse_clicked, seq_nr=seq_nr))
         widget_layout = QtWidgets.QVBoxLayout(widget)
         widget_layout.setContentsMargins(5, 5, 7, 5)

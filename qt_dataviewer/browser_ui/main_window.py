@@ -7,7 +7,13 @@ from PyQt5.QtWidgets import QDesktopWidget
 from qt_dataviewer import DatasetViewer
 from qt_dataviewer.abstract.dataset_store import DatasetStore, Filter
 from qt_dataviewer.abstract.dataset_description import DatasetDescription
-from qt_dataviewer.utils.qt_utils import qt_log_exception, qt_init
+from qt_dataviewer.utils.qt_utils import (
+    qt_log_exception,
+    qt_init,
+    qt_create_app,
+    qt_run_app,
+    qt_set_darkstyle,
+)
 from .browser_dataset_list import BrowserDatasetList
 from .dataset_list import DatasetListView
 from .datelist import DateListView
@@ -41,16 +47,19 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         column_definitions: tuple[str] | tuple[str, int] | tuple[str, int, str],
         sort_by_column: int,
         filters: list[str | tuple[str, str]],
+        gui_style: str | None = None
     ):
         global _app
         logger.debug("Init QT data browser")
 
         qt_app_runing = qt_init()
         if not qt_app_runing:
-            logger.info("Create Qt application")
             # note: store reference to avoid garbage collection.
             # reference is also used to restart browser 2nd time in Python console.
-            _app = QtWidgets.QApplication([])
+            _app = qt_create_app()
+
+        if gui_style == "dark":
+            qt_set_darkstyle()
 
         super().__init__()
 
@@ -159,9 +168,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         self.browser_started()
 
         if _app is not None:
-            logger.info("Run Qt Application")
-            _app.exec()
-            logger.info("Qt Application event loop exited")
+            qt_run_app(_app)
 
     def browser_started(self):
         ## Currently the derived classes trigger the first load....

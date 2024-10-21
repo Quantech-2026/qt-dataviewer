@@ -4,7 +4,6 @@ from matplotlib import colormaps
 
 from PyQt5 import QtCore, QtWidgets
 from qt_dataviewer.utils.qt_utils import qt_log_exception
-
 from .smart_format import SmartFormatter
 from .plots import BasePlot
 
@@ -29,10 +28,6 @@ class PlotMultiline(BasePlot):
         plot_model = self._plot_model
         data = plot_model.get_data()
         self._data = data
-
-        pg.setConfigOption('background', None)
-        # pg.setConfigOption('background', 'white')
-        pg.setConfigOption('foreground', 'k')
 
         self.plot = pg.PlotWidget()
         self.label = QtWidgets.QLabel()
@@ -80,6 +75,7 @@ class PlotMultiline(BasePlot):
         data = plot_model.get_data()
         self._data = data
 
+        #  TODO @@@: sort data. Move sorting to plot_model?
         data = plot_model.get_data()
         self._data = data
         x0 = data[data.dims[0]]

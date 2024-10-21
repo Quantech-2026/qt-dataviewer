@@ -30,10 +30,6 @@ class Plot1D(BasePlot):
         data = plot_model.get_data()
         self._data = data
 
-        pg.setConfigOption('background', None)
-        # pg.setConfigOption('background', 'white')
-        pg.setConfigOption('foreground', 'k')
-
         self.plot = pg.PlotWidget()
         self.label = QtWidgets.QLabel()
         self.label.setAlignment(QtCore.Qt.AlignRight)
@@ -67,6 +63,9 @@ class Plot1D(BasePlot):
         curve_style = graph_color[0]
         if len(x_data) > 100:
             curve_style = {"pen": curve_style["pen"]}
+
+#        if not np.any(np.isfinite(y_data)):
+#            print("Oops", label)
 
         curve = plot.plot(x_data, y_data, **curve_style, name=label, connect='finite')
         self.curves.append(curve)
@@ -144,7 +143,7 @@ class Plot1D(BasePlot):
             y_data = self.y_data
             if self.one_d_is_vertical:
                 d = np.abs(y_data - y_val)
-                d[np.isnan(d)] = np.inf
+                d[np.isnan(d)] = np.inf # @@@
                 iy = d.argmin()
                 x_val = x_data[iy]
                 y_val = y_data[iy]

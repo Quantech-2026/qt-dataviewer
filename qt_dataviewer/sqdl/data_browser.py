@@ -13,7 +13,14 @@ logger = logging.getLogger(__name__)
 
 
 class SqdlDataBrowser(DataBrowserBase):
-    def __init__(self, scope_name: str = None):
+    def __init__(self, scope_name: str | None = None, gui_style: str | None = None):
+        """
+        Creates sQDL data browser.
+
+        Args:
+            scope_name: name of scope to open. If None a selection box will be shown.
+            gui_style: if "dark" enables dark style for gui.
+        """
         self.data_store = SqdlDatasetStore() # TODO @@@ change construction order to show pop-up notification for login..
         self.scope_name = scope_name
         if self.data_store.user_name:
@@ -38,7 +45,7 @@ class SqdlDataBrowser(DataBrowserBase):
             column_definitions=[
                 ("Rating", 54, "rating-star-hide"),
                 ("UUID", 140),
-                ("Time", 56),
+                ("Time", 58),
                 ("Name", ),
                 ("Variables", ),
                 ("Axes", ),
@@ -52,6 +59,7 @@ class SqdlDataBrowser(DataBrowserBase):
                 ("Variables", "list"),
                 ("Axes", "list"),
                 ],
+            gui_style=gui_style,
             )
 
     def browser_started(self):
