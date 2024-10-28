@@ -116,7 +116,7 @@ class TopBar(QtWidgets.QWidget):
 
     @QtCore.pyqtSlot()
     def _uid_entered(self):
-        text = self.uid_edit.text()
+        text = self.uid_edit.text().strip()
         if not text:
             return
         self.open_uid.emit(text)
