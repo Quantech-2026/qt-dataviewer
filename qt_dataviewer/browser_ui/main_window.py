@@ -15,7 +15,7 @@ from qt_dataviewer.utils.qt_utils import (
     qt_set_darkstyle,
 )
 from .browser_dataset_list import BrowserDatasetList
-from .dataset_list import DatasetListView
+from .dataset_list_view import DatasetListView
 from .datelist import DateListView
 from .filters import (
     TextFilterWidget,
