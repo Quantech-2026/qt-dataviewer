@@ -3,6 +3,7 @@ import logging
 from PyQt5 import QtCore, QtWidgets
 
 from qt_dataviewer.plot_ui.plot_window import PlotWindow, EventHandler
+from qt_dataviewer.plot_ui.dataarray_plotter import DataArrayPlotter
 from qt_dataviewer.utils.qt_utils import (
     qt_log_exception,
     qt_init,
@@ -10,14 +11,13 @@ from qt_dataviewer.utils.qt_utils import (
     qt_run_app,
 )
 
-from .dataarray_plotter import DataArrayPlotter
-from .dataset_list import DatasetList
-from .abstract import Dataset, DatasetDescription
+from .abstract import Dataset, DatasetDescription, DatasetList
 
 
 logger = logging.getLogger(__name__)
 
 _app = None
+
 
 class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
     dataset_rating_changed = QtCore.pyqtSignal(DatasetDescription, int)

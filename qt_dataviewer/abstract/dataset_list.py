@@ -1,6 +1,6 @@
 from abc import abstractmethod
 
-from .abstract import Dataset
+from .dataset import Dataset
 
 class DatasetList:
     """

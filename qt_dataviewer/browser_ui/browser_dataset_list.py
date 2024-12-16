@@ -1,5 +1,9 @@
-from qt_dataviewer.dataset_list import DatasetList
-from qt_dataviewer.abstract import Dataset, DatasetDescription, DatasetStore
+from qt_dataviewer.abstract import (
+    Dataset,
+    DatasetDescription,
+    DatasetList,
+    DatasetStore,
+    )
 
 class BrowserDatasetList(DatasetList):
     def __init__(self, ds_store: DatasetStore, ds_description: DatasetDescription):
@@ -39,11 +43,3 @@ class BrowserDatasetList(DatasetList):
         self.current_dd = dd
         return self.ds_store.get_dataset(dd)
 
-    # TODO
-    # @abstractmethod
-    # def rate_dataset(self, rate: int) -> None:
-    #     ...
-
-    # @abstractmethod
-    # def rename_dataset(self, name: str) -> None:
-    #     ...
