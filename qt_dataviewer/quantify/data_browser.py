@@ -5,8 +5,6 @@ from qt_dataviewer.browser_ui.main_window import DataBrowserBase
 from .dataset_store import QuantifyDatasetStore
 
 
-# @@@ TEST when launched from plain python console
-
 class QuantifyDataBrowser(DataBrowserBase):
     def __init__(self, path=None, auto_scan: bool = True, gui_style: str | None = None):
         self._quantify_data_dir = path

@@ -9,9 +9,10 @@ from PyQt5 import QtCore
 from qt_dataviewer.abstract import (
     Dataset, DatasetDescription, DatasetStore, Filter, LabelsDict
     )
-from qt_dataviewer.quantify.dataset import QuantifyDataset
 from qt_dataviewer.utils.qt_utils import qt_log_exception
-from .dataset_path import DatasetPath
+
+from .dataset import QuantifyDataset
+from .dataset_description import QuantifyDatasetDescription
 
 
 logger = logging.getLogger(__name__)
@@ -40,7 +41,8 @@ class QuantifyDatasetStore(DatasetStore):
         if self._auto_scan:
             self._update_timer.start()
 
-    def get_source_name(self):
+    @property
+    def source_name(self):
         return self._base_dir
 
     def set_filter(self, filter: Filter):
@@ -104,10 +106,9 @@ class QuantifyDatasetStore(DatasetStore):
                 continue
             if entry.is_dir():
                 try:
-                    dp = DatasetPath(entry.name, entry.path)
+                    ds_description = QuantifyDatasetDescription(entry.name, entry.path)
                 except:
                     continue
-                ds_description = dp.dataset_description
                 self._ds_descriptions[date].append(ds_description)
                 self._ds_descriptions_changed = True
                 self._all_ds_paths.add(entry.path)
@@ -139,7 +140,7 @@ class QuantifyDatasetStore(DatasetStore):
         if len(tuid) < 26:
             # TODO @@@ Show error in GUI
             raise Exception(f"'{tuid}' is too short for value TUID")
-        date = datetime.strptime(tuid[0:19], "%Y%m%d-%H%M%S-%f").date()
+        date = datetime.strptime(tuid[:19], "%Y%m%d-%H%M%S-%f").date()
         if date not in self._ds_descriptions:
             return None
         for dsd in self._ds_descriptions[date]:
