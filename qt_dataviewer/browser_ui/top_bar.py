@@ -53,7 +53,7 @@ class TopBar(QtWidgets.QWidget):
         hbox.addWidget(self.source_type_label)
 
         source_label = QtWidgets.QLabel("<none>")
-        source_label.setWordWrap(True) # @@@ Path !!
+        source_label.setWordWrap(True)
         source_label.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
         )
@@ -74,11 +74,14 @@ class TopBar(QtWidgets.QWidget):
         hbox.addWidget(uid_edit)
         uid_edit.returnPressed.connect(self._uid_entered)
 
-        checkbox = QtWidgets.QCheckBox("Live updating")
-        checkbox.stateChanged.connect(self._on_checkbox_changed)
-        self.cb_live_plotting = checkbox
+        if option_liveplotting:
+            checkbox = QtWidgets.QCheckBox("Live updating")
+            checkbox.stateChanged.connect(self._on_checkbox_changed)
+            hbox.addWidget(checkbox, alignment=QtCore.Qt.AlignRight)
+            self.cb_live_plotting = checkbox
+        else:
+            self.cb_live_plotting = None
 
-        hbox.addWidget(checkbox, alignment=QtCore.Qt.AlignRight)
 
         close_all_button = QtWidgets.QPushButton("Close all plots")
         close_all_button.setToolTip("Closes all plots (Ctrl+K)")
@@ -89,7 +92,8 @@ class TopBar(QtWidgets.QWidget):
 
 
     def set_live_plotting(self, checked: bool):
-        self.cb_live_plotting.setChecked(checked)
+        if self.cb_live_plotting is not None:
+            self.cb_live_plotting.setChecked(checked)
 
     def set_data_source(self, source_name: str) -> None:
         """Set the text for the data source.
