@@ -1,0 +1,124 @@
+{
+    "instruments": {
+        "MC": {
+            "submodules": {
+                "experiment_data": {
+                    "submodules": {},
+                    "parameters": {},
+                    "name": "MC_experiment_data",
+                    "label": "experiment_data"
+                }
+            },
+            "parameters": {
+                "IDN": {
+                    "value": null,
+                    "ts": null,
+                    "name": "IDN",
+                    "unit": "",
+                    "label": "IDN"
+                },
+                "lazy_set": {
+                    "value": false,
+                    "ts": "2024-09-06 14:23:03",
+                    "name": "lazy_set",
+                    "unit": "",
+                    "label": "lazy_set"
+                },
+                "verbose": {
+                    "value": true,
+                    "ts": "2024-09-06 14:23:03",
+                    "name": "verbose",
+                    "unit": "",
+                    "label": "verbose"
+                },
+                "on_progress_callback": {
+                    "value": null,
+                    "ts": null,
+                    "name": "on_progress_callback",
+                    "unit": "",
+                    "label": "on_progress_callback"
+                },
+                "instr_plotmon": {
+                    "value": null,
+                    "ts": null,
+                    "name": "instr_plotmon",
+                    "unit": "",
+                    "label": "instr_plotmon"
+                },
+                "update_interval": {
+                    "value": 0.5,
+                    "ts": "2024-09-06 14:23:03",
+                    "name": "update_interval",
+                    "unit": "",
+                    "label": "update_interval"
+                }
+            },
+            "name": "MC",
+            "label": "MC"
+        },
+        "ParameterHolder": {
+            "submodules": {},
+            "parameters": {
+                "IDN": {
+                    "value": null,
+                    "ts": null,
+                    "name": "IDN",
+                    "unit": "",
+                    "label": "IDN"
+                },
+                "amp": {
+                    "value": 1,
+                    "ts": "2024-09-06 14:23:03",
+                    "name": "amp",
+                    "unit": "V",
+                    "label": "Amplitude"
+                },
+                "freq": {
+                    "value": 0.5,
+                    "ts": "2024-09-06 14:23:03",
+                    "name": "freq",
+                    "unit": "Hz",
+                    "label": "Frequency"
+                },
+                "t": {
+                    "value": 1,
+                    "ts": "2024-09-06 14:23:03",
+                    "name": "t",
+                    "unit": "s",
+                    "label": "Time"
+                },
+                "phi": {
+                    "value": 0,
+                    "ts": "2024-09-06 14:23:03",
+                    "name": "phi",
+                    "unit": "Rad",
+                    "label": "Phase"
+                },
+                "noise_level": {
+                    "value": 0.05,
+                    "ts": "2024-09-06 14:23:03",
+                    "name": "noise_level",
+                    "unit": "V",
+                    "label": "Noise level"
+                },
+                "acq_delay": {
+                    "value": 0.01,
+                    "ts": "2024-09-06 14:23:03",
+                    "name": "acq_delay",
+                    "unit": "s",
+                    "label": "acq_delay"
+                },
+                "sig": {
+                    "value": null,
+                    "ts": null,
+                    "name": "sig",
+                    "unit": "V",
+                    "label": "Signal level"
+                }
+            },
+            "name": "ParameterHolder",
+            "label": "ParameterHolder"
+        }
+    },
+    "parameters": {}
+}
