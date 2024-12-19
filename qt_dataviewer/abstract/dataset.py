@@ -44,7 +44,7 @@ class Dataset:
 
     @property
     @abstractmethod
-    def info(self) -> dict[str, str]:
+    def info(self) -> list[tuple[str, str]]:
         raise NotImplementedError()
 
     @property

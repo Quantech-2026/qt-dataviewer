@@ -35,6 +35,10 @@ class DatasetStore(QObject):
         self._labels : LabelsDict = {}
 
     @property
+    def source_name(self):
+        ...
+
+    @property
     def is_dynamic(self):
         return self._is_dynamic
 
