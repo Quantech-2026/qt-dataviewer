@@ -7,11 +7,11 @@ def convert_quantify(ds: xr.Dataset):
     tuid = ds.attrs["tuid"]
     try:
         start_time = datetime.strptime(tuid[:18], "%Y%m%d-%H%M%S-%f")
+        ds.attrs["measurement_time"] = start_time.isoformat()
     except Exception:
-        start_time = None
+        pass
     if "application" not in ds.attrs:
         ds.attrs["application"] = "Quantify"
-    ds.attrs["measurement_time"] = start_time.isoformat()
     return ds
 
 
