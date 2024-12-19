@@ -99,7 +99,7 @@ class CoreToolsDataset(Dataset):
         # return s[:-14] + '_' + s[-14:-9] + '_' + s[-9:]
 
     @property
-    def info(self) -> dict[str, str]:
+    def info(self) -> list[tuple[str, str]]:
         labels = self.ds_description.labels
         return [
             ("Project", labels.get("project")),

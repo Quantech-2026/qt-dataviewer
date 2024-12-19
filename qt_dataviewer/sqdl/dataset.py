@@ -108,7 +108,7 @@ class SqdlDataset(Dataset):
         return self._snapshot
 
     @property
-    def info(self) -> dict[str, str]:
+    def info(self) -> list[tuple[str, str]]:
         # TODO @@@ Use schema
         info_keys = [
             ("Project", "project"),
