@@ -44,7 +44,7 @@ class PlotWindow:
         main_window.setMinimumSize(QtCore.QSize(1000, 600))
         self.create_main_layout(main_window, rating_options)
 
-    def create_main_layout(self, main_window, rating_options: str | None = None):
+    def create_main_layout(self, main_window, rating_options: str | None):
         central_widget = QtWidgets.QWidget(main_window)
         central_layout = QtWidgets.QVBoxLayout(central_widget)
         central_layout.setContentsMargins(2, 2, 2, 2)
@@ -65,7 +65,7 @@ class PlotWindow:
         main_window.setCentralWidget(central_widget)
         self.lb_variables.setFocus()
 
-    def create_top_layout(self, rating_options: str | None = None):
+    def create_top_layout(self, rating_options: str | None):
         top_layout = QtWidgets.QHBoxLayout()
         top_layout.addSpacing(10)
         top_layout.setSpacing(4)
@@ -275,7 +275,7 @@ class PlotWindow:
         scroll_area.setWidget(scroll_widget)
         self._plot_scroll_area = scroll_area
 
-        plots_layout = QtWidgets.QGridLayout(scroll_widget) # @@@ Create dynamic flow layout
+        plots_layout = QtWidgets.QGridLayout(scroll_widget)
         plots_layout.setSpacing(2)
         plots_layout.setContentsMargins(0, 0, 0, 0)
         self.plots_layout = plots_layout
