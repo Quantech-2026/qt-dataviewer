@@ -121,7 +121,7 @@ class QuantifyDatasetStore(DatasetStore):
 
         for ds_date, entries in self._ds_descriptions.items():
             for ds_description in entries:
-                if filt.name_contains and filt.name_contains not in ds_description.name:
+                if filt.name_contains and filt.name_contains.lower() not in ds_description.name.lower():
                     continue
                 # TODO apply other filters
                 self._filtered_ds_descriptions[ds_date].append(ds_description)
