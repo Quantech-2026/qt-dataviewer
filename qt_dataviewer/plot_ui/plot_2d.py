@@ -193,8 +193,8 @@ class Plot2D(BasePlot):
                 self._plot_mode = 'irregular'
 
             log_mode = {
-                'x': x_array.attrs['log'],
-                'y': y_array.attrs['log'],
+                'x': x_array.attrs.get('log', False),
+                'y': y_array.attrs.get('log', False),
                 }
             plot.setLogMode(**log_mode)
             self._log_mode = log_mode

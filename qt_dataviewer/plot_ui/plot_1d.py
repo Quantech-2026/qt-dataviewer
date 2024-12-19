@@ -73,7 +73,10 @@ class Plot1D(BasePlot):
         self.proxy = pg.SignalProxy(plot.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
 
     def _update_axis(self, x, y):
-        log_mode = {'x': x.attrs['log'], 'y': y.attrs['log']}
+        log_mode = {
+            'x': x.attrs.get('log', False),
+            'y': y.attrs.get('log', False)
+            }
         self._log_mode = log_mode
         x_formatter = SmartFormatter(x.attrs)
         self._x_formatter = x_formatter

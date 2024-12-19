@@ -55,7 +55,7 @@ def format_with_units(value: float | None, units: str, precision: int):
 class SmartFormatter:
     def __init__(self, attrs):
         self.label = attrs.get('long_name', '<>')
-        units = attrs['units']
+        units = attrs.get("units", "")
         if units == "no_label":
             units = ""
         try:
