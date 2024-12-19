@@ -58,8 +58,12 @@ class DatasetDescription:
         if attr == "rating":
             return f"{self.rating:+d}" if self.rating else ""
         if attr == "time":
+            if self.collected_datetime is None:
+                return "--:--:--"
             return f"{self.collected_datetime:%H:%M:%S}"
         if attr == "date":
+            if self.collected_datetime is None:
+                return "....-..-.."
             return f"{self.collected_datetime:%Y-%m-%d}"
         if attr == "variables":
             return self.variables_text
