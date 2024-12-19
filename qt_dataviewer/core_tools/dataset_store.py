@@ -49,7 +49,8 @@ class CoreToolsDatasetStore(DatasetStore):
         self._update_timer.setSingleShot(True)
         self._update_timer.setInterval(300)
 
-    def get_source_name(self):
+    @property
+    def source_name(self):
         if SQL_conn_info_local.host == 'localhost':
             return 'Local'
         if SQL_conn_info_remote.host:

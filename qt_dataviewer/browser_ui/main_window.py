@@ -250,7 +250,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
 
     @QtCore.pyqtSlot()
     def _refresh_view(self) -> None:
-        self.set_data_source(self.data_store.get_source_name())
+        self.set_data_source(self.data_store.source_name)
         # call selection changed to update list with datasets
         self.date_list_view.date_selection_changed()
 

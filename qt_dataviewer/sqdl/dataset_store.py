@@ -86,7 +86,8 @@ class SqdlDatasetStore(DatasetStore):
         # max_dataset_id is used to detect new measurements.
         self._max_dataset_id: int = -1
 
-    def get_source_name(self):
+    @property
+    def source_name(self):
         return self.scope_name or "<select scope>"
 
     def set_filter(self, filter: Filter):
@@ -139,7 +140,7 @@ class SqdlDatasetStore(DatasetStore):
                 rating=ds.rating,
                 labels=ds.metadata,
                 )
-        ds_description.sqdl_ds = ds
+        ds_description.sqdl_ds = ds # @@@ YUK!
         return ds_description
 
     def _fetch_labels(self):
@@ -284,6 +285,7 @@ class SqdlDatasetStore(DatasetStore):
 
             self._max_dataset_id = max_dataset_id
         except Exception as ex:
+            # @@@ TODO: distinguish requests.exceptions.Timeout (warning+message), ConnectionError (warning+message), RequestException(error)
             qt_show_exception("Auto update failed", ex)
         # restart timer.
         self._update_timer.start()
