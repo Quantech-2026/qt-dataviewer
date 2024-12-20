@@ -167,7 +167,6 @@ class DataFileBrowser(QtWidgets.QMainWindow):
             self, 'Base directory', current)
 
         if data_dir:
-            print("Open", data_dir)
             self.directory_tree.clear()
             self.dataset_store.set_base_dir(data_dir)
 

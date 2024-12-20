@@ -100,7 +100,6 @@ class FileDataStore(DatasetStore, DirectoryScanner):
         full_path = os.path.join(self._base_dir, path)
 
         logging.debug(f"Scanning '{full_path}'")
-        starttime = time.perf_counter()
         dataset_descriptions = []
         directories = []
         for entry in os.scandir(full_path):
@@ -118,8 +117,6 @@ class FileDataStore(DatasetStore, DirectoryScanner):
 
         self._dataset_descriptions[path] = dataset_descriptions
         self._directories[path] = directories
-        duration = time.perf_counter() - starttime
-        print(f"Found {len(self._dataset_descriptions[path])} dd in {duration*1000:.1f} ms")
 
     def _get_dd_from_dir(self, entry: os.DirEntry) -> DatasetDescription | None:
         try:
