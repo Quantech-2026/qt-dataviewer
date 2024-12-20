@@ -13,6 +13,10 @@ each individual axis.
 
 ![Browser](docs/QT%20Dataset%20Browser%20(CoreTools).png)
 
+<img src="docs/QT%20Dataset%20Browser%20(CoreTools).png" width="50%" height="50%" />
+
+<img src="docs/QT%20Dataset%20Browser%20(CoreTools).png" width="200"/>
+
 # Data storage browser
 
 The browser uses a backend to retrieve data from various sources.
