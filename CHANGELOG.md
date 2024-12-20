@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.1] - 2024-12-20
+
+- Removed unintended print messages.
+
 ## \[0.4.0] - 2024-12-20
 
 - Added file browser for exported core-tools data.
