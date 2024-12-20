@@ -8,7 +8,7 @@ version = "0.3.12" # tbump: version
 authors = [
   { name="Sander de Snoo", email="s.l.desnoo@tudelft.nl" },
 ]
-description = "QuTech Viewer for xarray Datasets."
+description = "QuTech Viewer for xarray Datasets. Supports Core-tools and Quantify datasets."
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
@@ -18,18 +18,20 @@ classifiers = [
 ]
 dependencies = [
     "pyqt5 >= 5.15",
-    "pyqtgraph == 0.13.7.4",
+#    "pyqtgraph == 0.13.7.4",
+    "pyqtgraph >= 0.13.7",
     "matplotlib >= 3.5.3",
     "numpy >= 1.24",
     "xarray",
     "h5netcdf",
 ]
 
-# [project.urls]
-# Homepage = "https://github.com/pypa/sampleproject"
-# Issues = "https://github.com/pypa/sampleproject/issues"
-
-
+[project.urls]
+# Homepage = "https://example.com"
+Documentation = "https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/blob/main/README.md"
+Repository = "https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer"
+# Issues = "https://github.com/me/spam/issues"
+Changelog = "https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/blob/main/CHANGELOG.md"
 
 [tool.tbump]
 # Uncomment this if your project is hosted on GitHub:

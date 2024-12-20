@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.0] - 2024-12-20
+
+- Added file browser for exported core-tools data.
+- Made parsing of xarray attributes more robust
+- Removed spaces surrounding entered uid / uuid
+
 ## \[0.3.12] - 2024-10-21
 
 - Support dark style. (requires installation of qdarkstyle)
