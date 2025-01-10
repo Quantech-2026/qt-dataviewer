@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.2] - 2025-01-10
+
+- Fixed loading of quantify files; explicitly use engine="h5netcdf".
+- Improved condensed snapshot view. (Now also works with Quantify.)
+
 ## \[0.4.1] - 2024-12-20
 
 - Removed unintended print messages.
