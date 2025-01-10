@@ -97,21 +97,7 @@ class InfoWidget(QtWidgets.QWidget):
             if value is None:
                 item.setText(1, 'None')
             elif isinstance(value, Mapping):
-                if (self._condensed_snapshot
-                        and "value" in value.keys()
-                        and "label" in value.keys()
-                        and not (set(value.keys()) - set(["value", "label", "unit"]))):
-                    unit = value.get("unit")
-                    if unit:
-                        v = value["value"]
-                        if isinstance(v, Number):
-                            item.setText(1, format_with_units(value['value'], unit, precision=6))
-                        else:
-                            item.setText(1, f"{value['value']}  ({unit})")
-                    else:
-                        item.setText(1, str(value["value"]))
-                    item.setData(0, QtCore.Qt.UserRole, (value, True))
-                elif depth > 0:
+                if depth > 0:
                     self._add_items(item, value, depth-1)
             elif not isinstance(value, str) and isinstance(value, Sequence):
                 item.setData(0, QtCore.Qt.UserRole, (value, True))
@@ -145,6 +131,21 @@ class InfoWidget(QtWidgets.QWidget):
 
 def reduce_snaphot(data):
     if isinstance(data, dict):
+        try:
+            value = data["value"]
+            if value is None:
+                return "None"
+            unit = data.get("unit")
+            if unit:
+                if isinstance(value, Number):
+                    return format_with_units(value, unit, precision=6)
+                else:
+                    return f"{value}  ({unit})"
+            else:
+                return str(value)
+        except KeyError:
+            pass
+
         res = {}
         try:
             clss = data['__class__']
