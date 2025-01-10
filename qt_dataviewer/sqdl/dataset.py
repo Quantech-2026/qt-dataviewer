@@ -71,7 +71,7 @@ class SqdlDataset(Dataset):
             length = len(resp.content)
             t1 = time.perf_counter()
             with io.BytesIO(resp.content) as fp:
-                res = xr.load_dataset(fp)
+                res = xr.load_dataset(fp, engine="h5netcdf")
                 t2 = time.perf_counter()
             logger.debug(f'Loaded HDF5 {(t1-t0)*1000:.1f} ms {length//1024} kB. Converted in {(t2-t1)*1000:.1f} ms')
             return res

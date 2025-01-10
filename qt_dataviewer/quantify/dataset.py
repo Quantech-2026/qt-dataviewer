@@ -83,11 +83,11 @@ class QuantifyDataset(Dataset):
             # assume we have write permission!
             tmp_file = str(file_path)[:-5]+".qt_tmp.hdf5"
             shutil.copy(file_path, tmp_file)
-            dsx = xr.load_dataset(tmp_file)
+            dsx = xr.load_dataset(tmp_file, engine="h5netcdf")
             os.remove(tmp_file)
             return dsx
         else:
-            return xr.load_dataset(file_path)
+            return xr.load_dataset(file_path, engine="h5netcdf")
 
     def _load_snapshot(self) -> dict[str, any]:
         with open(os.path.join(self.ds_description.path, "snapshot.json")) as fp:
