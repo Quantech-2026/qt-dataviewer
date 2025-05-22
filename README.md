@@ -11,11 +11,11 @@ Multidimensional datasets can be processed to 1D and 2D plots.
 Operations like slicing, averaging, FFT and histogram can be applied on
 each individual axis.
 
-<img src="docs/QT%20Dataset%20Browser%20(CoreTools).png" width="50%" height="50%" />
-<img src="docs/Simultaneous__Q23.png" width="50%" height="50%" />
-<img src="docs/shuttling%20qubit%20with%20MW%20compensation.png" width="50%" height="50%" />
-<img src="docs/Sensor__calibration%20(multiline).png" width="50%" height="50%" />
-<img src="docs/Sensor__calibration%20(histogram).png" width="50%" height="50%" />
+<img src="https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/raw/main/docs/QT%20Dataset%20Browser%20(CoreTools).png" width="50%" height="50%" />
+<img src="https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/raw/main/docs/Simultaneous__Q23.png" width="50%" height="50%" />
+<img src="https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/raw/main/docs/shuttling%20qubit%20with%20MW%20compensation.png" width="50%" height="50%" />
+<img src="https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/raw/main/docs/Sensor__calibration%20(multiline).png" width="50%" height="50%" />
+<img src="https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/raw/main/docs/Sensor__calibration%20(histogram).png" width="50%" height="50%" />
 
 
 # Data storage browser
