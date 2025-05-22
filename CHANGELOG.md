@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.3] - 2025-05-22
+
+- Ignore strange parameter units during smart formatting.
+
 ## \[0.4.2] - 2025-01-10
 
 - Fixed loading of quantify files; explicitly use engine="h5netcdf".

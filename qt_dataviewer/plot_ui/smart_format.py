@@ -1,8 +1,12 @@
+import logging
 import numpy as np
 import xarray as xr
 
 from pyqtgraph.functions import siScale
 from pyqtgraph.graphicsItems import AxisItem
+
+
+logger = logging.getLogger(__name__)
 
 _si_prefixes = {
     "T": 1e12,
@@ -41,6 +45,9 @@ def format_with_units(value: float | None, units: str, precision: int):
         units, scale = _auto_si_units[units]
         auto_si_prefix = True
     except KeyError:
+        auto_si_prefix = False
+    except Exception:
+        logger.info(f"Error formatting with units: '{units}', value: {value}", exc_info=True)
         auto_si_prefix = False
     if units in [None, '', '#']:
         return f"{value:#.{precision}g}"
