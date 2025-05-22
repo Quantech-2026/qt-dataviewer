@@ -1,5 +1,6 @@
 from collections.abc import Mapping, Sequence
 from numbers import Number
+from typing import Any
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -65,7 +66,7 @@ class InfoWidget(QtWidgets.QWidget):
             self.details_layout.addWidget(QtWidgets.QLabel(name), irow, 0)
             self.details_layout.addWidget(QtWidgets.QLabel(value), irow, 1)
 
-    def set_snapshot(self, snapshot: dict[str, any] | None):
+    def set_snapshot(self, snapshot: dict[str, Any] | None):
         self.snapshot = snapshot
         tree = self.snapshot_tree
         tree.clear()

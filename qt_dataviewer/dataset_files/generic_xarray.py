@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 import xarray as xr
 
@@ -46,11 +47,10 @@ class XarrayDataset(Dataset):
             ]
 
     @property
-    def snapshot(self) -> None | str | dict[str, any]:
+    def snapshot(self) -> None | str | dict[str, Any]:
         if self._snapshot is None and self.ds_xr is not None:
             self._snapshot = get_snapshot(self.ds_xr)
         return self._snapshot
 
     def close(self):
         pass
-

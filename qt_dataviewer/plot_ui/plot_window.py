@@ -5,6 +5,7 @@ import time
 from abc import abstractmethod
 from datetime import datetime
 from functools import partial
+from typing import Any
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 
@@ -31,6 +32,7 @@ class EventHandler:
 
 
 N_PLOT_COLUMNS = 4
+
 
 class PlotWindow:
     def setup_ui(self, main_window, event_handler: EventHandler,
@@ -104,7 +106,7 @@ class PlotWindow:
         self.btnPrevious.setToolTip("Load previous dataset (Ctrl+Left)")
         self.btnPrevious.setMinimumSize(QtCore.QSize(80, 0))
         # TODO cleanup interface PlotWindow vs DataViewer.
-        self.btnPrevious.setVisible(self.datalist is not None) # And get_next not abstract.
+        self.btnPrevious.setVisible(self.datalist is not None)  # And get_next not abstract.
         self.btnPrevious.clicked.connect(self._get_previous)
         top_layout.addWidget(self.btnPrevious)
 
@@ -127,7 +129,6 @@ class PlotWindow:
         self._timer_latest.timeout.connect(self._get_latest)
         self._timer_latest.setSingleShot(True)
         self._timer_latest.setInterval(100)
-
 
         self._shortcut_next = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+Right"), self)
         self._shortcut_next.activated.connect(self._get_next)
@@ -261,6 +262,7 @@ class PlotWindow:
 
         # plots panel: Grid
         zelf = self
+
         class MyScrollArea(QtWidgets.QScrollArea):
             def resizeEvent(self,  event: QtGui.QResizeEvent):
                 super().resizeEvent(event)
@@ -385,7 +387,7 @@ class PlotWindow:
     def set_details_info(self, details_list: list[tuple[str, str]]):
         self.info_widget.set_info(details_list)
 
-    def set_snapshot(self, snapshot: None | str | dict[str, any]):
+    def set_snapshot(self, snapshot: None | str | dict[str, Any]):
         if isinstance(snapshot, str):
             tree_data = json.loads(snapshot)
         elif isinstance(snapshot, dict):
@@ -415,8 +417,8 @@ class PlotWindow:
 
     def clear_variables(self):
         if self.current_settings_widget is not None:
-           self.current_settings_widget.deleteLater()
-           self.current_settings_widget = None
+            self.current_settings_widget.deleteLater()
+            self.current_settings_widget = None
         for widget in self._plot_widgets.values():
             widget.deleteLater()
         self._plot_widgets = {}
@@ -502,7 +504,7 @@ class PlotWindow:
 
         if self.cb_only_selected.isChecked():
             selected = self.lb_variables.selectedIndexes()[0].row()
-            plot_index = 0 # TODO not correct with sub-plots (cross-hair slicing)
+            plot_index = 0  # TODO not correct with sub-plots (cross-hair slicing)
             if int(seq_nr) != selected:
                 widget.setVisible(False)
         irow, icol = divmod(plot_index, N_PLOT_COLUMNS)

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Any
 import logging
 
 import numpy as np
@@ -108,7 +109,7 @@ class CoreToolsDataset(Dataset):
             ]
 
     @property
-    def snapshot(self) -> None | str | dict[str, any]:
+    def snapshot(self) -> None | str | dict[str, Any]:
         return self.ds_ct.snapshot
 
     def close(self):

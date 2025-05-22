@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from datetime import datetime
+from typing import Any
 
 import xarray as xr
 
@@ -49,7 +50,7 @@ class Dataset:
 
     @property
     @abstractmethod
-    def snapshot(self) -> None | str | dict[str, any]:
+    def snapshot(self) -> None | str | dict[str, Any]:
         raise NotImplementedError()
 
     def close(self):

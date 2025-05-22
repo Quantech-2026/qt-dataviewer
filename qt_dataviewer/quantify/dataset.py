@@ -3,6 +3,7 @@ import logging
 import os
 import shutil
 from datetime import datetime, timedelta
+from typing import Any
 
 import xarray as xr
 
@@ -24,7 +25,7 @@ class QuantifyDataset(Dataset):
         try:
             ds = self._load_ds()
             self.ds_xr = convert_quantify(ds)
-        except:
+        except Exception:
             logging.error(f"Failed to load {self.ds_description.uid}", exc_info=True)
 
     @property
@@ -58,7 +59,7 @@ class QuantifyDataset(Dataset):
             ]
 
     @property
-    def snapshot(self) -> None | str | dict[str, any]:
+    def snapshot(self) -> None | str | dict[str, Any]:
         if self._snapshot is None:
             try:
                 self._snapshot = self._load_snapshot()
@@ -68,7 +69,6 @@ class QuantifyDataset(Dataset):
                 print(ex)
                 return None
         return self._snapshot
-
 
     def _get_file_mtime(self):
         file_path = self.ds_description.dataset_file_path
@@ -89,6 +89,6 @@ class QuantifyDataset(Dataset):
         else:
             return xr.load_dataset(file_path, engine="h5netcdf")
 
-    def _load_snapshot(self) -> dict[str, any]:
+    def _load_snapshot(self) -> dict[str, Any]:
         with open(os.path.join(self.ds_description.path, "snapshot.json")) as fp:
             return json.load(fp)
