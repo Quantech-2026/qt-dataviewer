@@ -93,7 +93,13 @@ class CoreToolsDatasetStore(DatasetStore):
             return ds_descriptions
 
     def get_dataset_description_for_uid(self, uid: str) -> DatasetDescription | None:
-        ds = load_by_uuid(int(uid))
+        try:
+            ds = load_by_uuid(int(uid))
+        except ValueError as ex:
+            if ex.args[0].startswith("uuid"):
+                return None
+            raise
+
         s = str(ds.exp_uuid)
         uuid_str = s[:-14] + '_' + s[-14:-9] + '_' + s[-9:]
         labels = {
