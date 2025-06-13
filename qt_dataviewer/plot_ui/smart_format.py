@@ -104,7 +104,7 @@ class SmartFormatter:
             units = prefix+units
         return f"{value:#.{d}g} {units}"
 
-    def set_plot_axis(self, axis:AxisItem):
+    def set_plot_axis(self, axis: AxisItem):
         if self.auto_si_prefix != axis.autoSIPrefix:
             axis.enableAutoSIPrefix(self.auto_si_prefix)
             if not self.auto_si_prefix:

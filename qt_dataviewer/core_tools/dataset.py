@@ -52,7 +52,7 @@ class CoreToolsDataset(Dataset):
     def is_complete(self) -> bool:
         ds = self.ds_ct
         if (not ds.completed
-            and datetime.now() - ds.run_timestamp < timedelta(days=2)):
+                and datetime.now() - ds.run_timestamp < timedelta(days=3)):
             for m_param_set in ds:
                 for m_param in m_param_set:
                     param = m_param[1]
@@ -77,7 +77,7 @@ class CoreToolsDataset(Dataset):
 
     def _sync_data(self) -> None:
         if (self._last_sync is None
-            or datetime.now() - self._last_sync > timedelta(milliseconds=100)):
+                or datetime.now() - self._last_sync > timedelta(milliseconds=100)):
             self.ds_ct.sync()
             self._last_sync = datetime.now()
 
@@ -90,7 +90,7 @@ class CoreToolsDataset(Dataset):
                 param = m_param[1]
                 written = param.written()
                 if written is not None:
-                    total +=  written
+                    total += written
         return total
 
     @property
