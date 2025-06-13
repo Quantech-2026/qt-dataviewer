@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Mapping, Sequence
 from numbers import Number
 from typing import Any
@@ -6,6 +7,9 @@ from PyQt5 import QtCore, QtWidgets
 
 from qt_dataviewer.utils.qt_utils import qt_log_exception
 from .smart_format import format_with_units
+
+
+logger = logging.getLogger(__name__)
 
 
 class InfoWidget(QtWidgets.QWidget):
@@ -68,13 +72,7 @@ class InfoWidget(QtWidgets.QWidget):
 
     def set_snapshot(self, snapshot: dict[str, Any] | None):
         self.snapshot = snapshot
-        tree = self.snapshot_tree
-        tree.clear()
-
-        if snapshot:
-            if self._condensed_snapshot:
-                snapshot = reduce_snaphot(snapshot)
-            self._add_items(None, snapshot)
+        self._show_snapshot()
 
     @qt_log_exception
     def _expand_item(self, item: QtWidgets.QTreeWidgetItem):
@@ -122,11 +120,17 @@ class InfoWidget(QtWidgets.QWidget):
     @qt_log_exception
     def _set_condensed_snapshot(self, checked):
         self._condensed_snapshot = checked
+        self._show_snapshot()
+
+    def _show_snapshot(self):
         snapshot = self.snapshot
         if snapshot:
             self.snapshot_tree.clear()
             if self._condensed_snapshot:
-                snapshot = reduce_snaphot(snapshot)
+                try:
+                    snapshot = reduce_snaphot(snapshot)
+                except Exception:
+                    logger.exception("Failed to reduce snapshot")
             self._add_items(None, snapshot)
 
 
@@ -157,9 +161,9 @@ def reduce_snaphot(data):
                     "qcodes.data.data_set.DataSet",
                     "qcodes.data.data_array.DataArray"]:
                 for name in ['submodules', 'parameters', 'value', 'unit', 'label',
-                              'names', 'units', 'labels', 'setpoints',
-                              'setpoint_names', 'setpoint_units', 'setpoint_labels',
-                              'metadata']:
+                             'names', 'units', 'labels', 'setpoints',
+                             'setpoint_names', 'setpoint_units', 'setpoint_labels',
+                             'metadata']:
                     try:
                         value = data[name]
                     except KeyError:
@@ -178,4 +182,3 @@ def reduce_snaphot(data):
             res[key] = reduce_snaphot(value)
         return res
     return data
-
