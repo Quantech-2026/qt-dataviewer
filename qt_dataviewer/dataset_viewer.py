@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime, timedelta
 
 from PyQt5 import QtCore, QtWidgets
 
@@ -106,9 +107,9 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
 
         self.set_dataset_info(
             ds.name,
-            uuid_str = ds.formatted_uid,
-            start_time = ds.collected_datetime,
-            rating = ds.ds_description.rating,
+            uuid_str=ds.formatted_uid,
+            start_time=ds.collected_datetime,
+            rating=ds.ds_description.rating,
             )
         self.set_details_info(ds.info)
         self.set_snapshot(ds.snapshot)
@@ -135,6 +136,11 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
                 plotter.update_data(var)
 
         if not ds.is_complete:
+            if ds.collected_datetime - datetime.now() > timedelta(seconds=20):
+                # slow down updates when measurement is already running for a while.
+                self._timer.setInterval(1000)
+            else:
+                self._timer.setInterval(500)
             self._timer.start()
 
     def closeEvent(self, event):
@@ -163,4 +169,3 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
             return
         ds.ds_description.rating = rating
         self.dataset_rating_changed.emit(ds.ds_description, rating)
-
