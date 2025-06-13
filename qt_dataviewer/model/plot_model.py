@@ -143,7 +143,7 @@ class PlotModel:
         ratio_ratio = (ratio_ratio - 1) / n + 1
         is_log = (
                 0.999 < ratio_ratio < 1.001
-                and (mean_ratio < 0.99 or mean_ratio > 1.01))
+                and (mean_ratio < 0.999 or mean_ratio > 1.001))
         if is_log:
             return 'log' + unsorted_postfix
         # TODO lin_irregular / log_irregular? => auto log
