@@ -141,7 +141,8 @@ class FileDataStore(DatasetStore, DirectoryScanner):
         return None
 
     def _get_dd_from_file(self, entry: os.DirEntry) -> DatasetDescription | None:
-        if entry.name.endswith(".hdf5"):
+        filename, file_extension = os.path.splitext(entry.name)
+        if file_extension in [".hdf5", ".h5", ".nc"]:
             try:
                 return self._get_hdf5_dataset_description(entry)
             except Exception:
