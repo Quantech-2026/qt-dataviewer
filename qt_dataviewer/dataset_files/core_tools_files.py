@@ -79,7 +79,7 @@ def get_core_tools_dataset_description(ds_xr: xr.Dataset, path: str):
         project = attrs["project"]
         sample_name = attrs["sample_name"]
         setup = attrs.get("setup", attrs["set_up"])
-        return CoreToolsDatasetDescription(
+        dd = CoreToolsDatasetDescription(
             uid=str(attrs["uuid"]),
             name=attrs["title"],
             collected_datetime=datetime.fromisoformat(attrs["measurement_time"]),
@@ -91,5 +91,8 @@ def get_core_tools_dataset_description(ds_xr: xr.Dataset, path: str):
                 ),
             path=path,
             ds_xr=ds_xr)
+        if "application" not in attrs:
+            attrs["application"] = "core-tools"
+        return dd
     except KeyError:
         return None
