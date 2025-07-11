@@ -78,9 +78,9 @@ class DataFileBrowser(QtWidgets.QMainWindow):
             "Name": "name",
             "App.": "application",
             }
-        column_definitions=[
-            ("UID", 164),
-            ("Date", 68),
+        column_definitions = [
+            ("UID", ),
+            ("Date", 76),
             ("Time", 58),
             ("Name", ),
             ("App.", 50),

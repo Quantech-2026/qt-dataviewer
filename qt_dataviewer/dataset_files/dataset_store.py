@@ -1,6 +1,5 @@
 import logging
 import os
-import time
 from datetime import datetime
 
 import xarray as xr
@@ -9,6 +8,12 @@ from qt_dataviewer.abstract import DatasetDescription, Dataset, DatasetStore
 from qt_dataviewer.quantify.dataset_description import QuantifyDatasetDescription
 from qt_dataviewer.quantify.dataset import QuantifyDataset
 from qt_dataviewer.xarray_adapters.quantify_xarray import convert_quantify
+
+from .qcodes_files import (
+    QcodesDataset,
+    QcodesDatasetDescription,
+    get_qcodes_dataset_description,
+    )
 
 from .core_tools_files import (
     CoreToolsDatasetDescription,
@@ -68,6 +73,8 @@ class FileDataStore(DatasetStore, DirectoryScanner):
             return QuantifyDataset(dd)
         if isinstance(dd, CoreToolsDatasetDescription):
             return CoreToolsDataset(dd, dd.ds_xr)
+        if isinstance(dd, QcodesDatasetDescription):
+            return QcodesDataset(dd, dd.ds_xr)
         if isinstance(dd, XarrayDatasetDescription):
             return XarrayDataset(dd, dd.ds_xr)
         raise Exception(f"Unknown dataset description {type(dd)}")
@@ -121,13 +128,13 @@ class FileDataStore(DatasetStore, DirectoryScanner):
     def _get_dd_from_dir(self, entry: os.DirEntry) -> DatasetDescription | None:
         try:
             return QuantifyDatasetDescription(entry.name, entry.path)
-        except:
+        except Exception:
             pass
 
         try:
             # check core-tools export: UUID + hdf5
             return self._get_sqdl_upload_dataset_description(entry)
-        except:
+        except Exception:
             raise
             pass
 
@@ -137,12 +144,12 @@ class FileDataStore(DatasetStore, DirectoryScanner):
         if entry.name.endswith(".hdf5"):
             try:
                 return self._get_hdf5_dataset_description(entry)
-            except:
+            except Exception:
                 pass
 
         return None
 
-    def _get_dd_index(self, dd:DatasetDescription) -> tuple[list[DatasetDescription], int]:
+    def _get_dd_index(self, dd: DatasetDescription) -> tuple[list[DatasetDescription], int]:
         path = self._get_parent_directory(dd)
         dd_list = self._dataset_descriptions[path]
         for i, dd_entry in enumerate(dd_list):
@@ -153,8 +160,9 @@ class FileDataStore(DatasetStore, DirectoryScanner):
             raise KeyError("Dataset description not found")
         return dd_list, index
 
-    def _get_parent_directory(self, dd:DatasetDescription) -> str:
-        if isinstance(dd,
+    def _get_parent_directory(self, dd: DatasetDescription) -> str:
+        if isinstance(
+                dd,
                 QuantifyDatasetDescription
                 | CoreToolsDatasetDescription
                 | XarrayDatasetDescription
@@ -180,7 +188,7 @@ class FileDataStore(DatasetStore, DirectoryScanner):
             with xr.open_dataset(hdf5_file) as ds_xr:
                 logging.debug(f"Found sqdl upload 'ds_{dir_name}.hdf5'")
                 return get_core_tools_dataset_description(ds_xr, entry.path)
-        except:
+        except Exception:
             return None
 
     def _get_hdf5_dataset_description(self, entry: os.DirEntry):
@@ -193,24 +201,29 @@ class FileDataStore(DatasetStore, DirectoryScanner):
                 dd = get_core_tools_dataset_description(ds_xr, entry.path)
                 if dd is not None:
                     return dd
-            except:
+            except Exception:
                 pass
 
             try:
                 return get_quantify_dataset_description(ds_xr, entry.path)
-            except:
+            except Exception:
+                pass
+
+            try:
+                return get_qcodes_dataset_description(ds_xr, entry.path)
+            except Exception:
                 pass
 
             attrs = ds_xr.attrs
             collected_datetime = None
             try:
                 if "measurement_time" in attrs:
-                    collected_datetime=datetime.fromisoformat(attrs["measurement_time"])
-            except:
+                    collected_datetime = datetime.fromisoformat(attrs["measurement_time"])
+            except Exception:
                 pass
 
             if collected_datetime is None:
-                collected_datetime=datetime.fromtimestamp(os.path.getmtime(path))
+                collected_datetime = datetime.fromtimestamp(os.path.getmtime(path))
 
             # Return generic xarray
             return XarrayDatasetDescription(
@@ -221,6 +234,7 @@ class FileDataStore(DatasetStore, DirectoryScanner):
                 ds_xr=ds_xr,
                 labels=dict(application=attrs.get("application", "Generic xarray")),
                 )
+
 
 def get_quantify_dataset_description(ds_xr: xr.Dataset, path: str):
     attrs = ds_xr.attrs
