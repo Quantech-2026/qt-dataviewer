@@ -26,6 +26,7 @@ Current implementation includes backends for:
 - sQDL (spin qubit data lake) database.
 - Quantify datasets on a file system.
 - xarray datasets stored in HDF5 (h5netcdf).
+- QCoDeS datasets stored as HDF5 files.
 
 Custom backends for other data sources can easily be created. The components of the
 browser GUI can be configured for the search and retrieval options of the data source.

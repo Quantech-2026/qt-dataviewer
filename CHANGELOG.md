@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.5] - 2025-07-11
+
+- Added basic support for QCoDeS datasets exported as xarray hdf5 file.
+- Improved live updates of long running measurements
+- Automatic log-scale with very small steps, e.g. np.geomspace(1, 10, 2001)
+- Handle Quantify "1d_2_settables_uniformly_spaced": True
+
 ## \[0.4.3] - 2025-05-22
 
 - Ignore strange parameter units during smart formatting.

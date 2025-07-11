@@ -8,7 +8,7 @@ version = "0.4.4" # tbump: version
 authors = [
   { name="Sander de Snoo", email="s.l.desnoo@tudelft.nl" },
 ]
-description = "QuTech Viewer for xarray Datasets. Supports Core-tools and Quantify datasets."
+description = "QuTech Viewer for xarray Datasets. Supports Core-tools, Quantify and QCoDeS datasets."
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
