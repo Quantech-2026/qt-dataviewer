@@ -68,7 +68,7 @@ class InfoWidget(QtWidgets.QWidget):
             widget.deleteLater()
         for irow, (name, value) in enumerate(details_list):
             self.details_layout.addWidget(QtWidgets.QLabel(name), irow, 0)
-            self.details_layout.addWidget(QtWidgets.QLabel(value), irow, 1)
+            self.details_layout.addWidget(QtWidgets.QLabel(str(value)), irow, 1)
 
     def set_snapshot(self, snapshot: dict[str, Any] | None):
         self.snapshot = snapshot
