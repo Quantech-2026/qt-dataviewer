@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.7] - 2025-07-18
+
+- Fixed use time zone in time comparison.
+
 ## \[0.4.5] - 2025-07-11
 
 - Added basic support for QCoDeS datasets exported as xarray hdf5 file.
