@@ -136,7 +136,8 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
                 plotter.update_data(var)
 
         if not ds.is_complete:
-            if ds.collected_datetime - datetime.now() > timedelta(seconds=20):
+            # localize both timezones
+            if ds.collected_datetime.astimezone() - datetime.now().astimezone() > timedelta(seconds=20):
                 # slow down updates when measurement is already running for a while.
                 self._timer.setInterval(1000)
             else:
