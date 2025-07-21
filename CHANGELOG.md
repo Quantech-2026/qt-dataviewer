@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.9] - 2025-07-21
+
+- Improved plotting of pulses containing sine waves, e.g. conveyor shuttling.
+
 ## \[0.4.7] - 2025-07-18
 
 - Fixed use time zone in time comparison.
