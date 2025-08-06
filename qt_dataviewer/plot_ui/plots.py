@@ -1,7 +1,12 @@
 from abc import abstractmethod
+import logging
 
 from PyQt5 import QtWidgets
 from qt_dataviewer.model.plot_model import PlotModel
+
+
+logger = logging.getLogger(__name__)
+
 
 class BasePlot:
     def __init__(self, layout: QtWidgets.QLayout, plot_model: PlotModel):
@@ -11,7 +16,11 @@ class BasePlot:
         self.ndim = plot_model.ndim
         self.one_d_is_vertical = plot_model.one_d_is_vertical
         # TODO add title and action buttons
-        self.create()
+        try:
+            self.create()
+        except Exception:
+            logger.error("Exception creating plot", exc_info=True)
+            raise
 
     @abstractmethod
     def create(self):
