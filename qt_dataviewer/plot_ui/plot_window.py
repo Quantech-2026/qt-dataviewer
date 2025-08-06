@@ -210,6 +210,10 @@ class PlotWindow:
             self._timer_latest.stop()
 
     def create_plots_tab(self, tabs): # @@@ Move to separate class
+        self._current_column_stretches = []
+        self._current_row_height = 0
+        self._current_n_rows = 0
+
         plots_widget = QtWidgets.QWidget()
         self.plots_widget = plots_widget
         # Horizontal: panel, line, grid with plots, spacer
@@ -551,15 +555,32 @@ class PlotWindow:
 
         n_rows = (nplots - 1) // N_PLOT_COLUMNS + 1
         row_height = int(self._plot_scroll_area.width() / 4 * 0.8)
+
         layout = self.plots_layout
+        column_stretches = self._current_column_stretches
         for icol in range(N_PLOT_COLUMNS):
-            layout.setColumnStretch(icol, 1 if icol < nplots else 0)
-        for irow in range(n_rows):
-            layout.setRowMinimumHeight(irow, row_height)
-            layout.setRowStretch(irow, 1)
-        for irow in range(n_rows, layout.rowCount()):
-            layout.setRowMinimumHeight(irow, 0)
-            layout.setRowStretch(irow, 0)
+            col_stretch = 1 if icol < nplots else 0
+            if icol == len(column_stretches):
+                column_stretches.append(col_stretch)
+            else:
+                if col_stretch == column_stretches[icol]:
+                    continue
+                column_stretches[icol] = col_stretch
+            layout.setColumnStretch(icol, col_stretch)
+        if row_height != self._current_row_height:
+            for irow in range(self._current_n_rows):
+                layout.setRowMinimumHeight(irow, row_height)
+            self._current_row_height = row_height
+        if n_rows != self._current_n_rows:
+            # add new rows
+            for irow in range(self._current_n_rows, n_rows):
+                layout.setRowMinimumHeight(irow, row_height)
+                layout.setRowStretch(irow, 1)
+            # "collapse" removed rows:
+            for irow in range(n_rows, self._current_n_rows):
+                layout.setRowMinimumHeight(irow, 0)
+                layout.setRowStretch(irow, 0)
+            self._current_n_rows = n_rows
 
 
 def get_font(point_size):
