@@ -2,7 +2,7 @@ import logging
 import pyqtgraph as pg
 import numpy as np
 
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from matplotlib import colormaps
 
 from qt_dataviewer.utils.qt_utils import qt_log_exception
@@ -22,18 +22,24 @@ class Plot2D(BasePlot):
         # set some image data. This is required for pyqtgraph > 0.11
         self.img.setImage(np.zeros((1, 1)))
 
-        img_view = pg.ImageView(view=self.plot, imageItem=self.img)
-        self.img_view = img_view
-        img_view.setColorMap(get_color_map())
-        img_view.ui.roiBtn.hide()
-        img_view.ui.menuBtn.hide()
-        img_view.ui.histogram.autoHistogramRange()
+        hist = pg.HistogramLUTWidget()
+        hist.setImageItem(self.img)
+        hist.gradient.setColorMap(get_color_map())
+        hist.hide()
+        self.hist = hist
+        self.plot.addItem(self.img)
+        self.widget = pg.PlotWidget(plotItem=self.plot)
+        self.layout_widget = QtWidgets.QWidget()
+        self.h_layout = QtWidgets.QHBoxLayout(self.layout_widget)
+        self.h_layout.addWidget(self.widget)
+        self.h_layout.addWidget(self.hist)
+        self._layout.addWidget(self.layout_widget)
+
         self._plot_mode = 'uniform'
 
         self.label = QtWidgets.QLabel()
         self.label.setAlignment(QtCore.Qt.AlignRight)
 
-        self._layout.addWidget(self.img_view)
         self._layout.addWidget(self.label)
 
         self._log_mode = {}
@@ -46,10 +52,7 @@ class Plot2D(BasePlot):
             logger.error("Failed to create plot", exc_info=True)
 
     def show_sidebar(self, show):
-        if self.img_view is not None:
-            histogram = self.img_view.ui.histogram
-        else:
-            return # TODO find out how to add histogram to PColorMesh
+        histogram = self.hist
         if not show:
             if not histogram.isHidden():
                 histogram.hide()
@@ -121,12 +124,8 @@ class Plot2D(BasePlot):
                 self.img = pg.ImageItem()
                 # set some image data. This is required for pyqtgraph > 0.11
                 self.img.setImage(np.zeros((1, 1)))
-                img_view = pg.ImageView(view=self.plot, imageItem=self.img)
-                self.img_view = img_view
-                img_view.setColorMap(get_color_map())
-                img_view.ui.roiBtn.hide()
-                img_view.ui.menuBtn.hide()
-                img_view.ui.histogram.autoHistogramRange()
+                self.plot.addItem(self.img)
+                self.hist.setImageItem(self.img)
                 self._plot_mode = 'uniform'
 
             log_mode = {}
@@ -184,11 +183,10 @@ class Plot2D(BasePlot):
         # TODO Cleanup !!
         if plot_mode == 'irregular':
             if self._plot_mode != 'irregular':
-                self.img_view.clear()
-                self.plot.removeItem(self.img_view)
-                self.img_view = None
+                self.plot.removeItem(self.img)
                 self.img = None
-                self.mesh = pg.PColorMeshItem()
+                self.mesh = MyPColorMesh()
+                self.hist.setImageItem(self.mesh)
                 self.plot.addItem(self.mesh)
                 self._plot_mode = 'irregular'
 
@@ -237,6 +235,7 @@ class Plot2D(BasePlot):
                 self.mesh.setLevels((np.nanmin(z), np.nanmax(z)), update=False)
 
             self.mesh.setData(x_grid, y_grid, z, autoLevels=False)
+            self.hist.setImageItem(self.mesh)
 
             # Calculate min/max values to show data with small empty border.
             # Default behavior of pyqtgraph is to select 'notural' values on axis.
@@ -266,15 +265,15 @@ class Plot2D(BasePlot):
     @qt_log_exception
     def mouseMoved(self, evt):
         vb = self.plot.vb
-        pos = evt[0]  ## using signal proxy turns original arguments into a tuple
+        pos = evt[0]  # using signal proxy turns original arguments into a tuple
         if self.plot.sceneBoundingRect().contains(pos):
             mousePoint = vb.mapSceneToView(pos)
             x_val = mousePoint.x()
             y_val = mousePoint.y()
             if self._log_mode.get('x'):
-                  x_val = 10**x_val
+                x_val = 10**x_val
             if self._log_mode.get('y'):
-                  y_val = 10**y_val
+                y_val = 10**y_val
 
             data = self._data
             z = data * self._z_formatter.scale
@@ -310,3 +309,36 @@ def get_color_map():
     lineColors = lineColors.astype(int)
     return pg.ColorMap(pos=np.linspace(0.0, 1.0, numofLines), color=lineColors)
 
+
+class MyPColorMesh(pg.PColorMeshItem):
+    """
+    Makes PColorMeshItem compatible with ImageItem for the
+    interaction with the histogram lut.
+
+    The code is a bit hacky, but works for now.
+    """
+
+    def setLookupTable(self, lut, update=True):
+        _lut = lut(n=256)
+        # print(_lut)
+        lut = [
+            QtGui.QColor.fromRgb(rgb[0], rgb[1], rgb[2]) for rgb in _lut
+            ]
+        super().setLookupTable(lut)
+
+    def getHistogram(self):
+        data = self.z
+        mn = np.nanmin(data)
+        mx = np.nanmax(data)
+
+        if mn is None or mx is None:
+            # the data are all-nan
+            return None, None
+        if mx == mn:
+            # degenerate image, arange will fail
+            mx += 1
+        bins = np.linspace(mn, mx, 500)
+
+        data = data[np.isfinite(data)]
+        hist = np.histogram(data, bins=bins)
+        return hist[1][:-1], hist[0]

@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.11] - 2025-08-07
+
+- Improved performance when drawing many 2D plots in one window.
+
 ## \[0.4.9] - 2025-07-21
 
 - Improved plotting of pulses containing sine waves, e.g. conveyor shuttling.
