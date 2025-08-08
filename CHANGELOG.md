@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.12] - 2025-08-08
+
+- Fix missing icons
+
 ## \[0.4.11] - 2025-08-07
 
 - Improved performance when drawing many 2D plots in one window.

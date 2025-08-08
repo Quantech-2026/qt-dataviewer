@@ -29,6 +29,10 @@ license-files = [
     "LICENSE",
 ]
 
+[tool.setuptools.package-data]
+"qt_dataviewer.resources" = ["*.png"]
+
+
 [project.urls]
 # Homepage = "https://example.com"
 Documentation = "https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/blob/main/README.md"
