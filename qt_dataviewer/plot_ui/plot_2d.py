@@ -135,6 +135,7 @@ class Plot2D(BasePlot):
             if y_scale == 'log':
                 log_mode['y'] = True
                 y = np.log10(y)
+            self._log_mode = log_mode
 
             x_limit_num = (x[x_limit[0]], x[x_limit[1]])
             y_limit_num = (y[y_limit[0]], y[y_limit[1]])
@@ -155,15 +156,6 @@ class Plot2D(BasePlot):
             else:
                 y_offset -= 0.5*y_scale
 
-            rect = QtCore.QRectF(
-                x_offset,
-                y_offset,
-                x_scale * len(x),
-                y_scale * len(y),
-            )
-            plot.setLogMode(**log_mode)
-            self._log_mode = log_mode
-
             # flip axis if scan from postive to negative value
             if x_limit_num[0] > x_limit_num[1]:
                 z = z[::-1, :]
@@ -176,7 +168,14 @@ class Plot2D(BasePlot):
             else:
                 y_offset -= y_limit[0]*y_scale
 
-            self.plot.invertY(False)
+            rect = QtCore.QRectF(
+                x_offset,
+                y_offset,
+                x_scale * len(x),
+                y_scale * len(y),
+            )
+            plot.setLogMode(**log_mode)
+            plot.invertY(False)
             self.img.setImage(z)
             self.img.setRect(rect)
 
