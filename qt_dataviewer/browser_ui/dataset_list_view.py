@@ -4,6 +4,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 
 from qt_dataviewer.abstract.dataset_description import DatasetDescription
 from qt_dataviewer.resources.icons import add_icons_to_checkbox, Icons, Images
+from qt_dataviewer.utils.qt_utils import qt_log_exception
 
 
 logger = logging.getLogger(__name__)
@@ -161,6 +162,7 @@ class DatasetListView(QtWidgets.QWidget):
         items[0].setData(ds_description, QtCore.Qt.UserRole)
         self.model.appendRow(items)
 
+    @qt_log_exception
     def set_datasets(self, datasets: list[DatasetDescription]) -> None:
         # TODO @@@ Keep selected dataset (if possible)
 

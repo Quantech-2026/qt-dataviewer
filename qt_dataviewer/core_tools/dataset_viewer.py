@@ -19,7 +19,7 @@ class CoreToolsDatasetViewer(DatasetViewer):
     coretools_upgrade_message_shown = False
 
     def __init__(self, ds: data_set, datalist: DatasetList = None):
-        ds_fullqualname = type(ds).__module__ +'.' + type(ds).__qualname__
+        ds_fullqualname = type(ds).__module__ + '.' + type(ds).__qualname__
         if ds_fullqualname != "core_tools.data.ds.data_set_core.data_set":
             raise Exception(f"Expected coretools data_set got '{ds_fullqualname}'")
 

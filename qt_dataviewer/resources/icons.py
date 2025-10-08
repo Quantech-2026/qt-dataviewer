@@ -20,7 +20,7 @@ def get_icon(icon_name):
 @cache
 def get_image(image_name, height=None):
     icon_path = os.path.dirname(resources.__file__)
-    image =  QtGui.QImage(os.path.join(icon_path, image_name))
+    image = QtGui.QImage(os.path.join(icon_path, image_name))
     if height:
         image = image.scaledToHeight(height, mode=QtCore.Qt.SmoothTransformation)
     return image
