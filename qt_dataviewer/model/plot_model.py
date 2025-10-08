@@ -74,7 +74,7 @@ class PlotModel:
 
         self._add_axes()
 
-        if data.name.endswith('_fraction') or data.attrs['units'] == '%':
+        if data.name.endswith('_fraction') or data.attrs.get('units') == '%':
             self.set_value_range((0, 1))
 
     def _add_axes(self):
@@ -112,7 +112,7 @@ class PlotModel:
         unsorted_postfix = ""
 
         deltas = data[1:] - data[:-1]
-        delta_ratio = np.min(deltas)/np.max(deltas)
+        delta_ratio = np.max(deltas)/np.min(deltas)
         if delta_ratio <= 0:
             logger.warning(f"Unsorted data on axis {axis.name} will be sorted")
             unsorted_postfix = '_unsorted'
@@ -123,18 +123,13 @@ class PlotModel:
         if is_lin:
             return 'lin' + unsorted_postfix
 
-        # Scale ratio by number of points. Accept some irregularity if it is small w.r.t. total axis.
-        # E.g. max step is twice min step gives ratio 0.5. For 1000 points the ratio becomes 0.9995.
-        # It's linear enough to be plotted as linear if the midpoint is also close to the middle of the plot.
-        delta_ratio2 = (delta_ratio - 1) / n + 1
-        mid = (len(data)-1)//2
-        mid_ratio = (data[0]-data[mid])/(data[mid]-data[2*mid])
-        is_lin = (0.9 < mid_ratio < 1.1
-                  and 0.999 < delta_ratio2 < 1.001)
-        if is_lin:
+        # Compare with linear fit. Max difference < mean delta.
+        line = np.linspace(data[0], data[-1], len(data))
+        max_dev = np.max(np.abs(line-data) / np.mean(deltas))
+        if max_dev < 1.0:
             return 'lin' + unsorted_postfix
 
-        # Add small number to void 0.0 in division.
+        # Add small number to avoid 0.0 in division.
         data_finite = data + 1e-100
         ratio = data_finite[:-1] / data_finite[1:]
         # the mean ratio must differ from 1.0
@@ -142,7 +137,7 @@ class PlotModel:
         ratio_ratio = np.min(ratio)/np.max(ratio)
         ratio_ratio = (ratio_ratio - 1) / n + 1
         is_log = (
-                0.999 < ratio_ratio < 1.001
+                0.99 < ratio_ratio < 1.01
                 and (mean_ratio < 0.999 or mean_ratio > 1.001))
         if is_log:
             return 'log' + unsorted_postfix
@@ -344,7 +339,10 @@ class PlotModel:
 
         # NOTE: attributes get lost during averaging.
         for name in ['units', 'long_name']:
-            da.attrs[name] = self._data.attrs[name]
+            try:
+                da.attrs[name] = self._data.attrs[name]
+            except KeyError:
+                pass
 
         # Note: order of Average and FFT matter, because of np.abs() of FFT.
         # First average than FFT.
@@ -354,7 +352,7 @@ class PlotModel:
                 da = apply_fft(da, dim_name)
                 da[dim_name].attrs['log'] = settings.logarithmic
 
-        value_range = (float(da.min()), float(da.max()))
+        value_range = (float(da.min().real), float(da.max().real)) # TODO @@@ handle complex data properly
         if histogram_mode is not None:
             logger.debug("start histogram")
             da = histogram(da, dims + ['histogram'], 50, value_range) # TODO bins, range
@@ -370,7 +368,7 @@ class PlotModel:
             dim_name = settings.data.name
             if settings.mode == AxisMode.Slice:
                 has_slice = True
-                da = da[{dim_name:settings.slice_index}].drop(dim_name)
+                da = da[{dim_name: settings.slice_index}].drop(dim_name)
                 continue
 
         self._var_settings.slice_value_range = value_range if has_slice else None
