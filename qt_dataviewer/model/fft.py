@@ -19,7 +19,7 @@ def apply_fft(da: xr.DataArray, dim_name: str):
     r = (np.abs(r) * 2)
 
     t_data = axis.values
-    freq = rfftfreq(len(t_data), t_data[1] - t_data[0])
+    freq = rfftfreq(len(t_data), np.abs(t_data[1] - t_data[0]))
     units, scale = get_unit_and_scale(axis.attrs['units'])
     if units == 's':
         new_units = 'Hz'
@@ -45,14 +45,16 @@ def apply_fft(da: xr.DataArray, dim_name: str):
         else:
             coords.append(new_axis)
 
+    attrs = {}
+    for name in ["units", "long_name"]:
+        if name in da.attrs:
+            attrs[name] = da.attrs[name]
+
     da2 = xr.DataArray(
-        name = da.name,
-        data = r,
+        name=da.name,
+        data=r,
         coords=coords,
-        attrs = {
-            'units': da.attrs['units'],
-            'long_name': da.attrs['long_name'],
-            }
+        attrs=attrs,
         )
-    da2 = da2.isel({dim_name:slice(1,None)})
+    da2 = da2.isel({dim_name: slice(1, None)})
     return da2
