@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.13] - 2025-10-08
+
+- Fixed negative frequency when scanning high to low.
+- Improved lin/log determination for slightly irregular linear steps.
+- Fixed axis of 2D plot of incomplete scan when scanning high to low.
+- Fixed parsing of hdf5 files in FileBrowser.
+
 ## \[0.4.12] - 2025-08-08
 
 - Fix missing icons
