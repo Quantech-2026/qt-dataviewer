@@ -66,9 +66,14 @@ class Plot1D(BasePlot):
 
 #        if not np.any(np.isfinite(y_data)):
 #            print("Oops", label)
-
-        curve = plot.plot(x_data, y_data, **curve_style, name=label, connect='finite')
-        self.curves.append(curve)
+        if y_data.dtype == complex: # TODO @@@ Properly handle complex data.
+            curve = plot.plot(x_data, y_data.real, **curve_style, name=label+".real", connect='finite')
+            self.curves.append(curve)
+            curve = plot.plot(x_data, y_data.imag, **curve_style, name=label+".imag", connect='finite')
+            self.curves.append(curve)
+        else:
+            curve = plot.plot(x_data, y_data, **curve_style, name=label, connect='finite')
+            self.curves.append(curve)
 
         self.proxy = pg.SignalProxy(plot.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
 
