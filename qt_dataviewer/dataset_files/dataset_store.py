@@ -146,6 +146,7 @@ class FileDataStore(DatasetStore, DirectoryScanner):
             try:
                 return self._get_hdf5_dataset_description(entry)
             except Exception:
+                logger.debug("Could not parse hdf5 file", exc_info=True)
                 pass
 
         return None
@@ -206,12 +207,16 @@ class FileDataStore(DatasetStore, DirectoryScanner):
                 pass
 
             try:
-                return get_quantify_dataset_description(ds_xr, entry.path)
+                dd = get_quantify_dataset_description(ds_xr, entry.path)
+                if dd is not None:
+                    return dd
             except Exception:
                 pass
 
             try:
-                return get_qcodes_dataset_description(ds_xr, entry.path)
+                dd = get_qcodes_dataset_description(ds_xr, entry.path)
+                if dd is not None:
+                    return dd
             except Exception:
                 pass
 
