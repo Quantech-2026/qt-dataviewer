@@ -1,5 +1,5 @@
 
-__version__ = "0.4.15"
+__version__ = "0.4.16"
 
 from qt_dataviewer.dataset_viewer import DatasetViewer
 
