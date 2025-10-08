@@ -13,7 +13,11 @@ class DataArrayPlotter:
         self._plot = None
         self._layout = None
         self._multiline_plot = False
-        self.name = data.attrs['long_name']
+        self.name = data.attrs.get("long_name", data.name)
+        if self.name is None:
+            self.name = "<no name>"
+        if "long_name" not in data.attrs:
+            data.attrs["long_name"] = "<no name>"
         plot_model = PlotModel(data, seq_nr)
         self._plot_model = plot_model
         plot_model.set_plotter(self)
