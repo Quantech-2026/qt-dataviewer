@@ -89,7 +89,6 @@ class PlotSettings(QtWidgets.QWidget):
             # layout.setRowMinimumHeight(irow, 10)
             irow += 1
 
-
         # Histogram
         axis = 'histogram'
         hist_mode = plot_model.histogram_mode
@@ -236,19 +235,21 @@ class Slider:
         slider.valueChanged.connect(self._slider_changed)
         slider.setStyleSheet(
             """
+            /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
             QSlider::groove:horizontal {
                 border: 1px solid #999999;
-                height: 6px; /* the groove expands to the size of the slider by default. by giving it a height, it has a fixed size */
+                height: 6px;
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #B1B1B1, stop:1 #c4c4c4);
                 margin: 0px 0;
                 border-radius: 2px;
             }
 
+            /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
             QSlider::handle:horizontal {
                 background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #b4b4b4, stop:1 #8f8f8f);
                 border: 1px solid #5c5c5c;
                 width: 10px;
-                margin: -6px 0; /* handle is placed by default on the contents rect of the groove. Expand outside the groove */
+                margin: -6px 0;
                 border-radius: 3px;
             }
             QSlider:focus {
@@ -273,7 +274,7 @@ class Slider:
 
     def _set_label_text(self, slice_index):
         settings = self.settings
-        value = settings.data[slice_index] * self.formatter.scale
+        value = self.formatter.without_unit_prefix(settings.data[slice_index])
         value_str = self.formatter.with_units(value, settings.data)
         self.label.setText(value_str)
 

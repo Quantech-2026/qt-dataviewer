@@ -1,4 +1,6 @@
 import logging
+from numbers import Number
+
 import numpy as np
 import xarray as xr
 
@@ -61,20 +63,25 @@ def format_with_units(value: float | None, units: str, precision: int):
 
 class SmartFormatter:
     def __init__(self, attrs):
-        self.label = attrs.get('long_name', '<>')
+        self._label = attrs.get('long_name', '<>')
         units = attrs.get("units", "")
         if units == "no_label":
             units = ""
-        try:
-            self.units, self.scale = _auto_si_units[units]
-        except KeyError:
-            self.scale = 1.0
-            self.auto_si_prefix = False
-            self.units = units
-        else:
-            self.auto_si_prefix = True
 
-    def get_precision(self, data: xr.DataArray):
+        if attrs.get("scale") == "labels":
+            self._prefixscale = None
+            self._auto_si_prefix = False
+            self._units = units
+        else:
+            try:
+                self._units, self._prefixscale = _auto_si_units[units]
+                self._auto_si_prefix = True
+            except KeyError:
+                self._prefixscale = 1.0
+                self._auto_si_prefix = False
+                self._units = units
+
+    def _get_precision(self, data: xr.DataArray):
         n = len(data)
         if n < 2:
             d = 4
@@ -90,24 +97,67 @@ class SmartFormatter:
                 d = 4
         return d
 
-    def with_units(self, value: float, data: xr.DataArray):
+    def without_unit_prefix(self, value: Number | str) -> Number | str:
+        if self._prefixscale is None:
+            # labels
+            return value
+        return value * self._prefixscale
+
+    def with_units(self, value: Number | str, data: xr.DataArray): # @@@ handle complex data?
+        """Return value formatted with units.
+
+        Args:
+            value: value to format in units without SI-prefix
+            data: collections of values to determine range (in units without SI-prefix)
+        """
+        if isinstance(value, str):
+            # labels
+            return value
+
+        if self._units == "|..>":
+            # qubit register
+            value = int(value+0.5)
+            n_qubits = self._get_n_qubits(data)
+            return f"|{value:0{n_qubits}b}>"
+
         if not isinstance(value, float):
             value = float(value)
         # Note: the data can change.
-        d = self.get_precision(data)
-        units = self.units
+        d = self._get_precision(data)
+        units = self._units
         if units in [None, '', '#']:
             return f"{value:#.{d}g}"
-        if self.auto_si_prefix:
+        if self._auto_si_prefix:
             prefixscale, prefix = siScale(value)
             value *= prefixscale
             units = prefix+units
         return f"{value:#.{d}g} {units}"
 
     def set_plot_axis(self, axis: AxisItem):
-        if self.auto_si_prefix != axis.autoSIPrefix:
-            axis.enableAutoSIPrefix(self.auto_si_prefix)
-            if not self.auto_si_prefix:
-                # fix bug in pyqtgraph
+        if self._auto_si_prefix != axis.autoSIPrefix:
+            axis.enableAutoSIPrefix(self._auto_si_prefix)
+            if not self._auto_si_prefix:
+                # workaround for bug in pyqtgraph
                 axis.autoSIPrefixScale = 1.0
-        axis.setLabel(self.label, self.units)
+        axis.setLabel(self._label, self._units)
+
+    def set_labels(self, axis: AxisItem, data: xr.DataArray):
+        if self._units == "|..>":
+            labels = self._get_qubit_labels(data)
+        else:
+            labels = list(data)
+        ticks = [
+            [(i, label) for i, label in enumerate(labels)],
+            [],
+            ]
+        axis.setTicks(ticks)
+
+    def _get_qubit_labels(self, data: xr.DataArray):
+        n_qubits = self._get_n_qubits(data)
+        labels = []
+        for s in range(0, int(np.max(data)+1.5)):
+            labels.append(f"{s:0{n_qubits}b}")
+        return labels
+
+    def _get_n_qubits(self, data: xr.DataArray):
+        return int(np.ceil(np.log2(data.max()+1)))

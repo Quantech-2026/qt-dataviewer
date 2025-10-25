@@ -1,6 +1,7 @@
 import logging
 import time
 from dataclasses import dataclass
+from numbers import Number
 
 import numpy as np
 import xarray as xr
@@ -80,15 +81,11 @@ class PlotModel:
     def _add_axes(self):
         x_axis = None
         y_axis = None
-        # total_axis = len(self._data.coords)
         for i, axis_name in enumerate(self._data.dims):
             data = self._data[axis_name]
             settings = AxisSettings(data, AxisMode.Average)
             self._axis_settings.append(settings)
 
-            # if total_axis > 1 and axis_name == 'repetition':
-            #     self.set_axis_mode(i, AxisMode.Average)
-            #     continue
             if x_axis is None and len(data) > 1:
                 self.set_axis_mode(i, AxisMode.XAxis)
                 x_axis = i
@@ -101,7 +98,14 @@ class PlotModel:
 
     def _detect_axis_scale(self, axis):
         data = axis.data
-        ind = np.argwhere(np.isfinite(data)).T[0]
+        if not issubclass(data.dtype.type, Number):
+            if issubclass(data.dtype.type, str):
+                return "labels"
+            else:
+                raise Exception(f"Unknown dtype {data.dtype} for {axis.name}")
+        if axis.attrs.get('units') == "|..>":
+            return "qubit-register"
+        ind = np.nonzero(np.isfinite(data))[0]
         n = len(ind)
         if n < 3:
             # need at least 3 points to check for logarithmic axis
@@ -128,6 +132,9 @@ class PlotModel:
         max_dev = np.max(np.abs(line-data) / np.mean(deltas))
         if max_dev < 1.0:
             return 'lin' + unsorted_postfix
+
+        if np.any(data <= 0.0):
+            return 'irregular' + unsorted_postfix
 
         # Add small number to avoid 0.0 in division.
         data_finite = data + 1e-100

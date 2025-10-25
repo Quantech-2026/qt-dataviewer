@@ -8,6 +8,7 @@ from matplotlib import colormaps
 from qt_dataviewer.utils.qt_utils import qt_log_exception
 from .plots import BasePlot
 from .smart_format import SmartFormatter
+from .axis_helper import AxisHelper
 
 
 logger = logging.getLogger(__name__)
@@ -81,9 +82,6 @@ class Plot2D(BasePlot):
             data = data.sortby(y_array.name)
             y_array = data[data.dims[1]]
 
-        x = x_array.data
-        y = y_array.data
-
         x_formatter = SmartFormatter(x_array.attrs)
         self._x_formatter = x_formatter
         y_formatter = SmartFormatter(y_array.attrs)
@@ -91,26 +89,17 @@ class Plot2D(BasePlot):
         z_formatter = SmartFormatter(data.attrs)
         self._z_formatter = z_formatter
 
-        x = x * x_formatter.scale
-        y = y * y_formatter.scale
+        x_helper = AxisHelper(x_array, x_scale)
+        y_helper = AxisHelper(y_array, y_scale)
+
         z = data.data
         if not np.any(np.isfinite(z)):
             logger.info("no valid data to plot")
             return
 
         plot = self.plot
-        x_formatter.set_plot_axis(plot.getAxis('bottom'))
-        y_formatter.set_plot_axis(plot.getAxis('left'))
-
-        x_args = np.argwhere(np.isfinite(x)).T[0]
-        y_args = np.argwhere(np.isfinite(y)).T[0]
-        if len(x_args) == 0 or len(y_args) == 0:
-            # No data yet. Nothing to update.
-            return
-        x_limit = [np.min(x_args), np.max(x_args)]
-        y_limit = [np.min(y_args), np.max(y_args)]
-        x_slice = slice(x_limit[0], x_limit[1]+1)
-        y_slice = slice(y_limit[0], y_limit[1]+1)
+        x_helper.set_plot_axis(plot.getAxis('bottom'))
+        y_helper.set_plot_axis(plot.getAxis('left'))
 
         if x_scale == 'irregular' or y_scale == 'irregular':
             plot_mode = 'irregular'
@@ -128,54 +117,33 @@ class Plot2D(BasePlot):
                 self.hist.setImageItem(self.img)
                 self._plot_mode = 'uniform'
 
-            log_mode = {}
-            if x_scale == 'log':
-                log_mode['x'] = True
-                x = np.log10(x)
-            if y_scale == 'log':
-                log_mode['y'] = True
-                y = np.log10(y)
-            self._log_mode = log_mode
+            x_offset, x_width, x_flip = x_helper.get_axis_range()
+            y_offset, y_height, y_flip = y_helper.get_axis_range()
 
-            x_limit_num = (x[x_limit[0]], x[x_limit[1]])
-            y_limit_num = (y[y_limit[0]], y[y_limit[1]])
+            if x_offset is None or y_offset is None:
+                logger.warning("No valid values on axis")
+                return
 
-            x_offset = np.min(x[x_args])
-            y_offset = np.min(y[y_args])
-            with np.errstate(divide='ignore', invalid='ignore'):
-                x_scale = abs(x_limit_num[1] - x_limit_num[0])/(x_limit[1] - x_limit[0])
-                y_scale = abs(y_limit_num[1] - y_limit_num[0])/(y_limit[1] - y_limit[0])
-
-            if x_scale == 0 or np.isnan(x_scale):
-                x_scale = 1
-            else:
-                x_offset -= 0.5*x_scale
-
-            if y_scale == 0 or np.isnan(y_scale):
-                y_scale = 1
-            else:
-                y_offset -= 0.5*y_scale
-
-            # flip axis if scan from postive to negative value
-            if x_limit_num[0] > x_limit_num[1]:
+            if x_flip:
                 z = z[::-1, :]
-                x_offset -= (len(x)-x_limit[1]-1)*x_scale
-            else:
-                x_offset -= x_limit[0]*x_scale
-            if y_limit_num[0] > y_limit_num[1]:
+            if y_flip:
                 z = z[:, ::-1]
-                y_offset -= (len(y)-y_limit[1]-1)*y_scale
-            else:
-                y_offset -= y_limit[0]*y_scale
 
             rect = QtCore.QRectF(
                 x_offset,
                 y_offset,
-                x_scale * len(x),
-                y_scale * len(y),
+                x_width,
+                y_height,
             )
+            # log mode determined by axis data
+            log_mode = {
+                'x': x_scale == 'log',
+                'y': y_scale == 'log',
+                }
+            self._log_mode = log_mode
             plot.setLogMode(**log_mode)
             plot.invertY(False)
+
             self.img.setImage(z)
             self.img.setRect(rect)
 
@@ -189,46 +157,25 @@ class Plot2D(BasePlot):
                 self.plot.addItem(self.mesh)
                 self._plot_mode = 'irregular'
 
+            # log mode determined by plot settings
             log_mode = {
                 'x': x_array.attrs.get('log', False),
                 'y': y_array.attrs.get('log', False),
                 }
-            plot.setLogMode(**log_mode)
             self._log_mode = log_mode
+            plot.setLogMode(**log_mode)
 
-            x_valid = x[x_slice]
-            if log_mode.get('x'):
-                if np.any(x_valid <= 0.0):
-                    logger.warning("Skipping values <= 0 on x-axis")
-                    x_args = np.argwhere(np.isfinite(x) & (x > 0)).T[0]
-                    if len(x_args) == 0:
-                        logger.warning("No data left on x-axis")
-                        return
-                    x_limit = [np.min(x_args), np.max(x_args)]
-                    x_slice = slice(x_limit[0], x_limit[1]+1)
-                    x_valid = x[x_slice]
-                x_valid = np.log10(x_valid)
+            x_edges, ix_valid = x_helper.get_edges(log_mode.get('x'))
+            y_edges, iy_valid = y_helper.get_edges(log_mode.get('y'))
 
-            y_valid = y[y_slice]
-            if log_mode.get('y'):
-                if np.any(y_valid <= 0.0):
-                    logger.warning("Skipping values <= 0 on y-axis")
-                    y_args = np.argwhere(np.isfinite(y) & (y > 0)).T[0]
-                    if len(y_args) == 0:
-                        logger.warning("No data left on y-axis")
-                        return
-                    y_limit = [np.min(y_args), np.max(y_args)]
-                    y_slice = slice(y_limit[0], y_limit[1]+1)
-                    y_valid = y[y_slice]
-                y_valid = np.log10(y_valid)
-
-            x_edges = self._get_edges(x_valid)
-            y_edges = self._get_edges(y_valid)
+            if ix_valid is None or iy_valid is None:
+                logger.warning("No valid values on axis")
+                return
 
             x_grid = x_edges[:, None] * np.ones(len(y_edges))
             y_grid = y_edges * np.ones(len(x_edges))[:, None]
 
-            z = data.data[x_slice, y_slice]
+            z = data.data[ix_valid, iy_valid]
             # determine z-levels.
             if np.any(np.isfinite(z)):
                 self.mesh.setLevels((np.nanmin(z), np.nanmax(z)), update=False)
@@ -244,14 +191,6 @@ class Plot2D(BasePlot):
 
             self.plot.setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
             self.plot.invertY(False)
-
-    def _get_edges(self, x):
-        nx = len(x)+1
-        edges = np.zeros(nx)
-        edges[1:-1] = (x[1:] + x[:-1])/2
-        edges[0] = 2*x[0] - edges[1]
-        edges[-1] = 2*x[-1] - edges[-2]
-        return edges
 
     def _get_axis_limits(self, values):
         x_min = min(values)
@@ -274,22 +213,18 @@ class Plot2D(BasePlot):
             if self._log_mode.get('y'):
                 y_val = 10**y_val
 
-            data = self._data
-            z = data * self._z_formatter.scale
-            x = data[data.dims[0]] * self._x_formatter.scale
-            y = data[data.dims[1]] * self._y_formatter.scale
+            da = self._data
+            z = self._z_formatter.without_unit_prefix(da.data)
+            x = self._x_formatter.without_unit_prefix(da[da.dims[0]].data)
+            y = self._y_formatter.without_unit_prefix(da[da.dims[1]].data)
 
-            # Note: numpy 1.22 has nanargmin, but we're still on python 3.7. # @@@ CHANGE!
-            # So use a[isnan(a)] = np.inf to remove nans
-            d = np.abs(x.data-x_val)
-            d[np.isnan(d)] = np.inf
-            ix = d.argmin()
-            d = np.abs(y.data-y_val)
-            d[np.isnan(d)] = np.inf
-            iy = d.argmin()
-            value = z.data[ix, iy]
-            x_val = x.data[ix]
-            y_val = y.data[iy]
+            d = np.abs(x-x_val)
+            ix = np.nanargmin(d)
+            d = np.abs(y-y_val)
+            iy = np.nanargmin(d)
+            value = z[ix, iy]
+            x_val = x[ix]
+            y_val = y[iy]
 
             x_str = self._x_formatter.with_units(x_val, x)
             y_str = self._y_formatter.with_units(y_val, y)
