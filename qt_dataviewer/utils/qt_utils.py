@@ -4,7 +4,7 @@ import threading
 import traceback
 
 import pyqtgraph as pg
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtWidgets, QtGui
 from PyQt5.QtWidgets import QMessageBox
 
 try:
@@ -122,7 +122,7 @@ def qt_init(style: str | None = None) -> bool:
 
     # Only change if still default settings. Do not change is already changed
     if pg.getConfigOption('foreground') == 'd' and pg.getConfigOption('background') == 'k':
-        pg.setConfigOption('background', None)
+        pg.setConfigOption('background', QtGui.QColor(240, 240, 240))
         pg.setConfigOption('foreground', 'k')
 
     return _qt_app is not None
@@ -137,11 +137,11 @@ def qt_set_darkstyle():
         return
     dark_stylesheet = qdarkstyle.load_stylesheet()
     # patch qdarkstyle for cropped x-label on 2D graphics.
-    dark_stylesheet +=r'''
-QGraphicsView {
-    padding: 0px;
-}
-'''
+    dark_stylesheet += r'''
+        QGraphicsView {
+            padding: 0px;
+        }
+        '''
     qt_app.setStyleSheet(dark_stylesheet)
     pg.setConfigOption('background', 'k')
     pg.setConfigOption('foreground', 'gray')
