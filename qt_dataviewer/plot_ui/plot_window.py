@@ -349,11 +349,15 @@ class PlotWindow:
                 pass
             else:
                 if selected:
-                    widget.setStyleSheet('QFrame {border-width: 0} QFrame[frameShape="2"] {border-width: 2}')
-                    widget.layout().setContentsMargins(4, 4, 6, 4)
+                    # Use style sheet for dark mode
+                    widget.setStyleSheet('QFrame {border-width: 0} QFrame[frameShape="2"] {border-width: 3px}')
+                    # Use line width for normal mode
+                    widget.setLineWidth(3)
+                    widget.layout().setContentsMargins(3, 3, 5, 3)
                     self._plot_scroll_area.ensureWidgetVisible(widget)
                 else:
-                    widget.setStyleSheet('QFrame {border-width: 0} QFrame[frameShape="2"] {border-width: 1}')
+                    widget.setStyleSheet('QFrame {border-width: 0} QFrame[frameShape="2"] {border-width: 1px}')
+                    widget.setLineWidth(1)
                     widget.layout().setContentsMargins(5, 5, 7, 5)
 
     @qt_log_exception
