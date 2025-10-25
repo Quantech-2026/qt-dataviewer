@@ -8,7 +8,12 @@ def histogram(da: xr.DataArray,
               bin_range: tuple[float, float] | None = None) -> xr.DataArray:
 
     if bin_range is None:
-        bin_range = (float(da.min()), float(da.max()))
+        mn = float(da.min())
+        mx = float(da.max())
+    else:
+        mn, mx = bin_range
+    step = (mx-mn)/nbins
+    bin_range = (mn-step/2, mx+step/2)
     binedges = np.linspace(bin_range[0], bin_range[1], nbins+1)
     bincenters = (binedges[1:] + binedges[:-1])/2
 
