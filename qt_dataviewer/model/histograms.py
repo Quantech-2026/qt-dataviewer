@@ -1,6 +1,7 @@
 import numpy as np
 import xarray as xr
 
+
 def histogram(da: xr.DataArray,
               dims: list[str],
               nbins: int,
@@ -8,7 +9,7 @@ def histogram(da: xr.DataArray,
 
     if bin_range is None:
         bin_range = (float(da.min()), float(da.max()))
-    binedges  = np.linspace(bin_range[0], bin_range[1], nbins+1)
+    binedges = np.linspace(bin_range[0], bin_range[1], nbins+1)
     bincenters = (binedges[1:] + binedges[:-1])/2
 
     if dims[-1] != 'histogram':
@@ -18,8 +19,8 @@ def histogram(da: xr.DataArray,
     res = xr.Dataset()
     res.coords['histogram'] = bincenters
     res.coords['histogram'].attrs = {
-            'units': da.attrs['units'],
-            'long_name': da.attrs['long_name'],
+            'units': da.attrs.get('units'),
+            'long_name': da.attrs.get('long_name'),
             'scale': 'lin',
             }
 
