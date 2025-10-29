@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.17] - 2025-10-29
+
+- Plot labels and qubit-registers on axis.
+- Copy with correct background color.
+- Added Duration to info panel.
+
 ## \[0.4.15] - 2025-10-08
 
 - Fixed negative frequency when scanning high to low.
