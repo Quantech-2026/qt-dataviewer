@@ -102,10 +102,30 @@ class CoreToolsDataset(Dataset):
     @property
     def info(self) -> list[tuple[str, str]]:
         labels = self.ds_description.labels
+        start_time = self.ds_ct.run_timestamp
+        end_time = self.ds_ct.completed_timestamp
+        duration_str = "-"
+        try:
+            if end_time is not None:
+                duration = (end_time - start_time).total_seconds()
+                if duration >= 0:
+                    s = duration % 60
+                    m = int(duration) // 60
+                    h, m = divmod(m, 60)
+                    if h > 0:
+                        duration_str = f"{h}h:{m:02d}m:{int(s):02d}s"
+                    elif m > 0:
+                        duration_str = f"{m:2d}m:{int(s):02d}s"
+                    else:
+                        duration_str = f"{s:.2f}s"
+        except Exception:
+            logger.error("Could not get duration", exc_info=True)
+            duration_str = "-"
         return [
             ("Project", labels.get("project")),
             ("Setup", labels.get("setup")),
             ("Sample", labels.get("sample")),
+            ("Duration", duration_str),
             ]
 
     @property

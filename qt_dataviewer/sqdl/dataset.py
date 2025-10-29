@@ -42,7 +42,7 @@ class SqdlDataset(Dataset):
 
     def _get_changed_file(self) -> File | None:
         if (self._last_refresh is None
-            or datetime.now() - self._last_refresh > timedelta(milliseconds=100)):
+                or datetime.now() - self._last_refresh > timedelta(milliseconds=100)):
             sqdl_ds = self.ds_description.sqdl_ds.refresh()
             self.ds_description.sqdl_ds = sqdl_ds
             self._last_refresh = datetime.now()
@@ -117,7 +117,33 @@ class SqdlDataset(Dataset):
             ]
         labels = self.ds_description.labels
 
-        return [
+        start_time = self.ds_xr.attrs.get("measurement_time")
+        end_time = self.ds_xr.attrs.get("completed_time")
+        duration_str = "-"
+        try:
+            if end_time is not None and start_time is not None:
+                end_time = datetime.fromisoformat(end_time)
+                start_time = datetime.fromisoformat(start_time)
+                duration = (end_time - start_time).total_seconds()
+                if duration >= 0:
+                    s = duration % 60
+                    m = int(duration) // 60
+                    h, m = divmod(m, 60)
+                    if h > 0:
+                        duration_str = f"{h}h:{m:02d}m:{int(s):02d}s"
+                    elif m > 0:
+                        duration_str = f"{m:2d}m:{int(s):02d}s"
+                    else:
+                        duration_str = f"{s:.2f}s"
+        except Exception:
+            logger.error("Could not get duration", exc_info=True)
+            duration_str = "-"
+
+        info = [
             (name, labels.get(key, "-"))
             for name, key in info_keys
             ]
+        info.append(
+            ("Duration", duration_str)
+            )
+        return info
