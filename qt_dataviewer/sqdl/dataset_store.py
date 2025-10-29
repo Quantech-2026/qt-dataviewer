@@ -31,7 +31,7 @@ class SqdlDatasetStore(DatasetStore):
         self._client.login()
         try:
             self.user_name = self._client.user_info.get('name')
-        except:
+        except Exception:
             self.user_name = None
         self.s3_session = requests.Session()
 
@@ -124,6 +124,12 @@ class SqdlDatasetStore(DatasetStore):
 
     @qt_log_exception
     def get_dataset_description_for_uid(self, uid: str) -> DatasetDescription | None:
+        try:
+            # try to remove "_" from input
+            uid_value = int(uid)
+            uid = str(uid_value)
+        except Exception:
+            pass
         try:
             ds = self.scope.retrieve_dataset_from_uid(uid)
         except ObjectNotFoundException:
@@ -255,7 +261,7 @@ class SqdlDatasetStore(DatasetStore):
                 new_datasets = list(self.scope.search_datasets(
                         dataset_name_contains=self._filter.name_contains,
                         rating=filter_rating,
-                        min_id = self._max_dataset_id,
+                        min_id=self._max_dataset_id,
                         data_identifiers=data_identifiers,
                         limit=1000,
                         ))
@@ -382,4 +388,3 @@ class SqdlDatasetStore(DatasetStore):
     # add caching of files? Only if completed.
     # .qt_viewer/cache/cache.db; files
     # uuid, last_accessed, size, write_cursors:dict[id,cursor]
-
