@@ -295,8 +295,8 @@ class PulsesWidget(QtWidgets.QWidget):
 
                 x = x + [seg_dict['start']+t0] + list(x_ar) + [seg_dict['stop']+t0]
                 y = y + [0] + list(y_ar) + [0]
-                x_plot = x
-                y_plot = y
+                x_plot += x
+                y_plot += y
             t0 += end_time
 
         legend_name = name[:-7]
