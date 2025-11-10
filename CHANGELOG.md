@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.4.19] - 2025-11-10
+
+- Fixed plotting of MW pulses of sequence with multiple segments.
+- Fixed 2Dplot of irregular data (broken in previous release)
+
 ## \[0.4.17] - 2025-10-29
 
 - Plot labels and qubit-registers on axis.
