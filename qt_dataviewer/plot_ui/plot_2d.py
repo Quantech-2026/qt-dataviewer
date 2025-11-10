@@ -165,17 +165,17 @@ class Plot2D(BasePlot):
             self._log_mode = log_mode
             plot.setLogMode(**log_mode)
 
-            x_edges, ix_valid = x_helper.get_edges(log_mode.get('x'))
-            y_edges, iy_valid = y_helper.get_edges(log_mode.get('y'))
+            x_edges, x_slice = x_helper.get_edges(log_mode.get('x'))
+            y_edges, y_slice = y_helper.get_edges(log_mode.get('y'))
 
-            if ix_valid is None or iy_valid is None:
+            if x_slice is None or y_slice is None:
                 logger.warning("No valid values on axis")
                 return
 
             x_grid = x_edges[:, None] * np.ones(len(y_edges))
             y_grid = y_edges * np.ones(len(x_edges))[:, None]
 
-            z = data.data[ix_valid, iy_valid]
+            z = data.data[x_slice, y_slice]
             # determine z-levels.
             if np.any(np.isfinite(z)):
                 self.mesh.setLevels((np.nanmin(z), np.nanmax(z)), update=False)

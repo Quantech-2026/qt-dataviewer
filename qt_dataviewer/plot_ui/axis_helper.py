@@ -63,15 +63,16 @@ class AxisHelper:
     def get_edges(self, is_log: bool) -> tuple[NDArray, NDArray] | tuple[None, None]:
         x = self.x
         if is_log:
-            ix_valid = np.nonzero((x > 0) & np.isfinite(x))
+            ix_valid = np.nonzero((x > 0) & np.isfinite(x))[0]
             with np.errstate(divide='ignore', invalid='ignore'):
                 x = np.log10(x)
         else:
-            ix_valid = np.nonzero(np.isfinite(x))
+            ix_valid = np.nonzero(np.isfinite(x))[0]
         n_valid = len(ix_valid)
         if n_valid == 0:
             return None, None
-        xv = x[ix_valid]
+        x_slice = slice(min(ix_valid), max(ix_valid)+1)
+        xv = x[x_slice]
 
         if n_valid == 1:
             edges = np.array([xv[0]-0.5, xv[0]+0.5])
@@ -81,4 +82,5 @@ class AxisHelper:
             edges[1:-1] = (xv[1:] + xv[:-1])/2
             edges[0] = 1.5*xv[0] - 0.5*xv[1]
             edges[-1] = 1.5*xv[-1] - 0.5*xv[-2]
-        return edges, ix_valid
+
+        return edges, x_slice
