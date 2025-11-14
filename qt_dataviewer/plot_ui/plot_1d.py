@@ -36,7 +36,6 @@ class Plot1D(BasePlot):
         self.curves = []
 
         plot = self.plot
-        # plot.setBackground('white')
         # plot.addLegend()
         plot.showGrid(True, True)
 
@@ -141,7 +140,7 @@ class Plot1D(BasePlot):
     def mouseMoved(self, evt):
         vb = self.plot.getPlotItem().vb
         pos = evt[0]  # using signal proxy turns original arguments into a tuple
-        if self.plot.sceneBoundingRect().contains(pos):
+        if vb.sceneBoundingRect().contains(pos):
             mousePoint = vb.mapSceneToView(pos)
             x_val = mousePoint.x()
             y_val = mousePoint.y()
