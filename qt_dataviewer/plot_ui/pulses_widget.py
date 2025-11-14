@@ -66,6 +66,12 @@ class PulsesWidget(QtWidgets.QWidget):
             pulse_plot.getAxis('bottom').enableAutoSIPrefix(False)
             pulse_plot.setLabel('left', 'Voltage', 'mV')
             pulse_plot.setLabel('bottom', 'Time', 'ns')
+
+            self.proxy = pg.SignalProxy(pulse_plot.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
+            self._time_label = pg.LabelItem("-- ns")
+            self._time_label.setParentItem(pulse_plot.getPlotItem().vb)
+            self._time_label.anchor(itemPos=(0.0, 0.0), parentPos=(0.0, 0.0), offset=(35, 10))
+
             self.pulse_plot = pulse_plot
 
             pc_keys = [k for k, v in pulses.items() if k.startswith('pc') and v is not None]
@@ -86,6 +92,14 @@ class PulsesWidget(QtWidgets.QWidget):
             self.pulses_layout.addWidget(error_message, 1)
         finally:
             tab_widget.setCursor(QtCore.Qt.ArrowCursor)
+
+    def mouseMoved(self, evt):
+        viewbox = self.pulse_plot.getPlotItem().vb
+        pos = evt[0]  # using signal proxy turns original arguments into a tuple
+        if viewbox.sceneBoundingRect().contains(pos):
+            mousePoint = viewbox.mapSceneToView(pos)
+            x_val = mousePoint.x()
+            self._time_label.setText(f"{x_val:.0f} ns")
 
     def _plot_new_format(self, pulses, pc_keys, gate_keys):
         end_times = {}
