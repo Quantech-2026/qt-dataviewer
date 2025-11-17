@@ -83,8 +83,12 @@ class Plot1D(BasePlot):
 
         x_data = self._x_formatter.without_unit_prefix(x.data)
         y_data = self._y_formatter.without_unit_prefix(y.data)
-        x_data = self._fix_labels(x_data, self._x_formatter, self.plot.getAxis('bottom'))
-        y_data = self._fix_labels(y_data, self._y_formatter, self.plot.getAxis('left'))
+        x_axis = self._fix_labels(x_data, self._x_formatter, self.plot.getAxis('bottom'))
+        y_axis = self._fix_labels(y_data, self._y_formatter, self.plot.getAxis('left'))
+        if self.one_d_is_vertical:
+            y_data = y_axis
+        else:
+            x_data = x_axis
 
         self.x_data = x_data
         self.y_data = y_data
