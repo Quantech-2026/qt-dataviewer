@@ -6,6 +6,7 @@ from typing import Any, Self
 from .base import BaseClient, BaseScope, BaseDataset, BaseFile
 from .exceptions import DatasetNotFoundException
 
+import requests
 from sqdl_client.client import QDLClient as Client
 from sqdl_client.api import v1
 from sqdl_client.exceptions import ObjectNotFoundException
@@ -16,6 +17,15 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SqdlFile(BaseFile):
+
+    def download(self, session: requests.Session | None = None) -> bytes | None:
+        if session is not None:
+            response = session.get(url=self.presigned_url)
+        else:
+            response = requests.get(url=self.presigned_url)
+
+        response.raise_for_status()
+        return response.content
 
     @staticmethod
     def from_response(response: v1.file.File) -> Self:
@@ -86,7 +96,7 @@ class SqdlScope(BaseScope):
         data_identifiers: dict[str, str | list[str]] | None = None,
         limit: int = 10,
         offset: int = 0,
-    ) -> list[date]:
+    ) -> list[str]:
         return self.ref.search_dates(
             dataset_name_contains=dataset_name_contains,
             rating=rating,
@@ -148,7 +158,7 @@ class SqdlClient(BaseClient):
 
     @property
     def user_info(self) -> dict[str, str]:
-        self._client.user_info.get("name")
+        return self._client.user_info
 
     def list_scopes(self) -> list[SqdlScope]:
         resp = self._client.api.scope.list()

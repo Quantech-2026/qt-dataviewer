@@ -27,6 +27,7 @@ class SqdlDatasetStore(DatasetStore):
 
     def __init__(self, ):
         super().__init__(is_dynamic=True)
+        logger.debug("Starting SQDL DatasetStore")
         self.scope_name = None
         self.scope = None
         self._init_scope()
@@ -36,9 +37,12 @@ class SqdlDatasetStore(DatasetStore):
         self._client.login()
 
         try:
-            self.user_name = self._client.user_info.get('name')
-        except Exception:
+            info = self._client.user_info
+            logger.debug(f"user info: {info}")
+            self.user_name = info.get("name")  # todo: verify that qdl shares key
+        except Exception as exc:
             self.user_name = None
+            logger.error(exc)
         self.s3_session = requests.Session()
 
         # Use single shot timer and restart timer after performing queries

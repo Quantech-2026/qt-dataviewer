@@ -5,6 +5,8 @@ from typing import Self, Any
 
 from qt_dataviewer.abstract.dataset_description import DatasetDescription
 
+import requests
+
 
 @dataclass
 class BaseFile(ABC):
@@ -13,6 +15,10 @@ class BaseFile(ABC):
     presigned_url: str
     has_data: bool
     is_mutable: bool
+
+    @abstractmethod
+    def download(self, session: requests.Session | None = None) -> bytes | None:
+        pass
 
 
 @dataclass

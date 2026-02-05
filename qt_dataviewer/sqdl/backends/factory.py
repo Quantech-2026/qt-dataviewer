@@ -1,5 +1,5 @@
 from .base import BaseClient
-from .qdl import QDLClient
+from .qdl import QdlClient
 from .sqdl import SqdlClient
 
 
@@ -11,6 +11,6 @@ class ClientFactory():
             case "sqdl":
                 return SqdlClient()
             case "qdl":
-                return QDLClient()
+                return QdlClient()
             case _:
                 raise ValueError(f"Unfamiliar backend type: {backend}")

@@ -10,6 +10,8 @@ from .backends.base import DatasetDescriptionWithReference, BaseFile
 from qt_dataviewer.abstract.dataset import Dataset
 from qt_dataviewer.xarray_adapters.coretools_xarray import get_snapshot
 from qt_dataviewer.utils.qt_utils import qt_show_exception
+from requests import Session
+from requests.exceptions import HTTPError
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +20,7 @@ class SqdlDataset(Dataset):
     def __init__(
             self,
             ds_description: DatasetDescriptionWithReference,
-            s3session
+            s3session: Session,
     ):
         super().__init__(ds_description)
         self.uid = int(ds_description.uid)
@@ -35,8 +37,7 @@ class SqdlDataset(Dataset):
             file = self._get_changed_file()
             if file is None:
                 return
-            url = file.presigned_url
-            self.ds_xr = self._load_hdf5_from_url(url)
+            self.ds_xr = self._load_hdf5_from_url(file)
             self.is_mutable = file.is_mutable
             self.file_md5_sum = file.md5_sum
         except Exception as ex:
@@ -74,26 +75,32 @@ class SqdlDataset(Dataset):
 
         return file
 
-    def _load_hdf5_from_url(self, url):
+    def _load_hdf5_from_url(self, file) -> xr.Dataset | None:
         t0 = time.perf_counter()
-        resp = self._s3session.request("GET", url)
-        if resp.status_code == 200:
-            length = len(resp.content)
-            t1 = time.perf_counter()
-
-            with io.BytesIO(resp.content) as fp:
-                res = xr.load_dataset(fp, engine="h5netcdf")
-                t2 = time.perf_counter()
-
-            logger.debug(
-                f"Loaded HDF5 {(t1-t0)*1000:.1f} ms {length//1024} kB."
-                f" Converted in {(t2-t1)*1000:.1f} ms"
+        try:
+            content = file.download(self._s3session)
+        except HTTPError as exc:
+            logger.warning(
+                f"Failed to load hdf5 (status={exc.response.status_code})"
             )
-            return res
-        else:
-            logger.warning(f"Failed to load hdf5 (status={resp.status_code})")
-            logger.info(f"{resp.content}")
+            logger.info(f"{exc.response.content}")
             return None
+
+        if content is None:
+            return None
+
+        length = len(content)
+
+        t1 = time.perf_counter()
+        with io.BytesIO(content) as fp:
+            res = xr.load_dataset(fp, engine="h5netcdf")
+            t2 = time.perf_counter()
+
+        logger.debug(
+            f"Loaded HDF5 {(t1-t0)*1000:.1f} ms {length//1024} kB."
+            f" Converted in {(t2-t1)*1000:.1f} ms"
+        )
+        return res
 
     @property
     def data(self) -> xr.Dataset:
