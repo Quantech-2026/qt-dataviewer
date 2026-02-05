@@ -1,3 +1,4 @@
+import os
 import copy
 import logging
 import time
@@ -6,14 +7,17 @@ from datetime import date, timedelta
 
 import requests
 from qtpy.QtCore import QTimer
-from sqdl_client.client import QDLClient
-from sqdl_client.exceptions import ObjectNotFoundException
 
 from qt_dataviewer.abstract import (
     Dataset, DatasetDescription, DatasetStore, Filter
-    )
-from qt_dataviewer.utils.qt_utils import qt_log_exception, qt_show_exception, qt_show_error
+)
+from qt_dataviewer.utils.qt_utils import (
+    qt_log_exception, qt_show_exception, qt_show_error
+)
 from .dataset import SqdlDataset
+from .backends.base import DatasetDescriptionWithReference
+from .backends.factory import ClientFactory
+from .backends.exceptions import DatasetNotFoundException
 
 
 logger = logging.getLogger(__name__)
@@ -27,8 +31,10 @@ class SqdlDatasetStore(DatasetStore):
         self.scope = None
         self._init_scope()
 
-        self._client = QDLClient()
+        backend_type = os.environ.get("QDL_TEST", "sqdl")  # note: testing solution
+        self._client = ClientFactory.create_client(backend_type)
         self._client.login()
+
         try:
             self.user_name = self._client.user_info.get('name')
         except Exception:
@@ -49,13 +55,14 @@ class SqdlDatasetStore(DatasetStore):
     def set_scope(self, scope_name):
         self.scope_name = scope_name
         if scope_name:
-            sqdl_api = self._client.api
             try:
-                self.scope = sqdl_api.scope.retrieve_from_name(scope_name)
+                self.scope = self._client.retrieve_scope_from_name(scope_name)
             except Exception as ex:
-                qt_show_exception("Failure retrieving scope",
-                                  ex,
-                                  extra_line=f"Are you authorized for scope '{scope_name}'?")
+                qt_show_exception(
+                    "Failure retrieving scope",
+                    ex,
+                    extra_line=f"Are you authorized for scope '{scope_name}'?"
+                )
                 self.scope = None
                 self.scope_name = None
         else:
@@ -68,16 +75,17 @@ class SqdlDatasetStore(DatasetStore):
         self.refresh()
 
     def get_scopes(self):
-        sqdl_api = self._client.api
         try:
-            sqdl_scopes = sqdl_api.scope.list()
+            sqdl_scopes = self._client.list_scopes()
             if not sqdl_scopes:
-                qt_show_error("No scopes found",
-                              "No scopes found. Ask administrator to assign scopes.")
+                qt_show_error(
+                    "No scopes found",
+                    "No scopes found. Ask administrator to assign scopes."
+                )
         except Exception as ex:
             qt_show_exception("Failure retrieving scopes", ex)
             return []
-        return sorted(scope.name for scope in sqdl_scopes)
+        return sorted(scope.name for scope in sqdl_scopes)  # todo-marker
 
     def _init_scope(self):
         self._filter = Filter()
@@ -126,27 +134,38 @@ class SqdlDatasetStore(DatasetStore):
     def get_dataset_description_for_uid(self, uid: str) -> DatasetDescription | None:
         try:
             # try to remove "_" from input
+            logger.debug(f"examples - stripping underscope from: '{uid}'")
+            # why not s.replace("_", "")?
             uid_value = int(uid)
             uid = str(uid_value)
         except Exception:
             pass
         try:
+
             ds = self.scope.retrieve_dataset_from_uid(uid)
-        except ObjectNotFoundException:
+        except DatasetNotFoundException:
             return None
         except Exception as ex:
             # TODO @@@ Consistent exception handling: Now gives 2 message boxes: HTTP Error and Dataset not found
             qt_show_exception("Failure loading dataset", ex)
             return None
 
-        ds_description = DatasetDescription(
-                ds.uid,
-                ds.name,
-                ds.date_collected,
-                rating=ds.rating,
-                labels=ds.metadata,
-                )
-        ds_description.sqdl_ds = ds # @@@ YUK!
+        ds_description = DatasetDescriptionWithReference(
+            ds.uid,
+            ds.name,
+            ds.date_collected,
+            rating=ds.rating,
+            labels=ds.metadata,
+            dataset_reference=ds
+        )
+        # ds_description = DatasetDescription(  # todo-marker
+        #         ds.uid,
+        #         ds.name,
+        #         ds.date_collected,
+        #         rating=ds.rating,
+        #         labels=ds.metadata,
+        #         )
+        # ds_description.sqdl_ds = ds # @@@ YUK!
         return ds_description
 
     def _fetch_labels(self):
@@ -177,7 +196,7 @@ class SqdlDatasetStore(DatasetStore):
 
         dates = [
             date.fromisoformat(d)
-            for d in self.scope.search_dates(
+            for d in self.scope.search_dates(  # todo-marker
                     dataset_name_contains=self._filter.name_contains,
                     rating=filter_rating,
                     data_identifiers=data_identifiers,
@@ -203,7 +222,7 @@ class SqdlDatasetStore(DatasetStore):
         filter_rating = self._filter.rating
         if filter_rating is None:
             filter_rating = 0
-        datasets = self.scope.search_datasets(
+        datasets = self.scope.search_datasets(  # todo-marker
                 collected_since=date.isoformat(),
                 collected_until=(date+timedelta(1)).isoformat(),
                 dataset_name_contains=self._filter.name_contains,
@@ -223,12 +242,12 @@ class SqdlDatasetStore(DatasetStore):
             ds_descriptions.append(ds_description)
         t1 = time.perf_counter()
         logger.debug(f"Fetched {len(ds_descriptions)} in {(t1-t0):.3f} s")
-        ds_descriptions.sort(key=lambda ds: ds.collected_datetime, reverse=True)
+        ds_descriptions.sort(key=lambda ds: ds.collected_datetime, reverse=True)  # todo-marker
         return ds_descriptions
 
     @qt_log_exception
     def get_dataset(self, ds_description: DatasetDescription) -> Dataset:
-        return SqdlDataset(ds_description, self.s3_session)
+        return SqdlDataset(ds_description, self.s3_session)  # todo-marker
 
     @qt_log_exception
     def _check_for_updates(self):
@@ -236,7 +255,7 @@ class SqdlDatasetStore(DatasetStore):
             return
         try:
             t0 = time.perf_counter()
-            max_dataset_id = self.scope.get_max_dataset_id()
+            max_dataset_id = self.scope.get_max_dataset_id()  # todo-marker
             if max_dataset_id > self._max_dataset_id:
                 t1 = time.perf_counter()
                 data_identifiers = {}
@@ -258,7 +277,7 @@ class SqdlDatasetStore(DatasetStore):
                 filter_rating = self._filter.rating
                 if filter_rating is None:
                     filter_rating = 0
-                new_datasets = list(self.scope.search_datasets(
+                new_datasets = list(self.scope.search_datasets(  # todo-marker
                         dataset_name_contains=self._filter.name_contains,
                         rating=filter_rating,
                         min_id=self._max_dataset_id,
