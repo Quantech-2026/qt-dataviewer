@@ -4,9 +4,9 @@ import time
 import logging
 
 import xarray as xr
-from sqdl_client.api.v1.file import File
 
-from qt_dataviewer.abstract.dataset_description import DatasetDescription
+from .backends.base import DatasetDescriptionWithReference, BaseFile
+
 from qt_dataviewer.abstract.dataset import Dataset
 from qt_dataviewer.xarray_adapters.coretools_xarray import get_snapshot
 from qt_dataviewer.utils.qt_utils import qt_show_exception
@@ -15,9 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 class SqdlDataset(Dataset):
-    def __init__(self,
-                 ds_description: DatasetDescription,
-                 s3session):
+    def __init__(
+            self,
+            ds_description: DatasetDescriptionWithReference,
+            s3session
+    ):
         super().__init__(ds_description)
         self.uid = int(ds_description.uid)
         self._s3session = s3session
@@ -40,28 +42,36 @@ class SqdlDataset(Dataset):
         except Exception as ex:
             qt_show_exception("Dataset load failed", ex)
 
-    def _get_changed_file(self) -> File | None:
-        if (self._last_refresh is None
-                or datetime.now() - self._last_refresh > timedelta(milliseconds=100)):
-            sqdl_ds = self.ds_description.sqdl_ds.refresh()
-            self.ds_description.sqdl_ds = sqdl_ds
+    def _get_changed_file(self) -> BaseFile | None:
+        if (
+            self._last_refresh is None
+            or datetime.now() - self._last_refresh > timedelta(milliseconds=100)
+        ):
+            self.ds_description.refresh()
             self._last_refresh = datetime.now()
-        sqdl_files = self.ds_description.sqdl_ds.files
+
+        sqdl_files = self.ds_description.files
         if not sqdl_files:
             logger.warning(f"Dataset with uid '{self.uid}' contains no files")
             return
+
         for file in sqdl_files:
             if file.name.endswith('.hdf5'):
                 break
         else:
             logger.warning(f"HDF5 file for uid '{self.uid}' not found")
             return
+
         if not file.has_data:
-            logger.warning(f"HDF5 file '{file.name}' for uid '{self.uid}' is not uploaded")
+            logger.warning(
+                f"HDF5 file '{file.name}' for uid '{self.uid}' is not uploaded"
+            )
             return
+
         if file.md5_sum == self.file_md5_sum:
             logger.debug('file not changed')
             return
+
         return file
 
     def _load_hdf5_from_url(self, url):
@@ -70,10 +80,15 @@ class SqdlDataset(Dataset):
         if resp.status_code == 200:
             length = len(resp.content)
             t1 = time.perf_counter()
+
             with io.BytesIO(resp.content) as fp:
                 res = xr.load_dataset(fp, engine="h5netcdf")
                 t2 = time.perf_counter()
-            logger.debug(f'Loaded HDF5 {(t1-t0)*1000:.1f} ms {length//1024} kB. Converted in {(t2-t1)*1000:.1f} ms')
+
+            logger.debug(
+                f"Loaded HDF5 {(t1-t0)*1000:.1f} ms {length//1024} kB."
+                f" Converted in {(t2-t1)*1000:.1f} ms"
+            )
             return res
         else:
             logger.warning(f"Failed to load hdf5 (status={resp.status_code})")

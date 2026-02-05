@@ -47,22 +47,28 @@ class DatasetDescriptionWithReference(DatasetDescription):
     dataset_reference: BaseDataset | None = None
 
     def refresh(self):
+        msg = "Dataset Description for SQDL is missing its reference"
+        assert self.dataset_reference is not None, msg
+
         ds = self.dataset_reference.refresh()
-
-        # todo: do we also update all the dataclass attributes?
-        # self.uid = ds.uid,
-        # self.name = ds.name,
-        # self.date_collected = ds.date_collected,
-        # self.rating = ds.rating,
-        # self.labels = ds.metadata,
-
         self.dataset_reference = ds
+
+    @property
+    def files(self):
+        msg = "Dataset Description for SQDL is missing its reference"
+        assert self.dataset_reference is not None, msg
+
+        return self.dataset_reference.files
 
 
 @dataclass
 class BaseScope(ABC):
     name: str
     description: str
+
+    @abstractmethod
+    def get_max_dataset_id(self) -> int:
+        pass
 
     @abstractmethod
     def retrieve_dataset_from_uid(self, ds_uid: str) -> BaseDataset:

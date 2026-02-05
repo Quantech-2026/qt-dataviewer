@@ -158,14 +158,7 @@ class SqdlDatasetStore(DatasetStore):
             labels=ds.metadata,
             dataset_reference=ds
         )
-        # ds_description = DatasetDescription(  # todo-marker
-        #         ds.uid,
-        #         ds.name,
-        #         ds.date_collected,
-        #         rating=ds.rating,
-        #         labels=ds.metadata,
-        #         )
-        # ds_description.sqdl_ds = ds # @@@ YUK!
+
         return ds_description
 
     def _fetch_labels(self):
@@ -196,13 +189,14 @@ class SqdlDatasetStore(DatasetStore):
 
         dates = [
             date.fromisoformat(d)
-            for d in self.scope.search_dates(  # todo-marker
-                    dataset_name_contains=self._filter.name_contains,
-                    rating=filter_rating,
-                    data_identifiers=data_identifiers,
-                    limit=1000,
-                )
-            ]
+            for d
+            in self.scope.search_dates(
+                dataset_name_contains=self._filter.name_contains,
+                rating=filter_rating,
+                data_identifiers=data_identifiers,
+                limit=1000,
+            )
+        ]
         t1 = time.perf_counter()
         logger.debug(f"Fetch dates in {(t1-t0):.3f} s")
         return dates
@@ -222,32 +216,33 @@ class SqdlDatasetStore(DatasetStore):
         filter_rating = self._filter.rating
         if filter_rating is None:
             filter_rating = 0
-        datasets = self.scope.search_datasets(  # todo-marker
-                collected_since=date.isoformat(),
-                collected_until=(date+timedelta(1)).isoformat(),
-                dataset_name_contains=self._filter.name_contains,
-                rating=filter_rating,
-                data_identifiers=data_identifiers,
-                limit=1000,
-                )
+        datasets = self.scope.search_datasets(
+            collected_since=date.isoformat(),
+            collected_until=(date+timedelta(1)).isoformat(),
+            dataset_name_contains=self._filter.name_contains,
+            rating=filter_rating,
+            data_identifiers=data_identifiers,
+            limit=1000,
+        )
         for ds in datasets:
-            ds_description = DatasetDescription(
-                    ds.uid,
-                    ds.name,
-                    ds.date_collected,
-                    rating=ds.rating,
-                    labels=ds.metadata,
-                    )
-            ds_description.sqdl_ds = ds
+            ds_description = DatasetDescriptionWithReference(
+                ds.uid,
+                ds.name,
+                ds.date_collected,
+                rating=ds.rating,
+                labels=ds.metadata,
+                dataset_reference=ds
+            )
             ds_descriptions.append(ds_description)
         t1 = time.perf_counter()
         logger.debug(f"Fetched {len(ds_descriptions)} in {(t1-t0):.3f} s")
-        ds_descriptions.sort(key=lambda ds: ds.collected_datetime, reverse=True)  # todo-marker
+        ds_descriptions.sort(key=lambda ds: ds.collected_datetime, reverse=True)
         return ds_descriptions
 
     @qt_log_exception
     def get_dataset(self, ds_description: DatasetDescription) -> Dataset:
-        return SqdlDataset(ds_description, self.s3_session)  # todo-marker
+        # todo: figure out better name for duplicates
+        return SqdlDataset(ds_description, self.s3_session)
 
     @qt_log_exception
     def _check_for_updates(self):
@@ -255,7 +250,7 @@ class SqdlDatasetStore(DatasetStore):
             return
         try:
             t0 = time.perf_counter()
-            max_dataset_id = self.scope.get_max_dataset_id()  # todo-marker
+            max_dataset_id = self.scope.get_max_dataset_id()
             if max_dataset_id > self._max_dataset_id:
                 t1 = time.perf_counter()
                 data_identifiers = {}
@@ -268,8 +263,9 @@ class SqdlDatasetStore(DatasetStore):
                     last_date = max(self.dates)
                     current_ds_uids = [
                         dsd.uid
-                        for dsd in self.get_dataset_descriptions(last_date)
-                        ]
+                        for dsd
+                        in self.get_dataset_descriptions(last_date)
+                    ]
                 else:
                     last_date = date(2020, 1, 1)
                     current_ds_uids = []
@@ -277,34 +273,40 @@ class SqdlDatasetStore(DatasetStore):
                 filter_rating = self._filter.rating
                 if filter_rating is None:
                     filter_rating = 0
-                new_datasets = list(self.scope.search_datasets(  # todo-marker
-                        dataset_name_contains=self._filter.name_contains,
-                        rating=filter_rating,
-                        min_id=self._max_dataset_id,
-                        data_identifiers=data_identifiers,
-                        limit=1000,
-                        ))
+
+                new_datasets = list(self.scope.search_datasets(
+                    dataset_name_contains=self._filter.name_contains,
+                    rating=filter_rating,
+                    min_id=self._max_dataset_id,
+                    data_identifiers=data_identifiers,
+                    limit=1000,
+                ))
+
                 t2 = time.perf_counter()
                 new_ds_descriptions = []
                 for ds in new_datasets:
                     if ds.uid in current_ds_uids:
                         continue
-                    ds_description = DatasetDescription(
-                            ds.uid,
-                            ds.name,
-                            ds.date_collected,
-                            rating=ds.rating,
-                            labels=ds.metadata,
-                            )
+
+                    ds_description = DatasetDescriptionWithReference(
+                        ds.uid,
+                        ds.name,
+                        ds.date_collected,
+                        rating=ds.rating,
+                        labels=ds.metadata,
+                        dataset_reference=ds,
+                    )
+
                     logger.debug(f"New ds {ds_description.uid} {ds.date_collected}")
-                    ds_description.sqdl_ds = ds
                     new_ds_descriptions.append(ds_description)
+
                 t3 = time.perf_counter()
-                logger.debug(f"Update {len(new_datasets)} {len(new_ds_descriptions)} in "
-                             f"{(t1-t0):.3f} s, {(t2-t1):.3f} s, {(t3-t2):.3f} s")
+                logger.debug(
+                    f"Update {len(new_datasets)} {len(new_ds_descriptions)} in "
+                    f"{(t1-t0):.3f} s, {(t2-t1):.3f} s, {(t3-t2):.3f} s"
+                )
 
                 new_ds_descriptions = new_ds_descriptions.copy()
-
                 if new_ds_descriptions:
                     self._emit_updates(new_ds_descriptions)
 
@@ -312,6 +314,7 @@ class SqdlDatasetStore(DatasetStore):
         except Exception as ex:
             # @@@ TODO: distinguish requests.exceptions.Timeout (warning+message), ConnectionError (warning+message), RequestException(error)
             qt_show_exception("Auto update failed", ex)
+
         # restart timer.
         self._update_timer.start()
 
@@ -320,8 +323,10 @@ class SqdlDatasetStore(DatasetStore):
         for ds in new_ds_descriptions:
             if ds.collected_date in self._ds_descriptions_cache:
                 del self._ds_descriptions_cache[ds.collected_date]
+
             if ds.collected_date not in self._dates:
                 update_dates = True
+
             # # TODO only if in schema..
             # for label, new_values in ds.labels.items():
             #     try:
@@ -336,11 +341,12 @@ class SqdlDatasetStore(DatasetStore):
             #                 values.append(value)
             #         self._labels[label] = sorted(values)
             #     # TODO emit label change ??
+
         if update_dates:
             self._set_dates(self._fetch_dates())
         self.new_datasets.emit(new_ds_descriptions)
 
-    # TODO
+# TODO
     def set_name(self, ds_description: DatasetDescription, name: str):
         raise NotImplementedError()
 
@@ -394,7 +400,11 @@ class SqdlDatasetStore(DatasetStore):
         last_ds_description = dds[0]
         return last_ds_description
 
-    def _index(self, ds_description: DatasetDescription, ds_descriptions: list[DatasetDescription]):
+    def _index(
+            self,
+            ds_description: DatasetDescription,
+            ds_descriptions: list[DatasetDescription]
+    ):
         for i, ds in enumerate(ds_descriptions):
             if ds.uid == ds_description.uid:
                 return i

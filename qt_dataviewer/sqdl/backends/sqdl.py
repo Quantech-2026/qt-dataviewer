@@ -109,7 +109,7 @@ class SqdlScope(BaseScope):
         """
 
         """
-        resp = self.ref.search_datasets(
+        response = self.ref.search_datasets(
             min_id=min_id,
             collected_since=collected_since,
             collected_until=collected_until,
@@ -119,7 +119,7 @@ class SqdlScope(BaseScope):
             limit=limit,
             offset=offset,
         )
-        return [SqdlDataset.from_response(r) for r in resp]
+        return [SqdlDataset.from_response(item) for item in response]
 
     def list_data_identifiers(self, limit=10, offset=0) -> Any:
         # returns non-descript "PaginatedResponse"
@@ -138,22 +138,22 @@ class SqdlScope(BaseScope):
 
 class SqdlClient(BaseClient):
     def __init__(self):
-        self.client = Client()
+        self._client = Client()
 
     def login(self):
-        self.client.login()
+        self._client.login()
 
     def logout(self):
-        self.client.logout()
+        self._client.logout()
 
     @property
     def user_info(self) -> dict[str, str]:
-        self.client.user_info.get("name")
+        self._client.user_info.get("name")
 
     def list_scopes(self) -> list[SqdlScope]:
-        resp = self.client.api.scope.list()
+        resp = self._client.api.scope.list()
         return [SqdlScope.from_response(r) for r in resp]
 
     def retrieve_scope_from_name(self, scope_name: str) -> SqdlScope:
-        resp = self.client.api.scope.retrieve_from_name(scope_name)
+        resp = self._client.api.scope.retrieve_from_name(scope_name)
         return SqdlScope.from_response(resp)

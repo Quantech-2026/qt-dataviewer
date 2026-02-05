@@ -64,7 +64,10 @@ class SqdlDataBrowser(DataBrowserBase):
 
     def browser_started(self):
         if Version(sqdl_client_version) < Version("1.0.8"):
-            qt_show_error("Upgrade sqdl-client", "Upgrade sqdl-client to version 1.0.8+")
+            qt_show_error(
+                "Upgrade sqdl-client",
+                "Upgrade sqdl-client to version 1.0.8+"
+            )
             self.close()
             raise Exception("Upgrade sqdl-client to version 1.0.8+")
         if self.scope_name is not None:
