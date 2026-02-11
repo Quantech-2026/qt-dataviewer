@@ -1,4 +1,3 @@
-import os
 import copy
 import logging
 import time
@@ -24,14 +23,13 @@ logger = logging.getLogger(__name__)
 
 class SqdlDatasetStore(DatasetStore):
 
-    def __init__(self, ):
+    def __init__(self, backend_type: str | None = None):
         super().__init__(is_dynamic=True)
         logger.debug("Starting SQDL DatasetStore")
         self.scope_name = None
         self.scope = None
         self._init_scope()
 
-        backend_type = os.environ.get("QDL_TEST", "sqdl")  # note: testing solution
         self._client = ClientFactory.create_client(backend_type)
         self._client.login()
 
