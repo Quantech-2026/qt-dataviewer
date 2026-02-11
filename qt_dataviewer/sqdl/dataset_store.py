@@ -2,7 +2,6 @@ import os
 import copy
 import logging
 import time
-from collections import defaultdict
 from datetime import date, timedelta
 
 import requests
@@ -39,7 +38,7 @@ class SqdlDatasetStore(DatasetStore):
         try:
             info = self._client.user_info
             logger.debug(f"user info: {info}")
-            self.user_name = info.get("name")  # todo: verify that qdl shares key
+            self.user_name = info.get("name")
         except Exception as exc:
             self.user_name = None
             logger.error(exc)
@@ -89,7 +88,7 @@ class SqdlDatasetStore(DatasetStore):
         except Exception as ex:
             qt_show_exception("Failure retrieving scopes", ex)
             return []
-        return sorted(scope.name for scope in sqdl_scopes)  # todo-marker
+        return sorted(scope.name for scope in sqdl_scopes)
 
     def _init_scope(self):
         self._filter = Filter()
@@ -168,13 +167,8 @@ class SqdlDatasetStore(DatasetStore):
     def _fetch_labels(self):
         if self.scope is None:
             return {}
-        data_identifiers = self.scope.list_data_identifiers(limit=1000)
 
-        di_dict = defaultdict(list)
-        for di in data_identifiers:
-            di_dict[di.key].append(di.value)
-
-        return di_dict.copy()
+        return self.scope.list_data_identifiers(limit=100)
 
     def _fetch_dates(self) -> list[date]:
         if self.scope is None:
@@ -198,7 +192,7 @@ class SqdlDatasetStore(DatasetStore):
                 dataset_name_contains=self._filter.name_contains,
                 rating=filter_rating,
                 data_identifiers=data_identifiers,
-                limit=1000,
+                limit=100,
             )
         ]
         t1 = time.perf_counter()
@@ -220,13 +214,14 @@ class SqdlDatasetStore(DatasetStore):
         filter_rating = self._filter.rating
         if filter_rating is None:
             filter_rating = 0
+
         datasets = self.scope.search_datasets(
             collected_since=date.isoformat(),
             collected_until=(date+timedelta(1)).isoformat(),
             dataset_name_contains=self._filter.name_contains,
             rating=filter_rating,
             data_identifiers=data_identifiers,
-            limit=1000,
+            limit=100,
         )
         for ds in datasets:
             ds_description = DatasetDescriptionWithReference(
@@ -283,7 +278,7 @@ class SqdlDatasetStore(DatasetStore):
                     rating=filter_rating,
                     min_id=self._max_dataset_id,
                     data_identifiers=data_identifiers,
-                    limit=1000,
+                    limit=100,
                 ))
 
                 t2 = time.perf_counter()

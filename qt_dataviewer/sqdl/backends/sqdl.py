@@ -1,7 +1,8 @@
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, Self
+from typing import Self
 
 from .base import BaseClient, BaseScope, BaseDataset, BaseFile
 from .exceptions import DatasetNotFoundException
@@ -131,11 +132,15 @@ class SqdlScope(BaseScope):
         )
         return [SqdlDataset.from_response(item) for item in response]
 
-    def list_data_identifiers(self, limit=10, offset=0) -> Any:
-        # returns non-descript "PaginatedResponse"
+    def list_data_identifiers(self, limit=10, offset=0) -> dict[str, list[str]]:
         identifiers = self.ref.list_data_identifiers(limit=limit, offset=offset)
         logger.debug(f"Received data identifiers from SQDL backend: {identifiers}")
-        return identifiers
+
+        di_dict = defaultdict(list)
+        for di in identifiers:
+            di_dict[di.key].append(di.value)
+
+        return di_dict.copy()
 
     @staticmethod
     def from_response(response: v1.scope.Scope) -> Self:

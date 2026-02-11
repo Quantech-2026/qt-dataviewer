@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from typing import Any, Self
 
 from .base import BaseClient, BaseScope, BaseDataset, BaseFile
@@ -55,7 +55,7 @@ class QdlDataset(BaseDataset):
         self.ref.update_rank(rating)
 
     def refresh(self) -> Self | None:
-        resp = self.ref.refresh()
+        resp = self.ref._api.retrieve(self.uuid)
         if resp is not None:
             return QdlDataset.from_response(resp)
 
@@ -64,8 +64,8 @@ class QdlDataset(BaseDataset):
         logger.debug(f"QDL DATASET >>> FROM RESPONSE: {response}")
         return QdlDataset(
             name=response.name,
-            title=response.name,  # todo: get title from qdl?
-            description=response.name,  # todo: get description from qdl
+            title=response.name,
+            description=response.description,
             uid=response.uid,
             uuid=response.uuid,
             rating=response.rank,
@@ -86,6 +86,9 @@ class QdlScope(BaseScope):
             # todo: warning - "collected at" technically doesn't say anything about
             #  when the data was uploaded, so we need a better metric (which exists
             #  on QDL, but not on the client)
+
+            # note: put in a feature request with Fer -> some kind of index that can
+            #  reliably tell if there are new datasets in a scope
             return int(dataset.collected_at.timestamp())
         except IndexError:
             return -1
@@ -102,8 +105,24 @@ class QdlScope(BaseScope):
         limit: int = 10,
         offset: int = 0,
     ) -> list[str]:
-        # todo: update qdl-client to handle keyword arguments
-        return [d.isoformat() for d in self.ref.list_dates()]
+        # QDL backend only supports 'since' and 'until' query parameters, so
+        #  searching for filtered dates is not (yet) possible
+
+        # absence of filtered dates also leads to bugs in the "previous" and "next"
+        #  buttons, because you can have date pages without any datasets in them
+
+        # note: put in a feature request with Fer -> add query parameters for date
+        #  search: name, rank, **kwarg (attribute search)
+        # dates = self.ref.list_dates(
+        #     name=dataset_name_contains,
+        #     rank=rating,
+        #     limit=limit,
+        #     offset=offset,
+        #     **data_identifiers,
+        # )
+
+        dates = self.ref.list_dates()
+        return [d.isoformat() for d in dates]
 
     def search_datasets(
         self,
@@ -116,19 +135,52 @@ class QdlScope(BaseScope):
         limit: int = 10,
         offset: int = 0,
     ) -> list[QdlDataset]:
-        # todo: figure out how to transpose dataviever kwargs to qdl kwargs
-        response = self.ref._api.list_dataset(scope_uid=self.ref.name)
+
+        kwargs = {
+            "limit": limit,
+            "offset": offset,
+        }
+
+        if min_id:
+            collected_last = datetime.fromtimestamp(min_id)
+
+            if collected_since and collected_since < collected_last:
+                collected_since = collected_last
+
+        if collected_since:
+            kwargs.update({"since": collected_since})
+
+        if collected_until:
+            kwargs.update({"until": collected_until})
+
+        if dataset_name_contains:
+            kwargs.update({"name": dataset_name_contains})
+
+        if rating:
+            kwargs.update({"rank": rating})
+
+        if data_identifiers:
+            kwargs.update(data_identifiers)
+
+        logger.info(f"Searching for datasets: kwargs={kwargs}")
+        response = self.ref._api.list_dataset(
+            scope_uid=self.ref.name,
+            **kwargs,
+        )
         return [QdlDataset.from_response(item) for item in response]
 
-    def list_data_identifiers(self, limit=10, offset=0) -> Any:
-        logger.warning("Data identifiers not yet implemented for QDL")
-        return []
+    def list_data_identifiers(self, limit=10, offset=0) -> dict[str, list[str]]:
+        attributes = self.ref.list_attributes(
+            limit=limit,
+            offset=offset
+        )
+        return attributes
 
     @staticmethod
     def from_response(response: v1.Scope) -> Self:
         return QdlScope(
             name=response.name,
-            description=response.name,  # todo: scope description from qdl
+            description=response.description,
             ref=response,
         )
 

@@ -47,27 +47,6 @@ class BaseDataset(ABC):
 
 
 @dataclass
-class DatasetDescriptionWithReference(DatasetDescription):
-    # note: must all be arguments with defaults, because of how the __init__ method
-    #  is composed for dataclass inheritance.
-    dataset_reference: BaseDataset | None = None
-
-    def refresh(self):
-        msg = "Dataset Description for SQDL is missing its reference"
-        assert self.dataset_reference is not None, msg
-
-        ds = self.dataset_reference.refresh()
-        self.dataset_reference = ds
-
-    @property
-    def files(self):
-        msg = "Dataset Description for SQDL is missing its reference"
-        assert self.dataset_reference is not None, msg
-
-        return self.dataset_reference.files
-
-
-@dataclass
 class BaseScope(ABC):
     name: str
     description: str
@@ -104,7 +83,7 @@ class BaseScope(ABC):
         pass
 
     @abstractmethod
-    def list_data_identifiers(self, limit: int = 1000):
+    def list_data_identifiers(self, limit: int = 100) -> dict[str, list[str]]:
         pass
 
     @staticmethod
@@ -138,3 +117,24 @@ class BaseClient(ABC):
     @abstractmethod
     def retrieve_scope_from_name(self, scope_name: str) -> BaseScope:
         pass
+
+
+@dataclass
+class DatasetDescriptionWithReference(DatasetDescription):
+    # note: must all be arguments with defaults, because of how the __init__ method
+    #  is composed for dataclass inheritance.
+    dataset_reference: BaseDataset | None = None
+
+    def refresh(self):
+        msg = "Dataset Description for SQDL is missing its reference"
+        assert self.dataset_reference is not None, msg
+
+        ds = self.dataset_reference.refresh()
+        self.dataset_reference = ds
+
+    @property
+    def files(self):
+        msg = "Dataset Description for SQDL is missing its reference"
+        assert self.dataset_reference is not None, msg
+
+        return self.dataset_reference.files
