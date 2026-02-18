@@ -89,7 +89,7 @@ class QdlScope(BaseScope):
 
             # note: put in a feature request with Fer -> some kind of index that can
             #  reliably tell if there are new datasets in a scope
-            return int(dataset.collected_at.timestamp())
+            return int(dataset.created_at.timestamp())
         except IndexError:
             return -1
 
