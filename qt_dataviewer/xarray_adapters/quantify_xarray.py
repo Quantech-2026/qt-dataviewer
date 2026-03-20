@@ -1,12 +1,13 @@
-from datetime import datetime
 import xarray as xr
+
+from qt_dataviewer.quantify.utils import tuid_get_time
 
 
 def convert_quantify(ds: xr.Dataset):
     ds = _qf_to_nD(ds)
     tuid = ds.attrs["tuid"]
     try:
-        start_time = datetime.strptime(tuid[:18], "%Y%m%d-%H%M%S-%f")
+        start_time = tuid_get_time(tuid)
         ds.attrs["measurement_time"] = start_time.isoformat()
     except Exception:
         pass
