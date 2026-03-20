@@ -28,18 +28,18 @@ def get_image(image_name, height=None):
 
 def add_icons_to_checkbox(checkbox, icon_checked: str, icon_unchecked: str, size: int):
     icon_path = os.path.dirname(resources.__file__)
-    icon_unchecked_uri = pathlib.Path(os.path.join(icon_path, icon_unchecked)).as_uri()
-    icon_checked_uri = pathlib.Path(os.path.join(icon_path, icon_checked)).as_uri()
+    icon_unchecked_path = pathlib.Path(os.path.join(icon_path, icon_unchecked)).as_posix()
+    icon_checked_path = pathlib.Path(os.path.join(icon_path, icon_checked)).as_posix()
     style_sheet = f"""
     QCheckBox::indicator {{
         width: {size}px;
         height: {size}px;
     }}
     QCheckBox::indicator:unchecked {{
-        image: url("{icon_unchecked_uri[8:]}");
+        image: url("{icon_unchecked_path}");
     }}
     QCheckBox::indicator:checked {{
-        image: url("{icon_checked_uri[8:]}");
+        image: url("{icon_checked_path}");
     }}
     """
     checkbox.setStyleSheet(style_sheet)
