@@ -57,18 +57,18 @@ class TopBar(QtWidgets.QWidget):
         source_label.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
         )
-        source_label.setMinimumWidth(120)
+        source_label.setMinimumWidth(140)
         self.source_label = source_label
-        hbox.addWidget(self.source_label)
+        hbox.addWidget(self.source_label, stretch=4)
 
         hbox.addSpacerItem(
             QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
 
         hbox.addWidget(QtWidgets.QLabel(uid_label_text))
         uid_edit = QtWidgets.QLineEdit()
-        uid_edit.setMinimumWidth(120)
+        uid_edit.setMinimumWidth(140)
         self.uid_edit = uid_edit
-        hbox.addWidget(uid_edit)
+        hbox.addWidget(uid_edit, stretch=2)
         uid_edit.returnPressed.connect(self._uid_entered)
 
         if option_liveplotting:
