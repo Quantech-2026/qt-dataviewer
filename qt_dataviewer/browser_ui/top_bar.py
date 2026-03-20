@@ -57,9 +57,6 @@ class TopBar(QtWidgets.QWidget):
         source_label.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding
         )
-        font = QtGui.QFont()
-        font.setPointSize(8)
-        source_label.setFont(font)
         source_label.setMinimumWidth(120)
         self.source_label = source_label
         hbox.addWidget(self.source_label)
@@ -82,14 +79,12 @@ class TopBar(QtWidgets.QWidget):
         else:
             self.cb_live_plotting = None
 
-
         close_all_button = QtWidgets.QPushButton("Close all plots")
         close_all_button.setToolTip("Closes all plots (Ctrl+K)")
         close_all_button.clicked.connect(self.close_all_plots)
         self._shortcut_close_all = QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+K"), self)
         self._shortcut_close_all.activated.connect(self.close_all_plots)
         hbox.addWidget(close_all_button)
-
 
     def set_live_plotting(self, checked: bool):
         if self.cb_live_plotting is not None:
