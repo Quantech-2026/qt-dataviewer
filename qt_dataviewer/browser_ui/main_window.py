@@ -58,22 +58,28 @@ class DataBrowserBase(QtWidgets.QMainWindow):
             # reference is also used to restart browser 2nd time in Python console.
             _app = qt_create_app()
 
-        if gui_style == "dark":
-            qt_set_darkstyle()
+        if gui_style:
+            qt_set_darkstyle(gui_style)
 
         super().__init__()
+
+        # self.setStyleSheet(
+        #     """
+        #         font-size: 14pt;
+        #     """
+        #     )
 
         self.dataset_store = dataset_store
         self._selected_dates: list[date] = []
         self.viewers = []
         self._filter = Filter()
-        self._auto_open_plots = False # TODO Configurable.
+        self._auto_open_plots = False
 
         self.setWindowTitle(self._WINDOW_TITLE.format(storage_type_name))
 
         # set window size
         screen = QDesktopWidget().screenGeometry()
-        self.resize(int(screen.width() * 0.6), int(screen.height() * 0.6))
+        self.resize(int(screen.width() * 0.7), int(screen.height() * 0.7))
 
         labels = dataset_store.labels
 
@@ -124,12 +130,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
 
         self.dataset_list_view = DatasetListView(self, column_definitions, label_keys, sort_by_column)
         self.date_list_view = DateListView(self)
-
-        # create splitter for widgets
-        splitter = QtWidgets.QSplitter()
-        splitter.addWidget(self.date_list_view)
-        splitter.addWidget(self.dataset_list_view)
-        splitter.setSizes([80, 820])
+        self.date_list_view.setFixedWidth(104)
 
         menu_actions = self.get_menu_actions()
         if menu_actions is not None:
@@ -159,8 +160,11 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         content = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.top_bar)
-        layout.addWidget(splitter)
-        layout.setStretchFactor(splitter, 1)
+        center = QtWidgets.QHBoxLayout()
+        center.addWidget(self.date_list_view)
+        center.addWidget(self.dataset_list_view)
+        layout.addLayout(center)
+        layout.setStretchFactor(center, 1)
         content.setLayout(layout)
 
         self.setCentralWidget(content)
@@ -240,7 +244,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
             if not viewer.alive:
                 try:
                     viewer.dataset_rating_changed.disconnect(self._update_rating)
-                except:
+                except Exception:
                     logger.error("Failure disconnecting signal", exc_info=True)
                 self.viewers.pop(i)
 

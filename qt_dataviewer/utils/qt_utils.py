@@ -11,7 +11,8 @@ try:
     import IPython.lib.guisupport as gs
     from IPython import get_ipython
 except Exception:
-    get_ipython = lambda: None
+    def get_ipython():
+        return None
 
 
 logger = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ def qt_show_exception(message, ex, extra_line: str = None):
     logger.error(message, exc_info=ex)
     text = message
     if extra_line:
-        text += "\n" + extra_line
+        text += "\n" + extra_line + "\n"
     text += f"\n{type(ex).__name__}: {ex}"
     msg = QMessageBox(
         QMessageBox.Critical,
@@ -90,9 +91,6 @@ def qt_init(style: str | None = None) -> bool:
 
     if _qt_app is None:
 
-    #    print(QtCore.QCoreApplication.testAttribute(QtCore.Qt.AA_EnableHighDpiScaling))
-    #    print(QtCore.QCoreApplication.testAttribute(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough))
-
         # Set attributes for proper scaling when display scaling is not equal to 100%
         # This should be done before QApplication is started.
         QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
@@ -128,14 +126,22 @@ def qt_init(style: str | None = None) -> bool:
     return _qt_app is not None
 
 
-def qt_set_darkstyle():
-    import qdarkstyle
+def qt_set_darkstyle(palette_name="dark"):
     import pyqtgraph as pg
+    import qdarkstyle
+    from qdarkstyle.light.palette import LightPalette
+    from qdarkstyle.dark.palette import DarkPalette
 
     qt_app = QtCore.QCoreApplication.instance()
     if qt_app is None:
         return
-    dark_stylesheet = qdarkstyle.load_stylesheet()
+    if palette_name == "dark":
+        palette = DarkPalette
+    elif palette_name == "light":
+        palette = LightPalette
+    else:
+        raise Exception(f"Unknown palette name '{palette_name}'")
+    dark_stylesheet = qdarkstyle.load_stylesheet(palette=palette)
     # patch qdarkstyle for cropped x-label on 2D graphics.
     dark_stylesheet += r'''
         QGraphicsView {
@@ -143,19 +149,32 @@ def qt_set_darkstyle():
         }
         '''
     qt_app.setStyleSheet(dark_stylesheet)
-    pg.setConfigOption('background', 'k')
-    pg.setConfigOption('foreground', 'gray')
+    if palette_name == "dark":
+        pg.setConfigOption('background', 'k')
+        pg.setConfigOption('foreground', 'gray')
 
 
 def qt_create_app() -> QtCore.QCoreApplication:
+    global _qt_app
+
     logger.info("Create Qt application")
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
-    app = QtWidgets.QApplication([])
-    return app
+    _qt_app = QtWidgets.QApplication([])
+    return _qt_app
 
 
 def qt_run_app(app):
     logger.info("Run Qt Application")
     app.exec()
     logger.info("Qt Application event loop exited")
+
+
+def get_font(rel_point_size):
+    default_font = QtWidgets.QApplication.font()
+    default_point_size = default_font.pointSize()
+    if default_point_size <= 0:
+        default_point_size = 10
+    font = QtGui.QFont()
+    font.setPointSize(int(default_point_size * rel_point_size))
+    return font
