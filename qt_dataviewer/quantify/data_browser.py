@@ -22,8 +22,8 @@ class QuantifyDataBrowser(DataBrowserBase):
                 "Keywords": "keywords",
                 },
             column_definitions=[
-                ("TUID", 190),
-                ("Time", 58),
+                ("TUID", ),
+                ("Time", ),
                 ("Name", ),
                 ("Keywords", ),
              ],
