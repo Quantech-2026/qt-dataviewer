@@ -1,5 +1,8 @@
+import bz2
+import gzip
 import json
 import logging
+import lzma
 import os
 import shutil
 from datetime import datetime, timedelta
@@ -90,5 +93,15 @@ class QuantifyDataset(Dataset):
             return xr.load_dataset(file_path, engine="h5netcdf")
 
     def _load_snapshot(self) -> dict[str, Any]:
-        with open(os.path.join(self.ds_description.path, "snapshot.json")) as fp:
-            return json.load(fp)
+        extensions = [
+            ("", open),
+            (".gz", gzip.open),
+            (".bz2", bz2.open),
+            (".xz", lzma.open),
+            ]
+        for ext, _open in extensions:
+            path = os.path.join(self.ds_description.path, "snapshot.json"+ext)
+            if os.path.exists(path):
+                with _open(path, "rt", encoding="utf-8") as fp:
+                    return json.load(fp)
+        return None

@@ -94,7 +94,7 @@ class QuantifyDatasetStore(DatasetStore):
             for entry in os.scandir(self._base_dir):
                 if entry.is_dir():
                     try:
-                        date = dt_date.strptime(entry.name, "%Y%m%d")
+                        date = datetime.strptime(entry.name, "%Y%m%d").date()
                     except ValueError:
                         continue
                     else:
