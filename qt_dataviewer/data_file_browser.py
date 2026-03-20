@@ -69,7 +69,7 @@ class DataFileBrowser(QtWidgets.QMainWindow):
 
         # set window size
         screen = QDesktopWidget().screenGeometry()
-        self.resize(int(screen.width() * 0.6), int(screen.height() * 0.6))
+        self.resize(int(screen.width() * 0.7), int(screen.height() * 0.7))
 
         label_keys = {
             "UID": "uid",
@@ -80,10 +80,10 @@ class DataFileBrowser(QtWidgets.QMainWindow):
             }
         column_definitions = [
             ("UID", ),
-            ("Date", 76),
-            ("Time", 58),
+            ("Date", ),
+            ("Time", ),
             ("Name", ),
-            ("App.", 50),
+            ("App.", ),
             ]
         sort_by_column = 0
         self.uid_label_text = "UID"
