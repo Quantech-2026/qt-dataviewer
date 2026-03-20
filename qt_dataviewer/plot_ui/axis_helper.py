@@ -11,7 +11,7 @@ class AxisHelper:
         self._x_array = x_array
         self._scale = scale
 
-        formatter = SmartFormatter(x_array.attrs)
+        formatter = SmartFormatter(x_array)
         self._formatter = formatter
         self.x = formatter.without_unit_prefix(x_array.data)
 

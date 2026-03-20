@@ -82,11 +82,11 @@ class Plot2D(BasePlot):
             data = data.sortby(y_array.name)
             y_array = data[data.dims[1]]
 
-        x_formatter = SmartFormatter(x_array.attrs)
+        x_formatter = SmartFormatter(x_array)
         self._x_formatter = x_formatter
-        y_formatter = SmartFormatter(y_array.attrs)
+        y_formatter = SmartFormatter(y_array)
         self._y_formatter = y_formatter
-        z_formatter = SmartFormatter(data.attrs)
+        z_formatter = SmartFormatter(data)
         self._z_formatter = z_formatter
 
         x_helper = AxisHelper(x_array, x_scale)

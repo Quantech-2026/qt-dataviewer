@@ -83,11 +83,11 @@ class PlotMultiline(BasePlot):
         x1 = data[data.dims[1]]
         y = data
 
-        x0_formatter = SmartFormatter(x0.attrs)
+        x0_formatter = SmartFormatter(x0)
         self._x0_formatter = x0_formatter
-        x1_formatter = SmartFormatter(x1.attrs)
+        x1_formatter = SmartFormatter(x1)
         self._x1_formatter = x1_formatter
-        y_formatter = SmartFormatter(y.attrs)
+        y_formatter = SmartFormatter(y)
         self._y_formatter = y_formatter
 
         self._update_axis(x0, y)

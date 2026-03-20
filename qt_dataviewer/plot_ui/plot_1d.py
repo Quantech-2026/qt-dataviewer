@@ -74,9 +74,9 @@ class Plot1D(BasePlot):
         if self.one_d_is_vertical:
             x, y = y, x
 
-        x_formatter = SmartFormatter(x.attrs)
+        x_formatter = SmartFormatter(x)
         self._x_formatter = x_formatter
-        y_formatter = SmartFormatter(y.attrs)
+        y_formatter = SmartFormatter(y)
         self._y_formatter = y_formatter
 
         self._update_axis(x, y)

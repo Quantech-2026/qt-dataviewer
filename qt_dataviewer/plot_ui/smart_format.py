@@ -62,8 +62,9 @@ def format_with_units(value: float | None, units: str, precision: int):
 
 
 class SmartFormatter:
-    def __init__(self, attrs):
-        self._label = attrs.get('long_name', '<>')
+    def __init__(self, da: xr.DataArray):
+        attrs = da.attrs
+        self._label = attrs.get('long_name', da.name)
         units = attrs.get("units", "")
         if units == "no_label":
             units = ""
