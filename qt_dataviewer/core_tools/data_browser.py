@@ -2,6 +2,7 @@ from qt_dataviewer.browser_ui.main_window import DataBrowserBase
 
 from .dataset_store import CoreToolsDatasetStore
 
+
 class CoreToolsDataBrowser(DataBrowserBase):
     def __init__(self, gui_style: str | None = None):
         self.data_store = CoreToolsDatasetStore()
@@ -21,8 +22,8 @@ class CoreToolsDataBrowser(DataBrowserBase):
                 },
             column_definitions=[
                 ("Rating",  46, "rating-star"),
-                ("UUID", 140),
-                ("Time", 58),
+                ("UUID", ),
+                ("Time", ),
                 ("Name", ),
                 ("Keywords", ),
              ],
