@@ -10,7 +10,7 @@ from typing import Any
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 from qt_dataviewer.model.plot_model import PlotModel
-from qt_dataviewer.utils.qt_utils import qt_log_exception
+from qt_dataviewer.utils.qt_utils import qt_log_exception, get_font
 from qt_dataviewer.resources.icons import add_icons_to_checkbox
 
 from .info_widget import InfoWidget
@@ -71,7 +71,7 @@ class PlotWindow:
         top_layout = QtWidgets.QHBoxLayout()
         top_layout.addSpacing(10)
         top_layout.setSpacing(4)
-        font = get_font(13)
+        font = get_font(1.3)
         self.label_name = QtWidgets.QLabel()
         self.label_name.setMinimumSize(QtCore.QSize(250, 0))
         self.label_name.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
@@ -88,7 +88,7 @@ class PlotWindow:
         else:
             self.rating_widget = None
 
-        font = get_font(10)
+        font = get_font(1.1)
 
         self.label_uuid = QtWidgets.QLabel()
         self.label_uuid.setMinimumSize(QtCore.QSize(160, 0))
@@ -227,8 +227,8 @@ class PlotWindow:
         size_policy.setVerticalStretch(0)
         # size_policy.setHeightForWidth(scroll_area.sizePolicy().hasHeightForWidth())
         scroll_area.setSizePolicy(size_policy)
-        scroll_area.setMinimumWidth(380)
-        scroll_area.setMaximumWidth(380)
+        scroll_area.setMinimumWidth(424)
+        scroll_area.setMaximumWidth(424)
         scroll_area.setWidgetResizable(True)
         scroll_widget = QtWidgets.QWidget()
         scroll_area.setWidget(scroll_widget)
@@ -247,7 +247,7 @@ class PlotWindow:
 
         lb_variables = QtWidgets.QListWidget()
         lb_variables.setMinimumSize(QtCore.QSize(300, 200))
-        lb_variables.setMaximumSize(QtCore.QSize(400, 300))
+        lb_variables.setMaximumSize(QtCore.QSize(500, 300))
         lb_variables.itemSelectionChanged.connect(self._variable_selection_changed)
         lb_variables.itemChanged.connect(self._variable_item_changed)
         self.lb_variables = lb_variables
@@ -459,7 +459,7 @@ class PlotWindow:
 
         label_msg = QtWidgets.QLabel("No measurement data (yet)")
         label_msg.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        label_msg.setFont(get_font(12))
+        label_msg.setFont(get_font(1.5))
         widget_layout.addWidget(label_msg)
         self.plots_layout.addWidget(widget, 0, 0)
         self._update_grid_stretch()
@@ -503,7 +503,7 @@ class PlotWindow:
 
         label_title = QtWidgets.QLabel(title)
         label_title.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
-        label_title.setFont(get_font(10))
+        # label_title.setFont(get_font(1.1))
         widget_layout.addWidget(label_title)
 
         plot_layout = QtWidgets.QVBoxLayout()
@@ -587,12 +587,6 @@ class PlotWindow:
             self._current_n_rows = n_rows
 
 
-def get_font(point_size):
-    font = QtGui.QFont()
-    font.setPointSize(point_size)
-    return font
-
-
 class ClickFrame(QtWidgets.QFrame):
 
     def onMousePressed(self, func):
@@ -618,7 +612,7 @@ class RatingWidget(QtWidgets.QWidget):
 
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout.setSpacing(2)
         self.setLayout(layout)
         self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         label = QtWidgets.QLabel(name)

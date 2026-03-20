@@ -1,9 +1,9 @@
 import logging
 from functools import partial
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 
-from qt_dataviewer.utils.qt_utils import qt_log_exception
+from qt_dataviewer.utils.qt_utils import qt_log_exception, get_font
 from qt_dataviewer.model.plot_model import AxisMode, AxisSettings, PlotModel
 from .smart_format import SmartFormatter
 
@@ -34,7 +34,7 @@ class PlotSettings(QtWidgets.QWidget):
         btn_col = 1
 
         label_name = QtWidgets.QLabel(plot_model.var_name)
-        label_name.setFont(get_font(11))
+        label_name.setFont(get_font(1.2))
         label_name.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
 
         layout.addWidget(label_name, irow, 0, 1, max_column)
@@ -225,9 +225,10 @@ class Slider:
         self.axis = axis
         self.settings = settings
         self.changed_cb = changed_cb
-        self.formatter = SmartFormatter(settings.data.attrs)
+        self.formatter = SmartFormatter(settings.data)
 
         slider = QtWidgets.QSlider()
+        slider.setFocusPolicy(QtCore.Qt.StrongFocus)
         slider.setOrientation(QtCore.Qt.Horizontal)
         slider.setTickInterval(1)
         slider.setMinimum(0)
@@ -282,9 +283,3 @@ class Slider:
     def _slider_changed(self, slice_index):
         self._set_label_text(slice_index)
         self.changed_cb(slice_index)
-
-
-def get_font(point_size):
-    font = QtGui.QFont()
-    font.setPointSize(point_size)
-    return font
