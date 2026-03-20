@@ -2,7 +2,7 @@ import copy
 import logging
 import os
 from collections import defaultdict
-from datetime import date, datetime
+from datetime import date as dt_date, datetime
 
 from PyQt5 import QtCore
 
@@ -25,8 +25,8 @@ class QuantifyDatasetStore(DatasetStore):
 
         self._base_dir = None
         self._filter = Filter()
-        self._ds_descriptions: dict[date, list[DatasetDescription]] = {}
-        self._filtered_ds_descriptions: dict[date, list[DatasetDescription]] = {}
+        self._ds_descriptions: dict[dt_date, list[DatasetDescription]] = {}
+        self._filtered_ds_descriptions: dict[dt_date, list[DatasetDescription]] = {}
         self._all_ds_paths = set()
         self._ds_descriptions_changed = False
         self._auto_scan = False
@@ -94,20 +94,20 @@ class QuantifyDatasetStore(DatasetStore):
             for entry in os.scandir(self._base_dir):
                 if entry.is_dir():
                     try:
-                        date = datetime.strptime(entry.name, "%Y%m%d").date()
+                        date = dt_date.strptime(entry.name, "%Y%m%d")
                     except ValueError:
                         continue
                     else:
                         self._scan_date_dir(date, entry.path)
 
-    def _scan_date_dir(self, date, path):
+    def _scan_date_dir(self, date: dt_date, path):
         for entry in os.scandir(path):
             if entry.path in self._all_ds_paths:
                 continue
             if entry.is_dir():
                 try:
                     ds_description = QuantifyDatasetDescription(entry.name, entry.path)
-                except:
+                except Exception:
                     continue
                 self._ds_descriptions[date].append(ds_description)
                 self._ds_descriptions_changed = True
@@ -132,15 +132,15 @@ class QuantifyDatasetStore(DatasetStore):
         # TODO @@@
         return {}
 
-    def get_dataset_descriptions(self, date: date) -> list[DatasetDescription]:
+    def get_dataset_descriptions(self, date: dt_date) -> list[DatasetDescription]:
         return self._filtered_ds_descriptions.get(date, [])
 
     def get_dataset_description_for_uid(self, uid: str) -> DatasetDescription | None:
         tuid = uid
         if len(tuid) < 26:
             # TODO @@@ Show error in GUI
-            raise Exception(f"'{tuid}' is too short for value TUID")
-        date = datetime.strptime(tuid[:19], "%Y%m%d-%H%M%S-%f").date()
+            raise Exception(f"'{tuid}' is too short for valid TUID")
+        date = dt_date.strptime(tuid[:8], "%Y%m%d")
         if date not in self._ds_descriptions:
             return None
         for dsd in self._ds_descriptions[date]:

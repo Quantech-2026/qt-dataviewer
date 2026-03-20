@@ -1,8 +1,8 @@
 import logging
 import os
-from datetime import datetime
 
 from qt_dataviewer.abstract.dataset_description import DatasetDescription
+from qt_dataviewer.quantify.utils import tuid_get_time
 
 
 logger = logging.getLogger(__name__)
@@ -25,7 +25,7 @@ class QuantifyDatasetDescription(DatasetDescription):
         if len(full_name) < 26:
             raise Exception(f"{full_name} too short for TUID")
         tuid = full_name[:26]
-        timestamp = datetime.strptime(tuid[:19], "%Y%m%d-%H%M%S-%f")
+        timestamp = tuid_get_time(tuid)
         if len(full_name) < 28:
             ds_name = "-- no name --"
         else:
@@ -43,4 +43,3 @@ class QuantifyDatasetDescription(DatasetDescription):
             timestamp,
             labels=dict(application="Quantify"),
             )
-

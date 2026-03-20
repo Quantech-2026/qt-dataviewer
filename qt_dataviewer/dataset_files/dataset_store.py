@@ -7,6 +7,7 @@ import xarray as xr
 from qt_dataviewer.abstract import DatasetDescription, Dataset, DatasetStore
 from qt_dataviewer.quantify.dataset_description import QuantifyDatasetDescription
 from qt_dataviewer.quantify.dataset import QuantifyDataset
+from qt_dataviewer.quantify.utils import tuid_get_time
 from qt_dataviewer.xarray_adapters.quantify_xarray import convert_quantify
 
 from .qcodes_files import (
@@ -245,7 +246,7 @@ class FileDataStore(DatasetStore, DirectoryScanner):
 def get_quantify_dataset_description(ds_xr: xr.Dataset, path: str):
     attrs = ds_xr.attrs
     tuid = attrs["tuid"]
-    collected_datetime = datetime.strptime(tuid[:19], "%Y%m%d-%H%M%S-%f")
+    collected_datetime = tuid_get_time(tuid)
 
     ds_xr = convert_quantify(ds_xr)
     return XarrayDatasetDescription(
