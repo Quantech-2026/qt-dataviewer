@@ -44,8 +44,8 @@ class SqdlDataBrowser(DataBrowserBase):
                 },
             column_definitions=[
                 ("Rating", 54, "rating-star-hide"),
-                ("UUID", 140),
-                ("Time", 58),
+                ("UUID", ),
+                ("Time", ),
                 ("Name", ),
                 ("Variables", ),
                 ("Axes", ),

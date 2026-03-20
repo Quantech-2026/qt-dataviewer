@@ -55,7 +55,7 @@ class SqdlDatasetStore(DatasetStore):
             except Exception as ex:
                 qt_show_exception("Failure retrieving scope",
                                   ex,
-                                  extra_line="Are you authorized for scope '{scope_name}'?")
+                                  extra_line=f"Are you authorized for scope '{scope_name}'?")
                 self.scope = None
                 self.scope_name = None
         else:
