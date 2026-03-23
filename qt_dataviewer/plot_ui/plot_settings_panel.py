@@ -42,6 +42,17 @@ class PlotSettings(QtWidgets.QWidget):
         layout.addWidget(self._height_filler(), irow, 0)
         irow += 1
 
+        if plot_model.error_message:
+            label_error = QtWidgets.QLabel("Error: " + plot_model.error_message)
+            label_error.setFont(get_font(1.2))
+            label_error.setStyleSheet("color: #aa0000;");
+            label_error.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
+            layout.addWidget(label_error, irow, 0, 1, max_column)
+            irow += 1
+            layout.addWidget(self._height_filler(), irow, 0)
+            irow += 1
+            return
+
         for i, text in enumerate(['x', 'y', 'avg', 'slice', 'log', 'fft', 'len'], btn_col):
             label_name = QtWidgets.QLabel(text)
             label_name.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)

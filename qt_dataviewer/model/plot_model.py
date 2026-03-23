@@ -73,10 +73,18 @@ class PlotModel:
         self._current_y = None
         self._last_selected_data = None
 
-        self._add_axes()
+        try:
+            self._add_axes()
 
-        if data.name.endswith('_fraction') or data.attrs.get('units') == '%':
-            self.set_value_range((0, 1))
+            if data.name.endswith('_fraction') or data.attrs.get('units') == '%':
+                self.set_value_range((0, 1))
+        except Exception as ex:
+            logger.error("Exception creating plot model", exc_info=True)
+            self.error_message = str(ex)
+            # remove axis
+            self._axis_settings: list[AxisSettings] = []
+        else:
+            self.error_message = None
 
     def _add_axes(self):
         x_axis = None
@@ -389,6 +397,3 @@ class PlotModel:
         duration = time.perf_counter() - start
         logger.info(f"Updated {self.var_name} {duration*1000:.1f} ms")
         return da
-
-
-
