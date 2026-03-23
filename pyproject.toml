@@ -30,7 +30,7 @@ license-files = [
 ]
 
 [tool.setuptools.package-data]
-"qt_dataviewer.resources" = ["*.png"]
+"qt_dataviewer.resources" = ["**/*.png"]
 
 
 [project.urls]
@@ -44,6 +44,7 @@ Changelog = "https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/blob/main/C
 qt-file-browser = "qt_dataviewer.cli.qt_file_browser:main"
 qt-sqdl-browser = "qt_dataviewer.cli.qt_sqdl_browser:main"
 qt-quantify-browser = "qt_dataviewer.cli.qt_quantify_browser:main"
+qt-qcodes-browser = "qt_dataviewer.cli.qt_qcodes_browser:main"
 
 [tool.tbump]
 # Uncomment this if your project is hosted on GitHub:
