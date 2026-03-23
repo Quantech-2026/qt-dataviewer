@@ -3,6 +3,7 @@ import xarray as xr
 from PyQt5 import QtWidgets
 
 from qt_dataviewer.model.plot_model import PlotModel
+from qt_dataviewer.plot_ui.plot_0d import Plot0D
 from qt_dataviewer.plot_ui.plot_1d import Plot1D
 from qt_dataviewer.plot_ui.plot_2d import Plot2D
 from qt_dataviewer.plot_ui.plot_multiline import PlotMultiline
@@ -46,9 +47,14 @@ class DataArrayPlotter:
                     or (ndim == 2 and self._multiline_plot != plot_model.multiline_plot)):
                 plot.remove()
                 plot = None
+        if plot_model.error_message:
+            self._plot = None
+            return
         if plot is None:
             self._multiline_plot = False
-            if ndim == 1:
+            if ndim == 0:
+                plot = Plot0D(self._layout, plot_model)
+            elif ndim == 1:
                 plot = Plot1D(self._layout, plot_model)
             elif ndim == 2:
                 if plot_model.multiline_plot:

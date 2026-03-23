@@ -83,6 +83,8 @@ class SmartFormatter:
                 self._units = units
 
     def _get_precision(self, data: xr.DataArray):
+        if data.ndim == 0:
+            return 4
         n = len(data)
         if n < 2:
             d = 4
