@@ -13,11 +13,12 @@ class QuantifyDatasetDescription(DatasetDescription):
     Includes path to dataset.
     """
 
-    def __init__(self, full_name: str, path: str) -> None:
+    def __init__(self, full_name: str, path: str, check_dataset: bool = False) -> None:
         """
         Args:
             name: full name of dataset, i.e. TUID+name
             path: path to directory containing hdf5 and snapshot files.
+            check_dataset: if True checks if dataset.hdf5 exist in directory
 
         Notes:
             path contains TUID and name.
@@ -34,7 +35,7 @@ class QuantifyDatasetDescription(DatasetDescription):
         self.path = path
         self.dataset_file_path = os.path.join(path, "dataset.hdf5")
 
-        if not os.path.isfile(self.dataset_file_path):
+        if check_dataset and not os.path.isfile(self.dataset_file_path):
             raise Exception(f"No 'dataset.hdf5' in {full_name}")
 
         super().__init__(

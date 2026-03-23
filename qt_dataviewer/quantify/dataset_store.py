@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 class QuantifyDatasetStore(DatasetStore):
 
-    def __init__(self):
+    def __init__(self, check_datasets: bool = False):
         super().__init__(is_dynamic=True)
 
         self._base_dir = None
@@ -30,6 +30,7 @@ class QuantifyDatasetStore(DatasetStore):
         self._all_ds_paths = set()
         self._ds_descriptions_changed = False
         self._auto_scan = False
+        self._check_datasets = False
         self._update_timer = QtCore.QTimer(self)
         self._update_timer.timeout.connect(self._check_for_updates)
         self._update_timer.setSingleShot(True)
@@ -106,7 +107,7 @@ class QuantifyDatasetStore(DatasetStore):
                 continue
             if entry.is_dir():
                 try:
-                    ds_description = QuantifyDatasetDescription(entry.name, entry.path)
+                    ds_description = QuantifyDatasetDescription(entry.name, entry.path, self._check_datasets)
                 except Exception:
                     continue
                 self._ds_descriptions[date].append(ds_description)
