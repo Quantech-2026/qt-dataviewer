@@ -32,7 +32,7 @@ class DatasetStore(QObject):
         super().__init__()
         self._is_dynamic = is_dynamic
         self._dates: list[date] = []
-        self._labels : LabelsDict = {}
+        self._labels: LabelsDict = {}
 
     @property
     def source_name(self):
