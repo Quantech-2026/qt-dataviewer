@@ -72,11 +72,12 @@ class CoreToolsDataset(Dataset):
 
     @property
     def is_modified(self) -> bool:
-        self.ds_ct.sync()
+        self._sync_data(force=True)
         return self._ct_total_written != self._get_total_written()
 
-    def _sync_data(self) -> None:
-        if (self._last_sync is None
+    def _sync_data(self, force: bool = False) -> None:
+        if (force
+                or self._last_sync is None
                 or datetime.now() - self._last_sync > timedelta(milliseconds=100)):
             self.ds_ct.sync()
             self._last_sync = datetime.now()
