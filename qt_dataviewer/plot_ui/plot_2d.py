@@ -146,6 +146,10 @@ class Plot2D(BasePlot):
 
             self.img.setImage(z)
             self.img.setRect(rect)
+            dx = x_width / len(x_array)
+            dy = y_height / len(y_array)
+            self.plot.setLimits(xMin=x_offset-dx, xMax=x_offset+x_width+dx,
+                                yMin=y_offset-dy, yMax=y_offset+y_height+dy)
 
         # TODO Cleanup !!
         if plot_mode == 'irregular':
