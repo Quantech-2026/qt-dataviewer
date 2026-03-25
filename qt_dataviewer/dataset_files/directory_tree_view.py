@@ -20,7 +20,7 @@ class DirectoryTreeView(QTreeWidget):
         self.itemSelectionChanged.connect(self._item_selected)
 
         self.current_path = ""
-        self.refresh()
+        self.clear()
 
     def clear(self):
         super().clear()
@@ -43,6 +43,7 @@ class DirectoryTreeView(QTreeWidget):
                 self._add_children(parent, "")
             if name == "":
                 if self.topLevelItemCount() > 0:
+                    self.setCurrentItem(self.topLevelItem(0))
                     self.topLevelItem(0).setSelected(True)
                 return
             for i in range(self.topLevelItemCount()):
