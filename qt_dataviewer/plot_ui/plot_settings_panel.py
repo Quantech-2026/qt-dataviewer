@@ -45,7 +45,7 @@ class PlotSettings(QtWidgets.QWidget):
         if plot_model.error_message:
             label_error = QtWidgets.QLabel("Error: " + plot_model.error_message)
             label_error.setFont(get_font(1.2))
-            label_error.setStyleSheet("color: #aa0000;");
+            label_error.setStyleSheet("color: #aa0000;")
             label_error.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
             layout.addWidget(label_error, irow, 0, 1, max_column)
             irow += 1
@@ -145,12 +145,20 @@ class PlotSettings(QtWidgets.QWidget):
         layout.addWidget(self._height_filler(), irow, 0)
         irow += 1
 
-        layout.addWidget(QtWidgets.QLabel('2D sidebar histogram'), irow, 0)
-        cb = QtWidgets.QCheckBox()
-        cb.setChecked(plot_model.show_sidebar)
-        cb.toggled.connect(self._set_show_sidebar)
-        self._cb_sidebar = cb
-        layout.addWidget(cb, irow, btn_col, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+        layout.addWidget(QtWidgets.QLabel('2D sidebar'), irow, 0)
+        sidebar_state = plot_model.show_sidebar
+        sidebar_layout = QtWidgets.QHBoxLayout()
+        group = QtWidgets.QButtonGroup(layout)
+        self._rb_sidebar = group
+        for icol, state in enumerate(["off", "std", "histogram"], btn_col):
+            rb = QtWidgets.QRadioButton(state)
+            rb.setChecked(sidebar_state == state)
+            rb.toggled.connect(partial(self._set_show_sidebar, state=state))
+            group.addButton(rb, icol)
+            sidebar_layout.addWidget(rb)
+        sidebar_layout.addStretch(4)
+        layout.addLayout(sidebar_layout, irow, btn_col, 1, 7)
+
         irow += 1
         layout.addWidget(self._height_filler(), irow, 0)
         irow += 1
@@ -206,8 +214,9 @@ class PlotSettings(QtWidgets.QWidget):
         self._plot_model.set_multiline_plot(checked)
 
     @qt_log_exception
-    def _set_show_sidebar(self, checked):
-        self._plot_model.set_show_sidebar(checked)
+    def _set_show_sidebar(self, checked, state):
+        if checked:
+            self._plot_model.set_show_sidebar(state)
 
     def update_gui(self):
         logger.debug('update gui')
@@ -227,7 +236,9 @@ class PlotSettings(QtWidgets.QWidget):
         for mode in [AxisMode.XAxis, AxisMode.YAxis]:
             hist_btns.button(mode).setChecked(mode == hist_mode)
 
-        self._cb_sidebar.setEnabled(plot_model.ndim == 2)
+        for btn in self._rb_sidebar.buttons():
+            btn.setEnabled(plot_model.ndim == 2 and not plot_model.multiline_plot)
+
         # self._cb_measured_log.setEnabled(plot_model.ndim == 1)
 
 

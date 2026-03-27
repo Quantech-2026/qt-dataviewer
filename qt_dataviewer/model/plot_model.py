@@ -36,7 +36,7 @@ class VariableSettings:
     hist_range: tuple[float, float] | None = None
     manual_value_range: tuple[float, float] | None = None
     slice_value_range: tuple[float, float] | None = None
-    show_sidebar: bool = False
+    show_sidebar: str = "off"
     multiline_plot: bool = False
 
     @property
@@ -322,9 +322,9 @@ class PlotModel:
         return self._var_settings.value_range
 
     @plot_changer
-    def set_show_sidebar(self, show):
-        if self._var_settings.show_sidebar != show:
-            self._var_settings.show_sidebar = show
+    def set_show_sidebar(self, state):
+        if self._var_settings.show_sidebar != state:
+            self._var_settings.show_sidebar = state
             self._changed = True
 
     @property

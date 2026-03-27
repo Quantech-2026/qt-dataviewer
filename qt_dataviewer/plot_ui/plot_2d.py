@@ -2,10 +2,12 @@ import logging
 import pyqtgraph as pg
 import numpy as np
 
+from pyqtgraph.colormap import getFromMatplotlib
 from PyQt5 import QtCore, QtWidgets, QtGui
 from matplotlib import colormaps
 
 from qt_dataviewer.utils.qt_utils import qt_log_exception
+from qt_dataviewer.utils.configuration import get_setting
 from .plots import BasePlot
 from .smart_format import SmartFormatter
 from .axis_helper import AxisHelper
@@ -22,21 +24,18 @@ class Plot2D(BasePlot):
         self.img = pg.ImageItem()
         # set some image data. This is required for pyqtgraph > 0.11
         self.img.setImage(np.zeros((1, 1)))
+        self.img.setColorMap(get_color_map())
 
-        hist = pg.HistogramLUTWidget()
-        hist.setImageItem(self.img)
-        hist.gradient.setColorMap(get_color_map())
-        hist.hide()
-        self.hist = hist
+        self.hist = None
+        self.cb = None
         self.plot.addItem(self.img)
         self.widget = pg.PlotWidget(plotItem=self.plot)
         self.layout_widget = QtWidgets.QWidget()
         self.h_layout = QtWidgets.QHBoxLayout(self.layout_widget)
         self.h_layout.addWidget(self.widget)
-        self.h_layout.addWidget(self.hist)
         self._layout.addWidget(self.layout_widget)
 
-        self._plot_mode = 'uniform'
+        self._plot_mode = "uniform"
 
         self.label = QtWidgets.QLabel()
         self.label.setAlignment(QtCore.Qt.AlignRight)
@@ -52,14 +51,35 @@ class Plot2D(BasePlot):
         except Exception:
             logger.error("Failed to create plot", exc_info=True)
 
-    def show_sidebar(self, show):
-        histogram = self.hist
-        if not show:
-            if not histogram.isHidden():
-                histogram.hide()
+    def show_sidebar(self, mode):
+        if mode == "std":
+            if self.cb is None:
+                cb = pg.ColorBarItem(colorMap=get_color_map(), interactive=False, width=12)
+                cb.axis.setWidth(25)
+                cb.setImageItem(self.img or self.mesh, insert_in=self.plot)
+                self.cb = cb
         else:
-            if histogram.isHidden():
-                histogram.show()
+            if self.cb is not None:
+                self.plot.layout.removeItem(self.cb)
+                self.cb = None
+
+        if mode == "histogram":
+            if self.hist is None:
+                hist = pg.HistogramLUTWidget()
+                hist.setMinimumWidth(76)
+                hist.vb.setMinimumWidth(24)
+                hist.setImageItem(self.img or self.mesh)
+                hist.gradient.setColorMap(get_color_map())  # nTicks=5))
+                hist.gradient.showTicks(False)
+                self.h_layout.addWidget(hist)
+                self.hist = hist
+        else:
+            if self.hist is not None:
+                hist = self.hist
+                # disconnect and delete
+                hist.imageItem().sigImageChanged.disconnect(hist.imageChanged)
+                self.h_layout.removeWidget(hist)
+                self.hist = None
 
     @qt_log_exception
     def update(self):
@@ -71,8 +91,8 @@ class Plot2D(BasePlot):
         x_array = data[data.dims[0]]
         y_array = data[data.dims[1]]
 
-        x_scale = x_array.attrs.get('scale', '')
-        y_scale = y_array.attrs.get('scale', '')
+        x_scale = x_array.attrs.get("scale", "")
+        y_scale = y_array.attrs.get("scale", "")
         if x_scale.endswith("_unsorted"):
             x_scale = x_scale[:-9]
             data = data.sortby(x_array.name)
@@ -98,24 +118,29 @@ class Plot2D(BasePlot):
             return
 
         plot = self.plot
-        x_helper.set_plot_axis(plot.getAxis('bottom'))
-        y_helper.set_plot_axis(plot.getAxis('left'))
+        x_helper.set_plot_axis(plot.getAxis("bottom"))
+        y_helper.set_plot_axis(plot.getAxis("left"))
 
-        if x_scale == 'irregular' or y_scale == 'irregular':
-            plot_mode = 'irregular'
+        if x_scale == "irregular" or y_scale == "irregular":
+            plot_mode = "irregular"
         else:
-            plot_mode = 'uniform'
+            plot_mode = "uniform"
 
-        if plot_mode == 'uniform':
-            if self._plot_mode != 'uniform':
+        if plot_mode == "uniform":
+            if self._plot_mode != "uniform":
                 self.plot.removeItem(self.mesh)
                 self.mesh = None
                 self.img = pg.ImageItem()
                 # set some image data. This is required for pyqtgraph > 0.11
                 self.img.setImage(np.zeros((1, 1)))
                 self.plot.addItem(self.img)
-                self.hist.setImageItem(self.img)
-                self._plot_mode = 'uniform'
+                if self.hist is not None:
+                    self.hist.setImageItem(self.img)
+                elif self.cb is not None:
+                    self.cb.setImageItem(self.img)
+                else:
+                    self.img.setColorMap(get_color_map())
+                self._plot_mode = "uniform"
 
             x_offset, x_width, x_flip = x_helper.get_axis_range()
             y_offset, y_height, y_flip = y_helper.get_axis_range()
@@ -137,8 +162,8 @@ class Plot2D(BasePlot):
             )
             # log mode determined by axis data
             log_mode = {
-                'x': x_scale == 'log',
-                'y': y_scale == 'log',
+                "x": x_scale == "log",
+                "y": y_scale == "log",
                 }
             self._log_mode = log_mode
             plot.setLogMode(**log_mode)
@@ -152,25 +177,30 @@ class Plot2D(BasePlot):
                                 yMin=y_offset-dy, yMax=y_offset+y_height+dy)
 
         # TODO Cleanup !!
-        if plot_mode == 'irregular':
-            if self._plot_mode != 'irregular':
+        if plot_mode == "irregular":
+            if self._plot_mode != "irregular":
                 self.plot.removeItem(self.img)
                 self.img = None
                 self.mesh = MyPColorMesh()
-                self.hist.setImageItem(self.mesh)
+                if self.hist is not None:
+                    self.hist.setImageItem(self.mesh)
+                elif self.cb is not None:
+                    self.cb.setImageItem(self.img)
+                else:
+                    self.mesh.setColorMap(get_color_map())
                 self.plot.addItem(self.mesh)
-                self._plot_mode = 'irregular'
+                self._plot_mode = "irregular"
 
             # log mode determined by plot settings
             log_mode = {
-                'x': x_array.attrs.get('log', False),
-                'y': y_array.attrs.get('log', False),
+                "x": x_array.attrs.get("log", False),
+                "y": y_array.attrs.get("log", False),
                 }
             self._log_mode = log_mode
             plot.setLogMode(**log_mode)
 
-            x_edges, x_slice = x_helper.get_edges(log_mode.get('x'))
-            y_edges, y_slice = y_helper.get_edges(log_mode.get('y'))
+            x_edges, x_slice = x_helper.get_edges(log_mode.get("x"))
+            y_edges, y_slice = y_helper.get_edges(log_mode.get("y"))
 
             if x_slice is None or y_slice is None:
                 logger.warning("No valid values on axis")
@@ -185,10 +215,10 @@ class Plot2D(BasePlot):
                 self.mesh.setLevels((np.nanmin(z), np.nanmax(z)), update=False)
 
             self.mesh.setData(x_grid, y_grid, z, autoLevels=False)
-            self.hist.setImageItem(self.mesh)
+            # Is this needed? self.hist.setImageItem(self.mesh)
 
             # Calculate min/max values to show data with small empty border.
-            # Default behavior of pyqtgraph is to select 'notural' values on axis.
+            # Default behavior of pyqtgraph is to select "notural" values on axis.
             # This behavior can result in a big white space around the data.
             x_min, x_max = self._get_axis_limits(x_edges)
             y_min, y_max = self._get_axis_limits(y_edges)
@@ -212,9 +242,9 @@ class Plot2D(BasePlot):
             mousePoint = vb.mapSceneToView(pos)
             x_val = mousePoint.x()
             y_val = mousePoint.y()
-            if self._log_mode.get('x'):
+            if self._log_mode.get("x"):
                 x_val = 10**x_val
-            if self._log_mode.get('y'):
+            if self._log_mode.get("y"):
                 y_val = 10**y_val
 
             da = self._data
@@ -237,15 +267,17 @@ class Plot2D(BasePlot):
             self.label.setText(f"x={x_str}, y={y_str}: {z_str}")
 
 
-def get_color_map():
-    numofLines = 5
-    colorMap = colormaps['viridis']
-    colorList = np.linspace(0, 1, numofLines)
+def get_color_map(nTicks: int | None = None):
+    colormap = get_setting("plotting.colormap")
+    if nTicks is None:
+        return getFromMatplotlib(colormap)
+    colorMap = colormaps[get_setting("plotting.colormap")]
+    colorList = np.linspace(0, 1, nTicks)
     lineColors = colorMap(colorList)
 
     lineColors = lineColors * 255
     lineColors = lineColors.astype(int)
-    return pg.ColorMap(pos=np.linspace(0.0, 1.0, numofLines), color=lineColors)
+    return pg.ColorMap(pos=np.linspace(0.0, 1.0, nTicks), color=lineColors)
 
 
 class MyPColorMesh(pg.PColorMeshItem):
@@ -257,11 +289,12 @@ class MyPColorMesh(pg.PColorMeshItem):
     """
 
     def setLookupTable(self, lut, update=True):
-        _lut = lut(n=256)
-        # print(_lut)
-        lut = [
-            QtGui.QColor.fromRgb(rgb[0], rgb[1], rgb[2]) for rgb in _lut
-            ]
+        if not isinstance(lut, list):
+            _lut = lut(n=256)
+            # print(_lut)
+            lut = [
+                QtGui.QColor.fromRgb(rgb[0], rgb[1], rgb[2]) for rgb in _lut
+                ]
         super().setLookupTable(lut)
 
     def getHistogram(self):
