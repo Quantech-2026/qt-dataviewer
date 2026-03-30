@@ -185,7 +185,7 @@ class Plot1D(BasePlot):
         plot_axis = plot.getAxis(axis_name)
         formatter.set_plot_axis(plot_axis)
 
-        plot_data = self._x_formatter.without_unit_prefix(data)
+        plot_data = formatter.without_unit_prefix(data)
 
         if issubclass(data.dtype.type, str) or formatter._units == "|..>": # TODO add to smarformaater?
             formatter.set_labels(plot_axis, data)
