@@ -1,7 +1,10 @@
-
+from qt_dataviewer.utils.logger import configure_logging
 from qt_dataviewer.sqdl import SqdlDataBrowser
 
-browser = SqdlDataBrowser()
-# browser = SqdlDataBrowser("MV-Shell Occupancy")
-# browser = SqdlDataBrowser("LV-sixdot")
+
+configure_logging()
+
+browser = SqdlDataBrowser(
+    # gui_style="dark",
+    )
 

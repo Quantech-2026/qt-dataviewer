@@ -1,4 +1,6 @@
-
 from qt_dataviewer.data_file_browser import DataFileBrowser
+from qt_dataviewer.utils.logger import configure_logging
 
-browser = DataFileBrowser(r"test_data", gui_style="dark")
+configure_logging()
+
+browser = DataFileBrowser()  # "test_data", gui_style="dark")
