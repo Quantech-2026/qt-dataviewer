@@ -3,7 +3,7 @@
 _default_configuration = """
 plotting:
   colormap: viridis  # viridis, plasma, inferno, magma, afmhot, Spectral, coolwarm, terrain, rainbow, jet, turbo
-  2D-colorbar: off  # options: off, standard, histogram
+  2D-colorbar: off  # options: off, std, histogram
 
 logging:
   enabled: true
