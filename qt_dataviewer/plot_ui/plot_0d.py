@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
 from qtpy import QtCore, QtWidgets
-from qt_dataviewer.model.plot_model import ComplexMode, get_phase
+from qt_dataviewer.model.plot_model import get_phase
 from qt_dataviewer.utils.qt_utils import qt_log_exception, get_font
 
 from .smart_format import SmartFormatter
