@@ -1,6 +1,9 @@
 import os
 import sys
 from qt_dataviewer.qcodes import QCoDeSDataBrowser
+from qt_dataviewer.utils.logger import configure_logging
+
+configure_logging()
 
 
 def print_usage():
