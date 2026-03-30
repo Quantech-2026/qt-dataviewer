@@ -4,7 +4,7 @@ from functools import partial
 from PyQt5 import QtCore, QtWidgets
 
 from qt_dataviewer.utils.qt_utils import qt_log_exception, get_font
-from qt_dataviewer.model.plot_model import AxisMode, AxisSettings, PlotModel
+from qt_dataviewer.model.plot_model import AxisMode, AxisSettings, PlotModel, ComplexMode
 from .smart_format import SmartFormatter
 
 logger = logging.getLogger(__name__)
@@ -26,6 +26,7 @@ class PlotSettings(QtWidgets.QWidget):
             layout.setColumnMinimumWidth(icol, 20)
         layout.setColumnMinimumWidth(max_column-2, 30)
 
+        self._updating = False
         self._rb_groups = {}
         self._cb_log = {}
         self._cb_fft = {}
@@ -115,7 +116,7 @@ class PlotSettings(QtWidgets.QWidget):
         irow += 1
         layout.addWidget(self._height_filler(), irow, 0)
         irow += 1
-        # @@@ add hist bins, range
+        # TODO add hist bins, range
 
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.HLine)
@@ -145,7 +146,19 @@ class PlotSettings(QtWidgets.QWidget):
         layout.addWidget(self._height_filler(), irow, 0)
         irow += 1
 
-        layout.addWidget(QtWidgets.QLabel('2D sidebar'), irow, 0)
+        if plot_model.iscomplex:
+            layout.addWidget(QtWidgets.QLabel('Complex'), irow, 0)
+            combo = QtWidgets.QComboBox()
+            combo.setMinimumWidth(80)
+            combo.addItem("---", None)
+            combo.currentTextChanged.connect(self._set_complex_mode)
+            self._complex_mode_cbx = combo
+            layout.addWidget(self._complex_mode_cbx, irow, btn_col, 1, 7)
+            irow += 1
+            layout.addWidget(self._height_filler(), irow, 0)
+            irow += 1
+
+        layout.addWidget(QtWidgets.QLabel('2D colorbar'), irow, 0)
         sidebar_state = plot_model.show_sidebar
         sidebar_layout = QtWidgets.QHBoxLayout()
         group = QtWidgets.QButtonGroup(layout)
@@ -163,9 +176,14 @@ class PlotSettings(QtWidgets.QWidget):
         layout.addWidget(self._height_filler(), irow, 0)
         irow += 1
 
-        self.update_gui()
+        self._info_lbl = QtWidgets.QLabel("INFO")
+        layout.addWidget(self._info_lbl, irow, 0, 1, 7, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
 
-        # @@@ value range
+        irow += 1
+        layout.addWidget(self._height_filler(), irow, 0)
+        irow += 1
+
+        self.update_gui()
 
     def _height_filler(self):
         height_filler = QtWidgets.QFrame()
@@ -199,6 +217,7 @@ class PlotSettings(QtWidgets.QWidget):
     def _set_fft(self, checked, index):
         logger.debug(f"set fft {index}")
         self._plot_model.set_axis_fft(index, checked)
+        self.update_gui()
 
     @qt_log_exception
     def _set_slice(self, slice_index, index):
@@ -214,6 +233,17 @@ class PlotSettings(QtWidgets.QWidget):
         self._plot_model.set_multiline_plot(checked)
 
     @qt_log_exception
+    def _set_complex_mode(self, mode: str):
+        try:
+            complex_mode = ComplexMode(mode)
+        except ValueError:
+            # ignore "---" or ""
+            return
+        if complex_mode != self._plot_model.complex_mode:
+            self._plot_model.set_complex_mode(complex_mode)
+            self.update_gui()
+
+    @qt_log_exception
     def _set_show_sidebar(self, checked, state):
         if checked:
             self._plot_model.set_show_sidebar(state)
@@ -223,6 +253,15 @@ class PlotSettings(QtWidgets.QWidget):
         plot_model = self._plot_model
         if not plot_model:
             return
+        if self._updating:
+            return
+        self._updating = True
+        if plot_model.info_message is None:
+            self._info_lbl.setVisible(False)
+        else:
+            self._info_lbl.setVisible(True)
+            self._info_lbl.setText(plot_model.info_message)
+
         for axis in range(plot_model.n_axis):
             settings = plot_model.get_axis_settings(axis)
             mode = settings.mode
@@ -239,7 +278,24 @@ class PlotSettings(QtWidgets.QWidget):
         for btn in self._rb_sidebar.buttons():
             btn.setEnabled(plot_model.ndim == 2 and not plot_model.multiline_plot)
 
+        if plot_model.iscomplex:
+            cbx = self._complex_mode_cbx
+            # TODO optimize? only if ndim changed?
+            cbx.clear()
+            current_mode = plot_model.complex_mode
+            if plot_model.ndim == 1:
+                for mode in ComplexMode:
+                    cbx.addItem(mode.value)
+                cbx.setCurrentText(current_mode.value)
+            elif plot_model.ndim == 2:
+                for mode in ComplexMode.modes_2D():
+                    cbx.addItem(mode.value)
+                cbx.setCurrentText(current_mode.to_2D_mode().value)
+            else:
+                cbx.addItem("---")
+
         # self._cb_measured_log.setEnabled(plot_model.ndim == 1)
+        self._updating = False
 
 
 class Slider:
@@ -297,7 +353,7 @@ class Slider:
 
     def _set_label_text(self, slice_index):
         settings = self.settings
-        value = self.formatter.without_unit_prefix(settings.data[slice_index])
+        value = self.formatter.without_unit_prefix(settings.data[slice_index]) # TODO Make 1 call?
         value_str = self.formatter.with_units(value, settings.data)
         self.label.setText(value_str)
 

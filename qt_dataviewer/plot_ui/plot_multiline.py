@@ -1,13 +1,17 @@
+import logging
 import pyqtgraph as pg
 import numpy as np
 from matplotlib import colormaps
 from PyQt5 import QtCore, QtWidgets
 from pyqtgraph.graphicsItems import AxisItem
 
+from qt_dataviewer.model.plot_model import ComplexMode, get_phase
 from qt_dataviewer.utils.qt_utils import qt_log_exception
 from .smart_format import SmartFormatter
 from .plots import BasePlot
 
+
+logger = logging.getLogger(__name__)
 
 # default colors cycle: see matplotlib CN colors.
 color_cycle = [
@@ -81,7 +85,24 @@ class PlotMultiline(BasePlot):
         self._data = data
         x0 = data[data.dims[0]]
         x1 = data[data.dims[1]]
-        y = data
+
+        if np.iscomplexobj(data):
+            complex_mode = plot_model.complex_mode
+
+            match complex_mode:
+                case ComplexMode.Re:
+                    y = data.real
+                case ComplexMode.Im:
+                    y = data.imag
+                case ComplexMode.Amplitude:
+                    y = np.abs(data)
+                case ComplexMode.Phase:
+                    y = get_phase(data)
+                case _:
+                    logger.error(f"Complex mode {complex_mode} not supported in 2D")
+                    y = data.real
+        else:
+            y = data
 
         x0_formatter = SmartFormatter(x0)
         self._x0_formatter = x0_formatter

@@ -6,6 +6,7 @@ from pyqtgraph.colormap import getFromMatplotlib
 from PyQt5 import QtCore, QtWidgets, QtGui
 from matplotlib import colormaps
 
+from qt_dataviewer.model.plot_model import ComplexMode, get_phase
 from qt_dataviewer.utils.qt_utils import qt_log_exception
 from qt_dataviewer.utils.configuration import get_setting
 from .plots import BasePlot
@@ -55,7 +56,7 @@ class Plot2D(BasePlot):
         if mode == "std":
             if self.cb is None:
                 cb = pg.ColorBarItem(colorMap=get_color_map(), interactive=False, width=12)
-                cb.axis.setWidth(25)
+                cb.axis.setWidth(40)
                 cb.setImageItem(self.img or self.mesh, insert_in=self.plot)
                 self.cb = cb
         else:
@@ -102,17 +103,38 @@ class Plot2D(BasePlot):
             data = data.sortby(y_array.name)
             y_array = data[data.dims[1]]
 
+        if np.iscomplexobj(data):
+            complex_mode = plot_model.complex_mode
+
+            match complex_mode:
+                case ComplexMode.Re:
+                    z_array = data.real
+                case ComplexMode.Im:
+                    z_array = data.imag
+                case ComplexMode.Amplitude:
+                    z_array = np.abs(data)
+                case ComplexMode.Phase:
+                    z_array = get_phase(data)
+                case _:
+                    logger.error(f"Complex mode {complex_mode} not supported in 2D")
+                    z_array = data.real
+        else:
+            z_array = data
+
         x_formatter = SmartFormatter(x_array)
         self._x_formatter = x_formatter
+        self._x_array = x_array
         y_formatter = SmartFormatter(y_array)
         self._y_formatter = y_formatter
-        z_formatter = SmartFormatter(data)
+        self._y_array = y_array
+        z_formatter = SmartFormatter(z_array)
         self._z_formatter = z_formatter
+        self._z_array = z_array
 
         x_helper = AxisHelper(x_array, x_scale)
         y_helper = AxisHelper(y_array, y_scale)
 
-        z = data.data
+        z = z_array.data
         if not np.any(np.isfinite(z)):
             logger.info("no valid data to plot")
             return
@@ -171,6 +193,8 @@ class Plot2D(BasePlot):
 
             self.img.setImage(z)
             self.img.setRect(rect)
+            if self.cb:
+                self.cb.setLevels(self.img.getLevels())
             dx = x_width / len(x_array)
             dy = y_height / len(y_array)
             self.plot.setLimits(xMin=x_offset-dx, xMax=x_offset+x_width+dx,
@@ -193,8 +217,8 @@ class Plot2D(BasePlot):
 
             # log mode determined by plot settings
             log_mode = {
-                "x": x_array.attrs.get("log", False),
-                "y": y_array.attrs.get("log", False),
+                "x": x_formatter.log,
+                "y": y_formatter.log,
                 }
             self._log_mode = log_mode
             plot.setLogMode(**log_mode)
@@ -209,10 +233,13 @@ class Plot2D(BasePlot):
             x_grid = x_edges[:, None] * np.ones(len(y_edges))
             y_grid = y_edges * np.ones(len(x_edges))[:, None]
 
-            z = data.data[x_slice, y_slice]
+            z = z_array.data[x_slice, y_slice]
             # determine z-levels.
             if np.any(np.isfinite(z)):
-                self.mesh.setLevels((np.nanmin(z), np.nanmax(z)), update=False)
+                levels = (np.nanmin(z), np.nanmax(z))
+                self.mesh.setLevels(levels, update=False)
+                if self.cb:
+                    self.cb.setLevels(levels)
 
             self.mesh.setData(x_grid, y_grid, z, autoLevels=False)
             # Is this needed? self.hist.setImageItem(self.mesh)
@@ -247,10 +274,9 @@ class Plot2D(BasePlot):
             if self._log_mode.get("y"):
                 y_val = 10**y_val
 
-            da = self._data
-            z = self._z_formatter.without_unit_prefix(da.data)
-            x = self._x_formatter.without_unit_prefix(da[da.dims[0]].data)
-            y = self._y_formatter.without_unit_prefix(da[da.dims[1]].data)
+            z = self._z_formatter.without_unit_prefix(self._z_array)
+            x = self._x_formatter.without_unit_prefix(self._x_array)
+            y = self._y_formatter.without_unit_prefix(self._y_array)
 
             d = np.abs(x-x_val)
             ix = np.nanargmin(d)

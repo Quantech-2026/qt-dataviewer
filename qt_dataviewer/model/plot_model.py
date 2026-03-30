@@ -1,6 +1,7 @@
 import logging
 import time
 from dataclasses import dataclass
+from enum import StrEnum
 from numbers import Number
 
 import numpy as np
@@ -17,6 +18,41 @@ class AxisMode:
     YAxis = 1
     Average = 2
     Slice = 3
+
+
+class ComplexMode(StrEnum):
+    """
+    FFT:
+        FFT gives complex data, but we only return amplitude!
+        Complex input for FFT does not make sense.
+        Re, Im, or amplitude input, amplitude output.
+        Re+Im input?
+        => Info line on settings panel !! Plotting FFT of real component / amplitude.
+    Histogram:
+        Re, Im or amplitude output.
+
+    Model.is_complex
+    Model.complex_mode
+    """
+    Re = "Re"
+    Im = "Im"
+    ReIm = "Re+Im"
+    Nyquist = "Nyquist"
+    NyquistPolar = "Nyquist (polar)"
+    Amplitude = "Amplitude"
+    Phase = "Phase"
+    AmplitudePhase = "Amplitude+Phase"
+
+    @staticmethod
+    def modes_2D():
+        return [ComplexMode.Re, ComplexMode.Im, ComplexMode.Amplitude, ComplexMode.Phase]
+
+    def to_2D_mode(self):
+        if self in [ComplexMode.ReIm, ComplexMode.Nyquist, ComplexMode.NyquistPolar]:
+            return ComplexMode.Re
+        if self == ComplexMode.AmplitudePhase:
+            return ComplexMode.Amplitude
+        return self
 
 
 @dataclass
@@ -36,14 +72,29 @@ class VariableSettings:
     hist_range: tuple[float, float] | None = None
     manual_value_range: tuple[float, float] | None = None
     slice_value_range: tuple[float, float] | None = None
+    slice_imag_range: tuple[float, float] | None = None
+    slice_ampl_range: tuple[float, float] | None = None
     show_sidebar: str = "off"
     multiline_plot: bool = False
+    complex_mode: ComplexMode = ComplexMode.Re
 
     @property
     def value_range(self) -> tuple[float, float] | None:
         if self.manual_value_range is not None:
             return self.manual_value_range
         return self.slice_value_range
+
+    @property
+    def imag_range(self) -> tuple[float, float] | None:
+        if self.manual_value_range is not None:
+            return self.manual_value_range
+        return self.slice_imag_value_range
+
+    @property
+    def amplitude_range(self) -> tuple[float, float] | None:
+        if self.manual_value_range is not None:
+            return self.manual_value_range
+        return self.slice_ampl_value_range
 
 
 def plot_changer(func):
@@ -72,6 +123,8 @@ class PlotModel:
         self._current_x = None
         self._current_y = None
         self._last_selected_data = None
+        self._info_message = None
+        self._iscomplex = np.iscomplexobj(data)
 
         try:
             self._add_axes()
@@ -80,11 +133,11 @@ class PlotModel:
                 self.set_value_range((0, 1))
         except Exception as ex:
             logger.error("Exception creating plot model", exc_info=True)
-            self.error_message = str(ex)
-            # remove axis
+            self._error_message = str(ex)
+            # remove axes
             self._axis_settings: list[AxisSettings] = []
         else:
-            self.error_message = None
+            self._error_message = None
 
     def _add_axes(self):
         x_axis = None
@@ -171,6 +224,7 @@ class PlotModel:
                 logger.error(f"Labels differ {new_labels} <> {old_labels} {data.dims} {self._data.dims}")
 
             self._data = data
+            self._iscomplex = np.iscomplexobj(data)
             for i, dim in enumerate(data.dims):
                 axis_data = data[dim]
                 settings = self._axis_settings[i]
@@ -187,12 +241,28 @@ class PlotModel:
             logger.error('update failed', exc_info=True)
 
     @property
+    def error_message(self):
+        return self._error_message
+
+    @property
+    def info_message(self):
+        return self._info_message
+
+    @property
     def seq_nr(self):
         return self._seq_nr
 
     @property
     def var_name(self):
         return self._data.name
+
+    @property
+    def title(self):
+        return self._data.attrs.get("long_name", self._data.name)
+
+    @property
+    def iscomplex(self):
+        return self._iscomplex
 
     def set_plotter(self, plotter):
         self._plotter = plotter
@@ -276,7 +346,7 @@ class PlotModel:
         old_index = self._axis_settings[index].slice_index
         if old_index != slice_index:
             self._axis_settings[index].slice_index = slice_index
-            self._changed = True
+            self._changed = True  # TODO Slice changed.
 
     @plot_changer
     def set_axis_fft(self, index, fft_on):
@@ -290,10 +360,20 @@ class PlotModel:
         return self._var_settings.histogram_mode
 
     @plot_changer
+    def set_complex_mode(self, mode: ComplexMode):
+        if self._var_settings.complex_mode != mode:
+            self._var_settings.complex_mode = mode
+            self._changed = True
+
+    @property
+    def complex_mode(self):
+        return self._var_settings.complex_mode
+
+    @plot_changer
     def set_logarithmic(self, logarithmic):
         if self._var_settings.logarithmic != logarithmic:
             self._var_settings.logarithmic = logarithmic
-            self._changed = True
+            self._changed = True # TODO Only plotting changed Update result only?
 
     @property
     def logarithmic(self):
@@ -303,7 +383,7 @@ class PlotModel:
     def set_multiline_plot(self, multiline_plot):
         if self._var_settings.multiline_plot != multiline_plot:
             self._var_settings.multiline_plot = multiline_plot
-            self._changed = True
+            self._changed = True # TODO: No change in data
 
     @property
     def multiline_plot(self):
@@ -332,15 +412,28 @@ class PlotModel:
         return self._var_settings.show_sidebar
 
     def update(self):
-        if self._changed and self._plotter:
+        if self._changed and self._plotter: # TODO plotting changed, data changed, slice changed.
+            # plotter calls get_data().
             self._plotter.update()
 
     def get_data(self):
+
+        """
+        TODO:
+            * fft and histogram are 'slow'. Cache result before slicing.
+
+        Split in multiple methods.
+        """
+
         if not self._changed and self._last_selected_data is not None:
             return self._last_selected_data
+
+        self._info_message = None
+
         logger.debug(f"get_data {self.var_name}")
         start = time.perf_counter()
-        histogram_mode = self._var_settings.histogram_mode
+        var_settings = self._var_settings
+        histogram_mode = var_settings.histogram_mode
         da = self._data
         dims = [settings.data.name for settings in self._axis_settings]
         for settings in reversed(self._axis_settings):
@@ -352,7 +445,7 @@ class PlotModel:
                 dims.remove(dim_name)
                 continue
 
-        # NOTE: attributes get lost during averaging.
+        # Copy attributes. They get lost during averaging.
         for name in ['units', 'long_name']:
             try:
                 da.attrs[name] = self._data.attrs[name]
@@ -360,23 +453,33 @@ class PlotModel:
                 pass
 
         # Note: order of Average and FFT matter, because of np.abs() of FFT.
-        # First average than FFT.
+        # FFT after averaging
         for settings in reversed(self._axis_settings):
             dim_name = settings.data.name
             if settings.fft and settings.mode in [AxisMode.XAxis, AxisMode.YAxis]:
+                if np.iscomplexobj(da):
+                    da = self._select_complex_component(da, "FFT")
                 da = apply_fft(da, dim_name)
                 da[dim_name].attrs['log'] = settings.logarithmic
 
-        value_range = (float(da.min().real), float(da.max().real)) # TODO @@@ handle complex data properly
+        value_range = (float(da.min().real), float(da.max().real))
+        if np.iscomplexobj(da):
+            imag = da.imag
+            amplitude = np.abs(da)
+            imag_range = (float(imag.min()), float(imag.max()))
+            ampl_range = (float(amplitude.min()), float(amplitude.max()))
+
         if histogram_mode is not None:
             logger.debug("start histogram")
+            if np.iscomplexobj(da):
+                da = self._select_complex_component(da, "histogram")
             da = histogram(da, dims + ['histogram'], 50, value_range) # TODO bins, range
             da['histogram'].attrs['log'] = False
             value_range = (float(da.min()), float(da.max()))
             logger.debug("done histogram")
 
         # @@@ Cache pre-slice value
-        # @@@ set attrs['log'] after calc.
+        self._pre_slice_data = da
 
         has_slice = False
         for settings in self._axis_settings:
@@ -386,9 +489,13 @@ class PlotModel:
                 da = da[{dim_name: settings.slice_index}].drop(dim_name)
                 continue
 
-        self._var_settings.slice_value_range = value_range if has_slice else None
+        var_settings.slice_value_range = value_range if has_slice else None
+        if np.iscomplexobj(da):
+            var_settings.slice_imag_range = imag_range if has_slice else None
+            var_settings.slice_ampl_range = ampl_range if has_slice else None
 
-        da.attrs['log'] = self._var_settings.logarithmic
+        da.attrs['log'] = var_settings.logarithmic
+
         logger.debug(f"Done get_data {self.var_name}")
         dims = [da[dim].name for dim in self.dims]
         da = da.transpose(*dims)
@@ -397,3 +504,31 @@ class PlotModel:
         duration = time.perf_counter() - start
         logger.info(f"Updated {self.var_name} {duration*1000:.1f} ms")
         return da
+
+    def _select_complex_component(self, da: xr.DataArray, transformation: str) -> xr.DataArray:
+        mode = self._var_settings.complex_mode
+        if mode in [ComplexMode.ReIm, ComplexMode.Nyquist, ComplexMode.NyquistPolar]:
+            self._info_message = f"Only real component used for {transformation}"
+            return da.real
+        if mode == ComplexMode.AmplitudePhase:
+            self._info_message = f"Only amplitude used for {transformation}"
+            return np.abs(da)
+        if mode == ComplexMode.Re:
+            return da.real
+        if mode == ComplexMode.Im:
+            return da.imag
+        if mode == ComplexMode.Amplitude:
+            return np.abs(da)
+        if mode == ComplexMode.Phase:
+            return get_phase(da)
+
+
+def get_phase(da: xr.DataArray) -> xr.DataArray:
+    # np.angle does not return an xarray DataArray
+    da2 = xr.DataArray(
+        data=np.angle(da),
+        coords=da.coords,
+        attrs=da.attrs.copy(),
+        )
+    da2.attrs["units"] = "rad"
+    return da2

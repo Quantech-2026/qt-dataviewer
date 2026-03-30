@@ -64,6 +64,7 @@ def format_with_units(value: float | None, units: str, precision: int):
 class SmartFormatter:
     def __init__(self, da: xr.DataArray):
         attrs = da.attrs
+        self.log = attrs.get("log", False)
         self._label = attrs.get('long_name', da.name)
         units = attrs.get("units", "")
         if units == "no_label":
