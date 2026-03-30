@@ -1,12 +1,12 @@
 
-from PyQt5 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 
 from qt_dataviewer.abstract.types import LabelsDict
 from qt_dataviewer.resources.icons import Icons
 
 
 class TextFilterWidget(QtWidgets.QWidget):
-    filter_changed = QtCore.pyqtSignal(str, str)
+    filter_changed = QtCore.Signal(str, str)
 
     def __init__(self, name: str, key: str, width: int = 100):
         super().__init__()
@@ -25,14 +25,14 @@ class TextFilterWidget(QtWidgets.QWidget):
 
         text_edit.editingFinished.connect(self._text_changed)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _text_changed(self):
         text = self.text_edit.text()
         self.filter_changed.emit(self.key, text)
 
 
 class ListFilterWidget(QtWidgets.QWidget):
-    filter_changed = QtCore.pyqtSignal(str, str)
+    filter_changed = QtCore.Signal(str, str)
     no_filtering_text = "-- All --"
 
     def __init__(self, name: str, key: str, items: list[str], width: int = 100):
@@ -59,7 +59,7 @@ class ListFilterWidget(QtWidgets.QWidget):
 
         combo_box.currentTextChanged.connect(self._text_changed)
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def _text_changed(self, text: str):
         if self._updating:
             return
@@ -82,13 +82,13 @@ class ListFilterWidget(QtWidgets.QWidget):
         if old_text != combo_box.currentText():
             self._text_changed(combo_box.currentText())
 
-    @QtCore.pyqtSlot(dict)
+    @QtCore.Slot(dict)
     def set_items_from_dict(self, items: LabelsDict):
         self.set_items(items.get(self.key, []))
 
 
 class KeywordFilterWidget(QtWidgets.QWidget):
-    filter_changed = QtCore.pyqtSignal(str, list)  # list[str]
+    filter_changed = QtCore.Signal(str, list)  # list[str]
 
     def __init__(self, name: str, key: str, width: int = 150):
         super().__init__()
@@ -108,7 +108,7 @@ class KeywordFilterWidget(QtWidgets.QWidget):
 
         text_edit.editingFinished.connect(self._text_changed)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _text_changed(self):
         text = self.text_edit.text()
         keywords = []
@@ -123,7 +123,7 @@ class KeywordFilterWidget(QtWidgets.QWidget):
 
 
 class RatingFilterWidget(QtWidgets.QWidget):
-    filter_changed = QtCore.pyqtSignal(int)
+    filter_changed = QtCore.Signal(int)
 
     def __init__(self, name: str, star: bool = False, hide: bool = False):
         super().__init__()
@@ -151,7 +151,7 @@ class RatingFilterWidget(QtWidgets.QWidget):
         combo_box.currentTextChanged.connect(self._text_changed)
         layout.addWidget(combo_box, 1)
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def _text_changed(self, text: str):
         if text == "Starred only":
             self._rating = +1

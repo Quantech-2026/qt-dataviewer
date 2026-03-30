@@ -7,7 +7,7 @@ from datetime import datetime
 from functools import partial
 from typing import Any
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from qtpy import QtCore, QtGui, QtWidgets
 
 from qt_dataviewer.model.plot_model import PlotModel
 from qt_dataviewer.utils.qt_utils import qt_log_exception, get_font
@@ -185,7 +185,7 @@ class PlotWindow:
         if self.datalist is not None:
             self._update_buttons(uncheck_latest=False)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _get_latest(self):
         if self.btnLatest.isChecked():
             try:
@@ -603,7 +603,7 @@ class ClickFrame(QtWidgets.QFrame):
 
 
 class RatingWidget(QtWidgets.QWidget):
-    rating_changed = QtCore.pyqtSignal(int)
+    rating_changed = QtCore.Signal(int)
 
     def __init__(self, name: str = "", star: bool = False, hide: bool = False):
         super().__init__()
@@ -645,7 +645,7 @@ class RatingWidget(QtWidgets.QWidget):
             self.cb_hide.setCheckState(QtCore.Qt.Checked if rating < 0 else QtCore.Qt.Unchecked)
         self._updating = False
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def _star_changed(self, state: QtCore.Qt.CheckState) -> None:
         if self._updating:
             return
@@ -658,7 +658,7 @@ class RatingWidget(QtWidgets.QWidget):
             self._rating = 0
             self.rating_changed.emit(self._rating)
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def _hide_changed(self, state: QtCore.Qt.CheckState) -> None:
         if self._updating:
             return

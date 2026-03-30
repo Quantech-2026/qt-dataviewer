@@ -1,7 +1,7 @@
 from abc import abstractmethod
 import logging
 
-from PyQt5 import QtWidgets
+from qtpy import QtWidgets
 from qt_dataviewer.model.plot_model import PlotModel
 
 

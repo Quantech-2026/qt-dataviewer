@@ -3,7 +3,7 @@ import logging
 from datetime import date
 from packaging.version import Version
 
-from PyQt5.QtCore import QTimer
+from qtpy.QtCore import QTimer
 
 # TODO: Add abstraction in core-tools?
 from core_tools import __version__ as ct_version

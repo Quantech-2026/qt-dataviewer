@@ -4,7 +4,7 @@ import os
 from collections import defaultdict
 from datetime import date as dt_date, datetime
 
-from PyQt5 import QtCore
+from qtpy import QtCore
 
 from qt_dataviewer.abstract import (
     Dataset, DatasetDescription, DatasetStore, Filter, LabelsDict

@@ -3,7 +3,7 @@ import qt_dataviewer.resources as resources
 import os
 import pathlib
 
-from PyQt5 import QtGui, QtCore
+from qtpy import QtGui, QtCore
 
 
 def add_icon_to_button(button, icon_name):

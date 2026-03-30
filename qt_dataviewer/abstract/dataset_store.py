@@ -3,8 +3,8 @@ from dataclasses import dataclass, field
 from datetime import date
 
 
-from PyQt5.QtCore import QObject
-from PyQt5.QtCore import pyqtSignal as Signal
+from qtpy.QtCore import QObject
+from qtpy.QtCore import Signal
 
 from .types import LabelsDict
 from .dataset_description import DatasetDescription

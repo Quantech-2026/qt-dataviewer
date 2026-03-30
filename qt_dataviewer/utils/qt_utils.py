@@ -4,8 +4,8 @@ import threading
 import traceback
 
 import pyqtgraph as pg
-from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5.QtWidgets import QMessageBox
+from qtpy import QtCore, QtWidgets, QtGui
+from qtpy.QtWidgets import QMessageBox
 
 try:
     import IPython.lib.guisupport as gs

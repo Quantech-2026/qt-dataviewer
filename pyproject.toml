@@ -16,7 +16,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "pyqt5 >= 5.15",
+    "qtpy",
     "pyqtgraph >= 0.14.0",
     "matplotlib >= 3.5.3",
     "numpy >= 1.24",

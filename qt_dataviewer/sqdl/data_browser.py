@@ -1,7 +1,7 @@
 import logging
 from packaging.version import Version
 from sqdl_client import __version__ as sqdl_client_version
-from PyQt5 import QtWidgets, QtCore
+from qtpy import QtWidgets, QtCore
 
 from qt_dataviewer.browser_ui.main_window import DataBrowserBase
 from qt_dataviewer.utils.qt_utils import qt_show_error
@@ -86,7 +86,7 @@ class SqdlDataBrowser(DataBrowserBase):
 
         return actions
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _select_scope(self):
         current_scope = self.data_store.scope_name
         scopes = self.data_store.get_scopes()
@@ -99,7 +99,7 @@ class SqdlDataBrowser(DataBrowserBase):
             self.data_store.set_scope(self.scope_name)
             self.activateWindow()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _logout(self):
         self.data_store.logout()
         self.close()

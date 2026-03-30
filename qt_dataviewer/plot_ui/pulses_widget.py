@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 import pyqtgraph as pg
-from PyQt5 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 
 from qt_dataviewer.utils.qt_utils import qt_log_exception
 

@@ -1,6 +1,6 @@
-from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QApplication
+from qtpy import QtCore
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QTreeWidget, QTreeWidgetItem, QApplication
 from qt_dataviewer.utils.qt_utils import qt_log_exception
 
 from .directory_scanner import DirectoryScanner
@@ -8,7 +8,7 @@ from .directory_scanner import DirectoryScanner
 
 class DirectoryTreeView(QTreeWidget):
 
-    path_changed = QtCore.pyqtSignal(str)
+    path_changed = QtCore.Signal(str)
 
     def __init__(self, dir_scanner: DirectoryScanner):
         super().__init__()

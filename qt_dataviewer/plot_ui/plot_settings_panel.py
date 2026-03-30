@@ -1,7 +1,7 @@
 import logging
 from functools import partial
 
-from PyQt5 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 
 from qt_dataviewer.utils.qt_utils import qt_log_exception, get_font
 from qt_dataviewer.model.plot_model import AxisMode, AxisSettings, PlotModel, ComplexMode

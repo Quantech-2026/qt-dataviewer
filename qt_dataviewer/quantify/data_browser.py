@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets, QtCore
+from qtpy import QtWidgets, QtCore
 
 from qt_dataviewer.browser_ui.main_window import DataBrowserBase
 
@@ -58,7 +58,7 @@ class QuantifyDataBrowser(DataBrowserBase):
 
         return actions
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _select_data_dir(self):
         current = self._quantify_data_dir
         if current is None:

@@ -2,7 +2,7 @@ import logging
 import pyqtgraph as pg
 import numpy as np
 from matplotlib import colormaps
-from PyQt5 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 from pyqtgraph.graphicsItems import AxisItem
 
 from qt_dataviewer.model.plot_model import ComplexMode, get_phase

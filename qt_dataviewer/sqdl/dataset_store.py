@@ -5,7 +5,7 @@ from collections import defaultdict
 from datetime import date, timedelta
 
 import requests
-from PyQt5.QtCore import QTimer
+from qtpy.QtCore import QTimer
 from sqdl_client.client import QDLClient
 from sqdl_client.exceptions import ObjectNotFoundException
 

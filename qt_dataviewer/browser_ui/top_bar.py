@@ -1,19 +1,19 @@
-from PyQt5 import QtCore, QtWidgets, QtGui
+from qtpy import QtCore, QtWidgets, QtGui
 
 
 class TopBar(QtWidgets.QWidget):
     """Top bar of the browser
 
     Attributes:
-        liveplotting_changed (QtCore.pyqtSignal):
+        liveplotting_changed (QtCore.Signal):
             A PyQt signal emitted when the live plotting state changes.
-        close_all_plots (QtCore.pyqtSignal):
+        close_all_plots (QtCore.Signal):
             A PyQt signal emitted when all plots should be closed.
     """
 
-    liveplotting_changed = QtCore.pyqtSignal(bool)
-    close_all_plots = QtCore.pyqtSignal()
-    open_uid = QtCore.pyqtSignal(str)
+    liveplotting_changed = QtCore.Signal(bool)
+    close_all_plots = QtCore.Signal()
+    open_uid = QtCore.Signal(str)
 
     def __init__(
         self,
@@ -104,7 +104,7 @@ class TopBar(QtWidgets.QWidget):
     def add_filter(self, filter_widget):
         self.filters_layout.addWidget(filter_widget, 1)
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def _on_checkbox_changed(self, state: QtCore.Qt.CheckState) -> None:
         """Slot called when the checkbox is changed.
 
@@ -113,7 +113,7 @@ class TopBar(QtWidgets.QWidget):
         """
         self.liveplotting_changed.emit(state == QtCore.Qt.Checked)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _uid_entered(self):
         text = self.uid_edit.text().strip()
         if not text:

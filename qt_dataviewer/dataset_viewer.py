@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timedelta
 
-from PyQt5 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 
 from qt_dataviewer.plot_ui.plot_window import PlotWindow, EventHandler
 from qt_dataviewer.plot_ui.dataarray_plotter import DataArrayPlotter
@@ -21,7 +21,7 @@ _app = None
 
 
 class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
-    dataset_rating_changed = QtCore.pyqtSignal(DatasetDescription, int)
+    dataset_rating_changed = QtCore.Signal(DatasetDescription, int)
 
     def __init__(self, ds: Dataset, *,
                  datalist: DatasetList | None = None,

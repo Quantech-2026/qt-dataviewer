@@ -1,6 +1,6 @@
 import xarray as xr
 
-from PyQt5 import QtWidgets
+from qtpy import QtWidgets
 
 from qt_dataviewer.model.plot_model import PlotModel
 from qt_dataviewer.plot_ui.plot_0d import Plot0D

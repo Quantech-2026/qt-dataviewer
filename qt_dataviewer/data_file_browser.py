@@ -2,8 +2,8 @@ import logging
 import os
 from datetime import date
 
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QDesktopWidget
+from qtpy import QtCore, QtWidgets
+from qtpy.QtWidgets import QDesktopWidget
 
 from qt_dataviewer import DatasetViewer
 from qt_dataviewer.abstract.dataset_description import DatasetDescription
@@ -157,7 +157,7 @@ class DataFileBrowser(QtWidgets.QMainWindow):
         actions.append(open_action)
         return actions
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _select_data_dir(self):
         current = self.dataset_store.base_dir
         if current is None:
@@ -173,7 +173,7 @@ class DataFileBrowser(QtWidgets.QMainWindow):
     def set_data_source(self, source_name):
         self.top_bar.set_data_source(source_name)
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def _select_path(self, path: str):
         if path == "":
             self.dataset_list_view.set_datasets([])
@@ -181,14 +181,14 @@ class DataFileBrowser(QtWidgets.QMainWindow):
             ds_descriptions = self.dataset_store.get_dataset_descriptions(path)
             self.dataset_list_view.set_datasets(ds_descriptions)
 
-    @QtCore.pyqtSlot(DatasetDescription)
+    @QtCore.Slot(DatasetDescription)
     def show_dataset(self, ds_description: DatasetDescription) -> None:
         self.setCursor(QtCore.Qt.WaitCursor)
         self.__show_dataset(ds_description)
         self._remove_closed_viewers()
         self.setCursor(QtCore.Qt.ArrowCursor)
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def open_uid(self, uid):
         try:
             ds_description = self.dataset_store.get_dataset_description_for_uid(uid)
@@ -221,7 +221,7 @@ class DataFileBrowser(QtWidgets.QMainWindow):
             viewer = DatasetViewer(ds, datalist=datalist)
             self.viewers.append(viewer)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def close_all_plots(self) -> None:
         for viewer in self.viewers:
             viewer.close()
@@ -233,16 +233,16 @@ class DataFileBrowser(QtWidgets.QMainWindow):
             if not viewer.alive:
                 self.viewers.pop(i)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def reload(self) -> None:
         self.dataset_store.refresh()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _refresh_view(self) -> None:
         self.set_data_source(self.dataset_store.source_name)
         self.directory_tree.refresh()
 
-    @QtCore.pyqtSlot(list)
+    @QtCore.Slot(list)
     def _new_datasets(self, ds_descriptions: list[DatasetDescription]) -> None:
         for dd in ds_descriptions:
             if dd.collected_date in self._selected_dates:

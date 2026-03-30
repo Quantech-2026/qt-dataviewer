@@ -1,4 +1,4 @@
-from PyQt5 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 
 from qt_dataviewer.browser_ui.main_window import DataBrowserBase
 
@@ -56,7 +56,7 @@ class QCoDeSDataBrowser(DataBrowserBase):
             self.data_store.refresh()
         super().browser_started()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _select_db(self):
         current = self.data_store.db_path
         if current is None:

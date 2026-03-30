@@ -3,7 +3,7 @@ import pyqtgraph as pg
 import numpy as np
 
 from pyqtgraph.colormap import getFromMatplotlib
-from PyQt5 import QtCore, QtWidgets, QtGui
+from qtpy import QtCore, QtWidgets, QtGui
 from matplotlib import colormaps
 
 from qt_dataviewer.model.plot_model import ComplexMode, get_phase

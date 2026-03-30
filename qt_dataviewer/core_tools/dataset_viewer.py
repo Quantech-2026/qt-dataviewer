@@ -1,7 +1,7 @@
 import logging
 
 from core_tools.data.ds.data_set_core import data_set
-from PyQt5.QtWidgets import QMessageBox
+from qtpy.QtWidgets import QMessageBox
 
 from qt_dataviewer import DatasetViewer
 from qt_dataviewer.abstract import DatasetDescription, Dataset, DatasetList

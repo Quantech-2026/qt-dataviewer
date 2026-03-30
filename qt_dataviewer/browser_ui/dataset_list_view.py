@@ -1,6 +1,6 @@
 import logging
 
-from PyQt5 import QtCore, QtWidgets, QtGui
+from qtpy import QtCore, QtWidgets, QtGui
 
 from qt_dataviewer.abstract.dataset_description import DatasetDescription
 from qt_dataviewer.resources.icons import add_icons_to_checkbox, Icons, Images
@@ -16,8 +16,8 @@ class DatasetListView(QtWidgets.QWidget):
     Note: It's a QTreeWidget, because QListWidget does not support multiple columns.
     """
 
-    dataset_activated = QtCore.pyqtSignal(DatasetDescription)
-    dataset_rating_changed = QtCore.pyqtSignal(DatasetDescription, int)
+    dataset_activated = QtCore.Signal(DatasetDescription)
+    dataset_rating_changed = QtCore.Signal(DatasetDescription, int)
 
     def __init__(self,
                  parent: QtWidgets.QWidget,
@@ -73,7 +73,7 @@ class DatasetListView(QtWidgets.QWidget):
             """
             )
 
-    @QtCore.pyqtSlot(QtCore.QPoint)
+    @QtCore.Slot(QtCore.QPoint)
     def show_context_menu(self, position: QtCore.QPoint) -> None:
         """
         Show a context menu when the user right-clicks on an item in the tree.
@@ -92,7 +92,7 @@ class DatasetListView(QtWidgets.QWidget):
         if action == copy_action:
             QtWidgets.QApplication.clipboard().setText(item.text())
 
-    @QtCore.pyqtSlot(QtCore.QModelIndex)
+    @QtCore.Slot(QtCore.QModelIndex)
     def _dataset_modify(self, model_index: QtCore.QModelIndex) -> None:
         if model_index.column() == self.rating_column:
             index = self.model.index(model_index.row(), 0)
@@ -194,7 +194,7 @@ class DatasetListView(QtWidgets.QWidget):
         ds_description.rating = rating
         self.dataset_rating_changed.emit(ds_description, rating)
 
-    @QtCore.pyqtSlot(QtCore.QModelIndex)
+    @QtCore.Slot(QtCore.QModelIndex)
     def _dataset_activated(self, model_index: QtCore.QModelIndex) -> None:
         index = self.model.index(model_index.row(), 0)
         item = self.model.itemFromIndex(index)
@@ -203,7 +203,7 @@ class DatasetListView(QtWidgets.QWidget):
 
 
 class RatingWidget(QtWidgets.QWidget):
-    rating_changed = QtCore.pyqtSignal(int)
+    rating_changed = QtCore.Signal(int)
 
     def __init__(self, parent = None, up: bool = True, down: bool = False,
                  rating: int = 0):
@@ -241,7 +241,7 @@ class RatingWidget(QtWidgets.QWidget):
         else:
             self.cb_hide = None
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def _up_changed(self, state: QtCore.Qt.CheckState) -> None:
         if state == QtCore.Qt.Checked:
             self._rating = +1
@@ -252,7 +252,7 @@ class RatingWidget(QtWidgets.QWidget):
             self._rating = 0
             self.rating_changed.emit(self._rating)
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def _down_changed(self, state: QtCore.Qt.CheckState) -> None:
         if state == QtCore.Qt.Checked:
             self._rating = -1

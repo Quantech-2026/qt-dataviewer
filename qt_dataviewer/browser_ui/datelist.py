@@ -2,13 +2,13 @@
 import logging
 from datetime import date
 
-from PyQt5 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 
 logger = logging.getLogger(__name__)
 
 
 class DateListView(QtWidgets.QListWidget):
-    dates_selected = QtCore.pyqtSignal(list) # List[date]
+    dates_selected = QtCore.Signal(list) # List[date]
 
     def __init__(self, parent: QtWidgets.QWidget):
         super().__init__(parent)
@@ -23,7 +23,7 @@ class DateListView(QtWidgets.QListWidget):
         self.setSelectionMode(QtWidgets.QListView.ExtendedSelection)
         self.itemSelectionChanged.connect(self.date_selection_changed)
 
-    @QtCore.pyqtSlot(list)
+    @QtCore.Slot(list)
     def update_date_list(self, dates: list[date]) -> None:
         dates = [f"{date:%Y-%m-%d}" for date in dates]
         if len(dates) == 0:
@@ -54,7 +54,7 @@ class DateListView(QtWidgets.QListWidget):
         if len(self.selectedIndexes()) == 0: # TODO check if this is the desired behavior when filtering.
             self.item(0).setSelected(True)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def date_selection_changed(self) -> None:
         dates = []
         for item in self.selectedItems():

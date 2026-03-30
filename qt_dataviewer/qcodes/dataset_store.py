@@ -4,7 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime
 
-from PyQt5.QtCore import QTimer
+from qtpy.QtCore import QTimer
 from qcodes.dataset import (
     connect,
     experiments,

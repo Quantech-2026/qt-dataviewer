@@ -1,8 +1,8 @@
 import logging
 from datetime import date
 
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtWidgets import QDesktopWidget
+from qtpy import QtCore, QtWidgets
+from qtpy.QtWidgets import QDesktopWidget
 
 from qt_dataviewer import DatasetViewer
 from qt_dataviewer.abstract.dataset_store import DatasetStore, Filter
@@ -183,22 +183,22 @@ class DataBrowserBase(QtWidgets.QMainWindow):
     def set_data_source(self, source_name):
         self.top_bar.set_data_source(source_name)
 
-    @QtCore.pyqtSlot(bool)
+    @QtCore.Slot(bool)
     def _liveplotting_changed(self, liveplotting: bool) -> None:
         self._auto_open_plots = liveplotting
 
-    @QtCore.pyqtSlot(DatasetDescription)
+    @QtCore.Slot(DatasetDescription)
     def show_dataset(self, ds_description: DatasetDescription) -> None:
         self.setCursor(QtCore.Qt.WaitCursor)
         self.__show_dataset(ds_description)
         self._remove_closed_viewers()
         self.setCursor(QtCore.Qt.ArrowCursor)
 
-    @QtCore.pyqtSlot(DatasetDescription, int)
+    @QtCore.Slot(DatasetDescription, int)
     def _update_rating(self, ds_description: DatasetDescription, rating: int) -> None:
         self.dataset_store.set_rating(ds_description, rating)
 
-    @QtCore.pyqtSlot(str)
+    @QtCore.Slot(str)
     def open_uid(self, uid):
         try:
             ds_description = self.dataset_store.get_dataset_description_for_uid(uid)
@@ -232,7 +232,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
             viewer.dataset_rating_changed.connect(self._update_rating)
             self.viewers.append(viewer)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def close_all_plots(self) -> None:
         for viewer in self.viewers:
             viewer.close()
@@ -248,17 +248,17 @@ class DataBrowserBase(QtWidgets.QMainWindow):
                     logger.error("Failure disconnecting signal", exc_info=True)
                 self.viewers.pop(i)
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def reload(self) -> None:
         self.dataset_store.refresh()
 
-    @QtCore.pyqtSlot()
+    @QtCore.Slot()
     def _refresh_view(self) -> None:
         self.set_data_source(self.data_store.source_name)
         # call selection changed to update list with datasets
         self.date_list_view.date_selection_changed()
 
-    @QtCore.pyqtSlot(list)
+    @QtCore.Slot(list)
     def set_date_selection(self, dates: list[date]) -> None:
         self._selected_dates = dates.copy()
         ds_descriptions = []
@@ -266,7 +266,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
             ds_descriptions += self.dataset_store.get_dataset_descriptions(d)
         self.dataset_list_view.set_datasets(ds_descriptions)
 
-    @QtCore.pyqtSlot(list)
+    @QtCore.Slot(list)
     def _new_datasets(self, ds_descriptions: list[DatasetDescription]) -> None:
         for dd in ds_descriptions:
             if dd.collected_date in self._selected_dates:
@@ -275,7 +275,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
             for dd in ds_descriptions:
                 self.show_dataset(dd)
 
-    @QtCore.pyqtSlot(str, str)
+    @QtCore.Slot(str, str)
     def _set_filter_name(self, key: str, contains: str):
         if not contains:
             # Empty string implies no filter.
@@ -283,7 +283,7 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         self._filter.name_contains = contains
         self._filter_datasets()
 
-    @QtCore.pyqtSlot(str, str)
+    @QtCore.Slot(str, str)
     def _set_filter_label_value(self, key: str, value: str):
         if not value:
             # Empty string implies no filter.
@@ -291,12 +291,12 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         self._filter.labels[key] = value
         self._filter_datasets()
 
-    @QtCore.pyqtSlot(str, list)
+    @QtCore.Slot(str, list)
     def _set_filter_label_values(self, key: str, values: str):
         self._filter.labels[key] = values
         self._filter_datasets()
 
-    @QtCore.pyqtSlot(int)
+    @QtCore.Slot(int)
     def _set_filter_rating(self, rating: int):
         self._filter.rating = rating
         self._filter_datasets()

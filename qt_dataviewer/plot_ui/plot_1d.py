@@ -3,7 +3,7 @@ import numpy as np
 import xarray as xr
 
 from numpy.typing import NDArray
-from PyQt5 import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets
 from qt_dataviewer.model.plot_model import ComplexMode
 from qt_dataviewer.utils.qt_utils import qt_log_exception
 
