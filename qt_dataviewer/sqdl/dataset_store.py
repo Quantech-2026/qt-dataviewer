@@ -349,7 +349,7 @@ class SqdlDatasetStore(DatasetStore):
 
     @qt_log_exception
     def set_rating(self, ds_description: DatasetDescription, rating: int):
-        sqdl_ds = ds_description.sqdl_ds
+        sqdl_ds = ds_description.dataset_reference
         if rating != sqdl_ds.rating:
             sqdl_ds.update_rating(rating)
 
