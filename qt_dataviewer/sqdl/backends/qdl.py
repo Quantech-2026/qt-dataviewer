@@ -1,9 +1,10 @@
 import logging
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Any, Self
 
 from .base import BaseClient, BaseScope, BaseDataset, BaseFile
+from .exceptions import DatasetNotFoundException
 
 import requests
 from qdl_client import QDLClient as Client
@@ -80,21 +81,23 @@ class QdlScope(BaseScope):
     ref: v1.Scope
 
     def get_max_dataset_id(self) -> int:
-        response = self.ref._api.list_dataset(scope_uid=self.ref.name, limit=1)
+        # in-progress: feature request with SDST for a cleaner /latest endpoint
+        response = self.ref.list_datasets(limit=1)
         try:
             dataset = response.pop()
-            # todo: warning - "collected at" technically doesn't say anything about
-            #  when the data was uploaded, so we need a better metric (which exists
-            #  on QDL, but not on the client)
-
-            # note: put in a feature request with Fer -> some kind of index that can
-            #  reliably tell if there are new datasets in a scope
             return int(dataset.created_at.timestamp())
         except IndexError:
             return -1
 
     def retrieve_dataset_from_uid(self, ds_uid: str) -> QdlDataset:
-        response = self.ref.retrieve_dataset(ds_uid)
+        try:
+            response = self.ref.retrieve_dataset(ds_uid)
+        except v1.exceptions.NotFoundException as exc:
+            raise DatasetNotFoundException(
+                f"Dataset not found in scope: ds={ds_uid}, scope={self.name}",
+                request=exc.request,
+                response=exc.response,
+            ) from exc
         return QdlDataset.from_response(response)
 
     def search_dates(
@@ -105,24 +108,8 @@ class QdlScope(BaseScope):
         limit: int = 10,
         offset: int = 0,
     ) -> list[str]:
-        # QDL backend only supports 'since' and 'until' query parameters, so
-        #  searching for filtered dates is not (yet) possible
-
-        # absence of filtered dates also leads to bugs in the "previous" and "next"
-        #  buttons, because you can have date pages without any datasets in them
-
-        # note: put in a feature request with Fer -> add query parameters for date
-        #  search: name, rank, **kwarg (attribute search)
-        # dates = self.ref.list_dates(
-        #     name=dataset_name_contains,
-        #     rank=rating,
-        #     limit=limit,
-        #     offset=offset,
-        #     **data_identifiers,
-        # )
 
         kwargs = {}
-
         if dataset_name_contains:
             kwargs.update({"name": dataset_name_contains})
 
@@ -174,7 +161,7 @@ class QdlScope(BaseScope):
             kwargs.update(data_identifiers)
 
         logger.info(f"Searching for datasets: kwargs={kwargs}")
-        response = self.ref._api.list_dataset(
+        response = self.ref._api.list_datasets(
             scope_uid=self.ref.name,
             **kwargs,
         )
