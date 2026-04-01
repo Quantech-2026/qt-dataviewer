@@ -121,7 +121,18 @@ class QdlScope(BaseScope):
         #     **data_identifiers,
         # )
 
-        dates = self.ref.list_dates()
+        kwargs = {}
+
+        if dataset_name_contains:
+            kwargs.update({"name": dataset_name_contains})
+
+        if rating:
+            kwargs.update({"rank": rating})
+
+        if data_identifiers:
+            kwargs.update(data_identifiers)
+
+        dates = self.ref.list_dates(**kwargs)
         return [d.isoformat() for d in dates]
 
     def search_datasets(
