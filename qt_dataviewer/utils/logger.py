@@ -22,7 +22,7 @@ def configure_logging():
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.DEBUG)
 
-    for handler in root_logger.handlers:
+    for handler in root_logger.handlers.copy():
         handler.close()
         root_logger.removeHandler(handler)
 
