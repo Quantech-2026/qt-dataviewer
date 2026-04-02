@@ -164,17 +164,12 @@ class FileDataStore(DatasetStore, DirectoryScanner):
         return dd_list, index
 
     def _get_parent_directory(self, dd: DatasetDescription) -> str:
-        if isinstance(
-                dd,
-                QuantifyDatasetDescription
-                | CoreToolsDatasetDescription
-                | XarrayDatasetDescription
-                ):
+        if hasattr(dd, "path"):
             parent_dir = os.path.dirname(dd.path)
             # remove base dir
             rel_path = os.path.relpath(parent_dir, self._base_dir)
             return rel_path.replace("\\", "/")
-        raise Exception(f"Unknown dataset description {type(dd)}")
+        raise Exception(f"Cannot find parent dir for {type(dd)}")
 
     def _get_sqdl_upload_dataset_description(self, entry: os.DirEntry):
         dir_name = entry.name
