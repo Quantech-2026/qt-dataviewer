@@ -21,6 +21,7 @@ class QuantifyDataset(Dataset):
     def __init__(self, ds_description: QuantifyDatasetDescription):
         super().__init__(ds_description)
         self._snapshot = None
+        self.ds_xr = None
         self.reload()
 
     def reload(self) -> None:
