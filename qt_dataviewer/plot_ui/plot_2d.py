@@ -37,13 +37,12 @@ class Plot2D(BasePlot):
         self._layout.addWidget(self.layout_widget)
 
         self._plot_mode = "uniform"
+        self._log_mode = {}
 
         self.label = QtWidgets.QLabel()
         self.label.setAlignment(QtCore.Qt.AlignRight)
 
         self._layout.addWidget(self.label)
-
-        self._log_mode = {}
 
         self.proxy = pg.SignalProxy(self.plot.scene().sigMouseMoved, rateLimit=60, slot=self.mouseMoved)
         try:
@@ -89,8 +88,10 @@ class Plot2D(BasePlot):
 
         data = plot_model.get_data()
         self._data = data
-        x_array = data[data.dims[0]]
-        y_array = data[data.dims[1]]
+
+        x_name, y_name = plot_model.plot_axes
+        x_array = data[x_name]
+        y_array = data[y_name]
 
         x_scale = x_array.attrs.get("scale", "")
         y_scale = y_array.attrs.get("scale", "")
@@ -189,7 +190,6 @@ class Plot2D(BasePlot):
                 }
             self._log_mode = log_mode
             plot.setLogMode(**log_mode)
-            plot.invertY(False)
 
             self.img.setImage(z)
             self.img.setRect(rect)
@@ -251,7 +251,6 @@ class Plot2D(BasePlot):
             y_min, y_max = self._get_axis_limits(y_edges)
 
             self.plot.setLimits(xMin=x_min, xMax=x_max, yMin=y_min, yMax=y_max)
-            self.plot.invertY(False)
 
     def _get_axis_limits(self, values):
         x_min = min(values)
