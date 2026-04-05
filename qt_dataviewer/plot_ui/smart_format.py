@@ -74,7 +74,9 @@ class SmartFormatter:
             self._prefixscale = None
             self._auto_si_prefix = False
             self._units = units
+            self._labels = True
         else:
+            self._labels = False
             try:
                 self._units, self._prefixscale = _auto_si_units[units]
                 self._auto_si_prefix = True
@@ -83,7 +85,7 @@ class SmartFormatter:
                 self._auto_si_prefix = False
                 self._units = units
 
-    def _get_precision(self, data: xr.DataArray):
+    def _get_precision(self, data: xr.DataArray):  # NDArray?
         if data.ndim == 0:
             return 4
         n = len(data)
@@ -107,7 +109,8 @@ class SmartFormatter:
             return value
         return value * self._prefixscale
 
-    def with_units(self, value: Number | str, data: xr.DataArray): # @@@ handle complex data?
+    def with_units(self, value: Number | str, data: xr.DataArray):  # NDArray?
+        # TODO handle complex data?
         """Return value formatted with units.
 
         Args:
@@ -118,17 +121,24 @@ class SmartFormatter:
             # labels
             return value
 
-        if self._units == "|..>":
+        if self._labels:
+            return data[value]
+
+        units = self._units
+        if units == "|..>":
             # qubit register
             value = int(value+0.5)
+            # TODO: number of qubits is incorrect when slicing and 0D is plotted.
             n_qubits = self._get_n_qubits(data)
             return f"|{value:0{n_qubits}b}>"
+
+        if isinstance(value, int):
+            return f"{value}" if units in [None, "", "#"] else f"{value} {units}"
 
         if not isinstance(value, float):
             value = float(value)
         # Note: the data can change.
         d = self._get_precision(data)
-        units = self._units
         if units in [None, '', '#']:
             return f"{value:#.{d}g}"
         if self._auto_si_prefix:
@@ -145,7 +155,7 @@ class SmartFormatter:
                 axis.autoSIPrefixScale = 1.0
         axis.setLabel(self._label, self._units)
 
-    def set_labels(self, axis: AxisItem, data: xr.DataArray):
+    def set_labels(self, axis: AxisItem, data: xr.DataArray):  # NDArray?
         if self._units == "|..>":
             labels = self._get_qubit_labels(data)
         else:
@@ -156,12 +166,12 @@ class SmartFormatter:
             ]
         axis.setTicks(ticks)
 
-    def _get_qubit_labels(self, data: xr.DataArray):
+    def _get_qubit_labels(self, data: xr.DataArray):  # NDArray?
         n_qubits = self._get_n_qubits(data)
         labels = []
         for s in range(0, int(np.max(data)+1.5)):
             labels.append(f"{s:0{n_qubits}b}")
         return labels
 
-    def _get_n_qubits(self, data: xr.DataArray):
+    def _get_n_qubits(self, data: xr.DataArray):  # NDArray?
         return int(np.ceil(np.log2(data.max()+1)))
