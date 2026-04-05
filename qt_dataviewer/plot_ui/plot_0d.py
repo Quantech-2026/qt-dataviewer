@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import xarray as xr
 from qtpy import QtCore, QtWidgets
@@ -6,6 +8,9 @@ from qt_dataviewer.utils.qt_utils import qt_log_exception, get_font
 
 from .smart_format import SmartFormatter
 from .plots import BasePlot
+
+
+logger = logging.getLogger(__name__)
 
 
 class Plot0D(BasePlot):
@@ -31,18 +36,28 @@ class Plot0D(BasePlot):
         data = plot_model.get_data()
         x = data
 
-        texts = [""]*4
-        if np.iscomplexobj(x):
+        try:
+            texts = [""]*4
+            if x.ndim > 0:
+                texts[0] = f"Error: expected scalar, but got array of shape {x.shape}"
+            elif np.iscomplexobj(x):
 
-            texts[0] = "Re: " + _get_text(x.real)
-            texts[1] = "Im: " + _get_text(x.imag)
-            texts[2] = "Ampl: " + _get_text(np.abs(x))
-            texts[3] = "Phase: " + _get_text(get_phase(x))
-        else:
-            texts[0] = _get_text(x)
+                texts[0] = "Re: " + _get_text(x.real)
+                texts[1] = "Im: " + _get_text(x.imag)
+                texts[2] = "Ampl: " + _get_text(np.abs(x))
+                texts[3] = "Phase: " + _get_text(get_phase(x))
+            else:
+                texts[0] = _get_text(x)
 
-        for i, text in enumerate(texts):
-            self.labels[i].setText(text)
+            for i, text in enumerate(texts):
+                self.labels[i].setText(text)
+        except Exception:
+            msg = "Exception formatting value"
+            self.labels[0].setText(msg)
+            for i in range(1, 4):
+                self.labels[i].setText("")
+            logger.error(msg)
+            raise
 
 
 def _get_text(x: xr.DataArray):
