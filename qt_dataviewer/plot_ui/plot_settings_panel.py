@@ -4,7 +4,7 @@ from functools import partial
 from qtpy import QtCore, QtWidgets
 
 from qt_dataviewer.utils.qt_utils import qt_log_exception, get_font
-from qt_dataviewer.model.plot_model import AxisMode, AxisSettings, PlotModel, ComplexMode
+from qt_dataviewer.model.plot_model import AxisMode, AxisSettings, AxisType, PlotModel, ComplexMode
 from .smart_format import SmartFormatter
 
 logger = logging.getLogger(__name__)
@@ -15,16 +15,16 @@ class PlotSettings(QtWidgets.QWidget):
         super().__init__()
         self._plot_model = plot_model
 
-        max_column = 8
+        max_column = 9
 
         layout = QtWidgets.QGridLayout(self)
-        layout.setColumnMinimumWidth(0, 120)
+        layout.setColumnMinimumWidth(0, 100)
         layout.setVerticalSpacing(0)
         layout.setHorizontalSpacing(8)
         layout.setColumnStretch(0, 1)
         for icol in range(1, max_column-1):
             layout.setColumnMinimumWidth(icol, 20)
-        layout.setColumnMinimumWidth(max_column-2, 30)
+        layout.setColumnMinimumWidth(max_column-1, 30)
 
         self._updating = False
         self._rb_groups = {}
@@ -54,7 +54,7 @@ class PlotSettings(QtWidgets.QWidget):
             irow += 1
             return
 
-        for i, text in enumerate(['x', 'y', 'avg', 'slice', 'log', 'fft', 'len'], btn_col):
+        for i, text in enumerate(['x', 'y', '*', 'avg', 'slice', 'log', 'fft', 'len'], btn_col):
             label_name = QtWidgets.QLabel(text)
             label_name.setAlignment(QtCore.Qt.AlignmentFlag.AlignHCenter)
             layout.addWidget(label_name, irow, i)
@@ -63,31 +63,47 @@ class PlotSettings(QtWidgets.QWidget):
         irow += 1
         for axis in range(plot_model.n_axis):
             settings = plot_model.get_axis_settings(axis)
-            ax_name = settings.data.name
+            ax_name = settings.name
             layout.addWidget(QtWidgets.QLabel(ax_name), irow, 0)
-            dim_label = QtWidgets.QLabel(f"{len(settings.data)}")
-            dim_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
-            layout.addWidget(dim_label, irow, max_column-1)
+
             group = QtWidgets.QButtonGroup(layout)
             self._rb_groups[axis] = group
-            for icol, mode in enumerate([AxisMode.XAxis, AxisMode.YAxis, AxisMode.Average, AxisMode.Slice], btn_col):
+
+            if settings.axis_type == AxisType.Coord:
+                options = [AxisMode.XAxis, AxisMode.YAxis, AxisMode.All]
+            else:
+                options = [AxisMode.XAxis, AxisMode.YAxis, AxisMode.All, AxisMode.Average, AxisMode.Slice]
+
+            for icol, mode in enumerate(options, btn_col):
                 rb = QtWidgets.QRadioButton()
                 rb.setChecked(settings.mode == mode)
                 rb.toggled.connect(partial(self._set_mode, index=axis, mode=mode))
                 group.addButton(rb, mode)
                 layout.addWidget(rb, irow, icol, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
 
-            cb = QtWidgets.QCheckBox()
-            cb.setChecked(settings.logarithmic)
-            cb.toggled.connect(partial(self._set_log, index=axis))
-            self._cb_log[axis] = cb
-            layout.addWidget(cb, irow, max_column-3, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+            if settings.axis_type == AxisType.Coord:
+                lbl = QtWidgets.QLabel(str(settings.dims))
+                layout.addWidget(lbl, irow, btn_col + len(options), 1, 2,
+                                 alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
 
-            cb = QtWidgets.QCheckBox()
-            cb.setChecked(settings.fft)
-            cb.toggled.connect(partial(self._set_fft, index=axis))
-            self._cb_fft[axis] = cb
-            layout.addWidget(cb, irow, max_column-2, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+            if settings.axis_type != AxisType.Dim:
+                cb = QtWidgets.QCheckBox()
+                cb.setChecked(settings.logarithmic)
+                cb.toggled.connect(partial(self._set_log, index=axis))
+                self._cb_log[axis] = cb
+                layout.addWidget(cb, irow, max_column-3, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+
+            if settings.axis_type == AxisType.DimCoord:
+                cb = QtWidgets.QCheckBox()
+                cb.setChecked(settings.fft)
+                cb.toggled.connect(partial(self._set_fft, index=axis))
+                self._cb_fft[axis] = cb
+                layout.addWidget(cb, irow, max_column-2, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+
+            if settings.axis_type != AxisType.Coord:
+                dim_label = QtWidgets.QLabel(f"{len(settings.data)}")
+                dim_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight)
+                layout.addWidget(dim_label, irow, max_column-1)
 
             irow += 1
 
@@ -102,9 +118,9 @@ class PlotSettings(QtWidgets.QWidget):
             irow += 1
 
         # Histogram
-        axis = 'histogram'
+        axis = "histogram"
         hist_mode = plot_model.histogram_mode
-        layout.addWidget(QtWidgets.QLabel('histogram'), irow, 0)
+        layout.addWidget(QtWidgets.QLabel("histogram"), irow, 0)
         group = QtWidgets.QButtonGroup(layout)
         self._rb_groups[axis] = group
         for icol, mode in enumerate([AxisMode.XAxis, AxisMode.YAxis], btn_col):
@@ -126,7 +142,7 @@ class PlotSettings(QtWidgets.QWidget):
         layout.addWidget(self._height_filler(), irow, 0)
         irow += 1
 
-        layout.addWidget(QtWidgets.QLabel('multiline plot'), irow, 0)
+        layout.addWidget(QtWidgets.QLabel("multiline plot"), irow, 0)
         cb = QtWidgets.QCheckBox()
         cb.setChecked(plot_model.multiline_plot)
         cb.toggled.connect(self._set_multiline_plot)
@@ -136,7 +152,7 @@ class PlotSettings(QtWidgets.QWidget):
         layout.addWidget(self._height_filler(), irow, 0)
         irow += 1
 
-        layout.addWidget(QtWidgets.QLabel('measured log.'), irow, 0)
+        layout.addWidget(QtWidgets.QLabel("measured log."), irow, 0)
         cb = QtWidgets.QCheckBox()
         cb.setChecked(plot_model.logarithmic)
         cb.toggled.connect(self._set_logarithmic)
@@ -147,18 +163,19 @@ class PlotSettings(QtWidgets.QWidget):
         irow += 1
 
         if plot_model.iscomplex:
-            layout.addWidget(QtWidgets.QLabel('Complex'), irow, 0)
+            layout.addWidget(QtWidgets.QLabel("Complex"), irow, 0)
             combo = QtWidgets.QComboBox()
             combo.setMinimumWidth(80)
             combo.addItem("---", None)
             combo.currentTextChanged.connect(self._set_complex_mode)
             self._complex_mode_cbx = combo
+            self._complex_mode_cbx_ndim = None
             layout.addWidget(self._complex_mode_cbx, irow, btn_col, 1, 7)
             irow += 1
             layout.addWidget(self._height_filler(), irow, 0)
             irow += 1
 
-        layout.addWidget(QtWidgets.QLabel('2D colorbar'), irow, 0)
+        layout.addWidget(QtWidgets.QLabel("2D colorbar"), irow, 0)
         sidebar_state = plot_model.show_sidebar
         sidebar_layout = QtWidgets.QHBoxLayout()
         group = QtWidgets.QButtonGroup(layout)
@@ -192,8 +209,8 @@ class PlotSettings(QtWidgets.QWidget):
 
     @qt_log_exception
     def _set_mode(self, checked, index, mode):
-        logger.debug(f"set mode {index} {mode}")
         if checked:
+            logger.debug(f"set mode {index} {mode}")
             self._plot_model.set_axis_mode(index, mode)
             self.update_gui()
             try:
@@ -201,12 +218,12 @@ class PlotSettings(QtWidgets.QWidget):
                 slider.widget.setVisible(mode == AxisMode.Slice)
             except KeyError:
                 pass
-        else:
-            if index == 'histogram':
-                hist_btns = self._rb_groups['histogram']
-                if hist_btns.checkedButton() is None:
-                    self._plot_model.set_axis_mode(index, None)
-                    self.update_gui()
+        elif index == 'histogram':
+            logger.debug(f"set mode {index} {mode}")
+            hist_btns = self._rb_groups['histogram']
+            if hist_btns.checkedButton() is None:
+                self._plot_model.set_axis_mode(index, None)
+                self.update_gui()
 
     @qt_log_exception
     def _set_log(self, checked, index):
@@ -221,7 +238,7 @@ class PlotSettings(QtWidgets.QWidget):
 
     @qt_log_exception
     def _set_slice(self, slice_index, index):
-        logger.debug(f"set log {index}")
+        logger.debug(f"set slice {index}")
         self._plot_model.set_axis_slice(index, slice_index)
 
     @qt_log_exception
@@ -249,13 +266,16 @@ class PlotSettings(QtWidgets.QWidget):
             self._plot_model.set_show_sidebar(state)
 
     def update_gui(self):
-        logger.debug('update gui')
+        logger.debug("update gui")
         plot_model = self._plot_model
         if not plot_model:
             return
         if self._updating:
             return
         self._updating = True
+
+        ndim = len(plot_model.plot_axes)
+
         if plot_model.info_message is None:
             self._info_lbl.setVisible(False)
         else:
@@ -266,21 +286,23 @@ class PlotSettings(QtWidgets.QWidget):
             settings = plot_model.get_axis_settings(axis)
             mode = settings.mode
             self._rb_groups[axis].button(mode).setChecked(True)
-            self._cb_log[axis].setEnabled(mode in [AxisMode.XAxis, AxisMode.YAxis])
-            self._cb_fft[axis].setEnabled(mode in [AxisMode.XAxis, AxisMode.YAxis])
+            if settings.axis_type != AxisType.Dim:
+                self._cb_log[axis].setEnabled(mode in [AxisMode.XAxis, AxisMode.YAxis])
+            if settings.axis_type == AxisType.DimCoord:
+                self._cb_fft[axis].setEnabled(mode in [AxisMode.XAxis, AxisMode.YAxis])
+
         # histogram
-        hist_btns = self._rb_groups['histogram']
+        hist_btns = self._rb_groups["histogram"]
         hist_btns.setExclusive(False)
         hist_mode = plot_model.histogram_mode
         for mode in [AxisMode.XAxis, AxisMode.YAxis]:
             hist_btns.button(mode).setChecked(mode == hist_mode)
 
         for btn in self._rb_sidebar.buttons():
-            btn.setEnabled(plot_model.ndim == 2 and not plot_model.multiline_plot)
+            btn.setEnabled(ndim == 2 and not plot_model.multiline_plot)
 
-        if plot_model.iscomplex:
+        if plot_model.iscomplex and self._complex_mode_cbx_ndim != ndim:
             cbx = self._complex_mode_cbx
-            # TODO optimize? only if ndim changed?
             cbx.clear()
             current_mode = plot_model.complex_mode
             if plot_model.ndim == 1:
@@ -293,8 +315,9 @@ class PlotSettings(QtWidgets.QWidget):
                 cbx.setCurrentText(current_mode.to_2D_mode().value)
             else:
                 cbx.addItem("---")
+            self._complex_mode_cbx_ndim = ndim
 
-        # self._cb_measured_log.setEnabled(plot_model.ndim == 1)
+        self._cb_measured_log.setEnabled(ndim == 1 or plot_model.multiline_plot)
         self._updating = False
 
 
@@ -353,7 +376,7 @@ class Slider:
 
     def _set_label_text(self, slice_index):
         settings = self.settings
-        value = self.formatter.without_unit_prefix(settings.data[slice_index]) # TODO Make 1 call?
+        value = self.formatter.without_unit_prefix(settings.data[slice_index].item()) # TODO Make 1 call?
         value_str = self.formatter.with_units(value, settings.data)
         self.label.setText(value_str)
 

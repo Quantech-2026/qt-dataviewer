@@ -3,17 +3,18 @@ import xarray as xr
 from qtpy import QtWidgets
 
 from qt_dataviewer.model.plot_model import PlotModel
-from qt_dataviewer.plot_ui.plot_0d import Plot0D
-from qt_dataviewer.plot_ui.plot_1d import Plot1D
-from qt_dataviewer.plot_ui.plot_2d import Plot2D
-from qt_dataviewer.plot_ui.plot_multiline import PlotMultiline
+from .plots import BasePlot
+from .plot_0d import Plot0D
+from .plot_1d import Plot1D
+from .plot_2d import Plot2D
+from .plot_multiline import PlotMultiline
+from .plot_scatter import PlotScatter
 
 
 class DataArrayPlotter:
     def __init__(self, data: xr.DataArray, seq_nr: float):
-        self._plot = None
+        self._plot: BasePlot | None = None
         self._layout = None
-        self._multiline_plot = False
         self.name = data.attrs.get("long_name", data.name)
         if self.name is None:
             self.name = "<no name>"
@@ -38,37 +39,45 @@ class DataArrayPlotter:
         if self._layout is None:
             return
         plot_model = self._plot_model
-        ndim = plot_model.ndim
+        plot_axes = plot_model.plot_axes
+        ndim = len(plot_axes)
+        gridded = plot_model.gridded
         plot = self._plot
 
         if plot is not None:
-            if (plot_model.dims != self._plot.dims
-                    or self._plot.one_d_is_vertical != plot_model.one_d_is_vertical
-                    or (ndim == 2 and self._multiline_plot != plot_model.multiline_plot)):
+            if (plot.plot_axes != plot_axes
+                    or plot.gridded != gridded
+                    or (ndim == 1 and plot.one_d_is_vertical != plot_model.one_d_is_vertical)
+                    or (ndim == 2 and plot.multiline_plot != plot_model.multiline_plot)):
                 plot.remove()
                 plot = None
         if plot_model.error_message:
             self._plot = None
             return
         if plot is None:
-            self._multiline_plot = False
-            if ndim == 0:
-                plot = Plot0D(self._layout, plot_model)
-            elif ndim == 1:
-                plot = Plot1D(self._layout, plot_model)
-            elif ndim == 2:
-                if plot_model.multiline_plot:
-                    self._multiline_plot = True
-                    plot = PlotMultiline(self._layout, plot_model)
-                else:
-                    plot = Plot2D(self._layout, plot_model)
-            else:
-                ...
-                # plot = NoData
-                # plot = Plot0D
-            self._plot = plot
+            self._plot = self._create_plot()
         else:
             plot.update()
 
     def update_data(self, data: xr.DataArray):
         self._plot_model.update_data(data)
+
+    def _create_plot(self):
+        plot_model = self._plot_model
+        plot_axes = plot_model.plot_axes
+        ndim = len(plot_axes)
+        gridded = plot_model.gridded
+
+        if ndim == 0:
+            return Plot0D(self._layout, plot_model)
+        if ndim == 1:
+            return Plot1D(self._layout, plot_model)
+        if ndim == 2:
+            if gridded:
+                if plot_model.multiline_plot:
+                    return PlotMultiline(self._layout, plot_model)
+                else:
+                    return Plot2D(self._layout, plot_model)
+            else:
+                return PlotScatter(self._layout, plot_model)
+            return None

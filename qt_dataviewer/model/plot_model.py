@@ -1,7 +1,9 @@
+from __future__ import annotations
 import logging
+import re
 import time
-from dataclasses import dataclass
-from enum import StrEnum
+from dataclasses import dataclass, field
+from enum import StrEnum, IntEnum
 from numbers import Number
 
 import numpy as np
@@ -13,11 +15,22 @@ from .fft import apply_fft
 logger = logging.getLogger(__name__)
 
 
+"""
+Notes on plotting.
+
+Selected data can be gridded, i.e. all plot axis are dimensions of the data
+and all dimensions are plotted.
+
+All other selected data is non-gridded: data contains dimension that is not on axis.
+"""
+
+
 class AxisMode:
     XAxis = 0
     YAxis = 1
     Average = 2
     Slice = 3
+    All = 4
 
 
 class ComplexMode(StrEnum):
@@ -55,13 +68,60 @@ class ComplexMode(StrEnum):
         return self
 
 
+class AxisType(IntEnum):
+    Dim = 1
+    Coord = 2
+    DimCoord = 3
+
+    @property
+    def is_dim(self):
+        return (self & 1) != 0
+
+    @property
+    def is_coord(self):
+        return (self & 2) != 0
+
+
 @dataclass
 class AxisSettings:
-    data: xr.DataArray
-    mode: AxisMode
+    name: str
+    data: xr.DataArray = field(repr=False)
+    axis_type: AxisType
+    mode: AxisMode = AxisMode.All
     logarithmic: bool = False
     slice_index: int = 0
     fft: bool = False
+
+    @property
+    def dims(self):
+        return self.data.dims
+
+    def update_dim_size(self, size: int):
+        self.data = self._get_dim_data(self.name, size)
+
+    @staticmethod
+    def _get_dim_data(name, size):
+        return xr.DataArray(
+            name=name,
+            data=np.arange(size, dtype=int),
+            dims=(name,),
+            )
+
+    @staticmethod
+    def from_coords(coords: xr.DataArray) -> AxisSettings:
+        if (coords.name, ) == coords.dims:
+            axis_type = AxisType.DimCoord
+            mode = AxisMode.Average
+        else:
+            axis_type = AxisType.Coord
+            mode = AxisMode.All
+        return AxisSettings(coords.name, coords, axis_type, mode)
+
+    @staticmethod
+    def from_dim(name: str, size: int) -> AxisSettings:
+        data = AxisSettings._get_dim_data(name, size)
+        ax = AxisSettings(name, data, AxisType.Dim, AxisMode.All)
+        return ax
 
 
 @dataclass
@@ -142,29 +202,44 @@ class PlotModel:
     def _add_axes(self):
         x_axis = None
         y_axis = None
-        for i, axis_name in enumerate(self._data.dims):
-            data = self._data[axis_name]
-            settings = AxisSettings(data, AxisMode.Average)
-            self._axis_settings.append(settings)
+        data = self._data
 
-            if x_axis is None and len(data) > 1:
-                self.set_axis_mode(i, AxisMode.XAxis)
-                x_axis = i
-            elif y_axis is None and len(data) > 1:
+        for axis_name in data.coords:
+            coords = data[axis_name]
+            if coords.dtype == object:
+                # skip multi-index
+                continue
+
+            settings = AxisSettings.from_coords(coords)
+            self._axis_settings.append(settings)
+            coords.attrs['scale'] = self._detect_axis_scale(coords)
+            if "log" in coords.attrs['scale']:
+                settings.logarithmic = True
+
+            idx = len(self._axis_settings) - 1
+            if x_axis is None and len(coords) > 1:
+                self.set_axis_mode(idx, AxisMode.XAxis)
+                x_axis = idx
+            elif y_axis is None and len(coords) > 1:
                 self.set_axis_mode(x_axis, AxisMode.YAxis)
                 y_axis = x_axis
-                self.set_axis_mode(i, AxisMode.XAxis)
-                x_axis = i
-            data.attrs['scale'] = self._detect_axis_scale(data)
+                self.set_axis_mode(idx, AxisMode.XAxis)
+                x_axis = idx
 
-    def _detect_axis_scale(self, axis):
-        data = axis.data
+        for i, axis_name in enumerate(data.dims):
+            if axis_name in data.coords and data[axis_name].dtype != object:
+                continue
+            settings = AxisSettings.from_dim(axis_name, data.shape[i])
+            self._axis_settings.append(settings)
+
+    def _detect_axis_scale(self, coords):
+        data = coords.data
         if not issubclass(data.dtype.type, Number):
             if issubclass(data.dtype.type, str):
                 return "labels"
             else:
-                raise Exception(f"Unknown dtype {data.dtype} for {axis.name}")
-        if axis.attrs.get('units') == "|..>":
+                raise Exception(f"Unknown dtype {coords.dtype} for {coords.name}")
+        if coords.attrs.get('units') == "|..>":
             return "qubit-register"
         ind = np.nonzero(np.isfinite(data))[0]
         n = len(ind)
@@ -179,7 +254,7 @@ class PlotModel:
         deltas = data[1:] - data[:-1]
         delta_ratio = np.max(deltas)/np.min(deltas)
         if delta_ratio <= 0:
-            logger.warning(f"Unsorted data on axis {axis.name} will be sorted")
+            logger.info(f"Unsorted data on axis {coords.name} will be sorted")
             unsorted_postfix = '_unsorted'
             data = np.sort(data)
             deltas = data[1:] - data[:-1]
@@ -215,53 +290,81 @@ class PlotModel:
     @plot_changer
     def update_data(self, data: xr.DataArray):
         try:
+            var_name = self.var_name
             if data.name != self._data.name:
-                raise Exception(f"OOPS!! name of array doesn't match {data.name} <> {self._data.name}")
+                msg = f"Update failure. Array name changed from {self._data.name} to {data.name}"
+                self._error_message = msg
+                raise Exception(msg)
 
-            old_labels = [settings.data.attrs.get('long_name', settings.data.name) for settings in self._axis_settings]
-            new_labels = [data[dim].attrs.get('long_name', data[dim].name) for dim in data.dims]
-            if old_labels != new_labels:
-                logger.error(f"Labels differ {new_labels} <> {old_labels} {data.dims} {self._data.dims}")
+            if self._data.dims != data.dims:
+                msg = f"Dimensions of {var_name} changed from {self._data.dims} to {data.dims}"
+                if not equivalent_names(self._data.dims, data.dims):
+                    raise Exception(msg)
+                else:
+                    logger.info(msg)
+
+            old_coords = [name for name in self._data.coords]
+            new_coords = [name for name in data.coords]
+            if new_coords != old_coords:
+                msg = f"Coordinates of {var_name} changed from {old_coords} to {new_coords}"
+                if not equivalent_names(self._data.dims, data.dims):
+                    raise Exception(msg)
+                else:
+                    logger.info(msg)
+
+            for i, axis_name in enumerate(data.coords):
+                coords = data[axis_name]
+                settings = self._axis_settings[i]
+                old_coords = self._data[settings.name]
+                # labels must be equal. The name can change due to xarray conversion.
+                new_axis_label = coords.attrs.get('long_name', coords.name)
+                old_axis_label = old_coords.attrs.get('long_name', settings.name)
+                if new_axis_label != old_axis_label:
+                    raise Exception(f"Coordinate of {var_name} changed from {old_axis_label} to {new_axis_label}")
+                coords.attrs['scale'] = self._detect_axis_scale(coords)
+                # update name, in case up equivalent names.
+                settings.name = axis_name
+
+            for settings in self._axis_settings:
+                if settings.axis_type is AxisType.Dim:
+                    dim_idx = self._data.dims.index(settings.name)
+                    # Also update name. Could have changed. See equivalent_names.
+                    settings.name = data.dims[dim_idx]
+                    settings.update_dim_size(data.shape[dim_idx])
 
             self._data = data
             self._iscomplex = np.iscomplexobj(data)
-            for i, dim in enumerate(data.dims):
-                axis_data = data[dim]
-                settings = self._axis_settings[i]
-                # labels must be equal. The name can change due to xarray conversion.
-                new_axis_label = axis_data.attrs.get('long_name', axis_data.name)
-                old_axis_label = settings.data.attrs.get('long_name', settings.data.name)
-                if new_axis_label != old_axis_label:
-                    raise Exception(f"OOPS!! name of coordinate {i} doesn't match "
-                                    f"{new_axis_label} <> {old_axis_label}")
-                axis_data.attrs['scale'] = self._detect_axis_scale(axis_data)
-                settings.data = axis_data
+
             self._changed = True
-        except Exception:
-            logger.error('update failed', exc_info=True)
+        except Exception as ex:
+            msg = "Update failed"
+            if ex.args:
+                msg += " " + str(ex.args[0])
+            self._error_message = msg
+            logger.error(msg, exc_info=True)
 
     @property
-    def error_message(self):
+    def error_message(self) -> str | None:
         return self._error_message
 
     @property
-    def info_message(self):
+    def info_message(self) -> str | None:
         return self._info_message
 
     @property
-    def seq_nr(self):
+    def seq_nr(self) -> int:
         return self._seq_nr
 
     @property
-    def var_name(self):
+    def var_name(self) -> str:
         return self._data.name
 
     @property
-    def title(self):
+    def title(self) -> str:
         return self._data.attrs.get("long_name", self._data.name)
 
     @property
-    def iscomplex(self):
+    def iscomplex(self) -> bool:
         return self._iscomplex
 
     def set_plotter(self, plotter):
@@ -269,11 +372,11 @@ class PlotModel:
         self.update()
 
     @property
-    def n_axis(self):
+    def n_axis(self) -> int:
         return len(self._axis_settings)
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         ndim = 0
         if self._current_x is not None:
             ndim += 1
@@ -282,19 +385,30 @@ class PlotModel:
         return ndim
 
     @property
-    def dims(self):
-        dims = []
+    def plot_axes(self) -> list[str]:
+        axes = []
         if self._current_x is not None:
             x = self._current_x
             if isinstance(x, int):
-                x = self._axis_settings[x].data.name
-            dims.append(x)
+                x = self._axis_settings[x].name
+            axes.append(x)
         if self._current_y is not None:
             y = self._current_y
             if isinstance(y, int):
-                y = self._axis_settings[y].data.name
-            dims.append(y)
-        return dims
+                y = self._axis_settings[y].name
+            axes.append(y)
+        return axes
+
+    @property
+    def gridded(self) -> bool:
+        for setting in self._axis_settings:
+            if setting.axis_type.is_dim:
+                if setting.mode == AxisMode.All and not self.histogram_mode:
+                    return False
+            else:
+                if setting.mode in [AxisMode.XAxis, AxisMode.YAxis]:
+                    return False
+        return True
 
     @property
     def one_d_is_vertical(self):
@@ -304,35 +418,87 @@ class PlotModel:
         return self._axis_settings[index]
 
     @plot_changer
-    def set_axis_mode(self, index, mode: AxisMode):
-        if index == 'histogram':
+    def set_axis_mode(self, index: int | str, mode: AxisMode):
+        axis_settings = self._axis_settings
+
+        if index == "histogram":
             old_mode = self._var_settings.histogram_mode
         else:
-            old_mode = self._axis_settings[index].mode
-        if old_mode != mode:
-            if self._current_x == index:
-                self._current_x = None
-            if self._current_y == index:
-                self._current_y = None
-            if mode == AxisMode.XAxis:
-                if self._current_x is not None:
-                    if old_mode == AxisMode.YAxis:
-                        self.set_axis_mode(self._current_x, AxisMode.YAxis)
-                    else:
-                        self.set_axis_mode(self._current_x, AxisMode.Average)
-                self._current_x = index
-            if mode == AxisMode.YAxis:
-                if self._current_y is not None:
-                    if old_mode == AxisMode.XAxis:
-                        self.set_axis_mode(self._current_y, AxisMode.XAxis)
-                    else:
-                        self.set_axis_mode(self._current_y, AxisMode.Average)
-                self._current_y = index
-            if index == 'histogram':
-                self._var_settings.histogram_mode = mode if mode in [AxisMode.XAxis, AxisMode.YAxis] else None
+            old_mode = axis_settings[index].mode
+        if old_mode == mode:
+            return
+
+        if self._current_x == index:
+            self._current_x = None
+        if self._current_y == index:
+            self._current_y = None
+
+        # swap x-y
+        if mode == AxisMode.XAxis and old_mode == AxisMode.YAxis:
+            self._update_axis_settings(self._current_x, old_mode)
+            self._update_axis_settings(index, mode)
+            return
+        if mode == AxisMode.YAxis and old_mode == AxisMode.XAxis:
+            self._update_axis_settings(self._current_y, old_mode)
+            self._update_axis_settings(index, mode)
+            return
+
+        # clear histogram
+        if mode == self._var_settings.histogram_mode:
+            self._update_axis_settings(index, mode)
+            self._update_axis_settings("histogram", None)
+            return
+
+        # change setting of old x/y axis
+        old_axis = None
+        if mode == AxisMode.XAxis:
+            old_axis = self._current_x
+        elif mode == AxisMode.YAxis:
+            old_axis = self._current_y
+
+        if old_axis is not None:
+            # Note: new mode for old axis may be overriden below (see below)
+            if axis_settings[old_axis].axis_type == AxisType.DimCoord:
+                new_mode = AxisMode.Average
             else:
-                self._axis_settings[index].mode = mode
-            self._changed = True
+                new_mode = AxisMode.All
+            self._update_axis_settings(old_axis, new_mode)
+
+        if index != "histogram":
+            if axis_settings[index].axis_type.is_dim and mode in [AxisMode.Average]:
+                dim_name = axis_settings[index].name
+                # Set to All. Just to be save.
+                for idx, settings in enumerate(self._axis_settings):
+                    if settings.axis_type == AxisType.Coord:
+                        if dim_name in self._data[settings.name].dims:
+                            self._update_axis_settings(idx, AxisMode.All)
+
+            if axis_settings[index].axis_type == AxisType.Coord and mode in [AxisMode.XAxis, AxisMode.YAxis]:
+                # Set all it's dims to All
+                # TODO: this does not yet properly cover cases with multiple dims.
+                dims = self._data[axis_settings[index].name].dims
+                for idx, settings in enumerate(self._axis_settings):
+                    if settings.name in dims:
+                        self._update_axis_settings(idx, AxisMode.All)
+
+        self._update_axis_settings(index, mode)
+
+    def _update_axis_settings(self, index, mode):
+        if index is None:
+            return
+        if index == "histogram":
+            self._var_settings.histogram_mode = mode if mode in [AxisMode.XAxis, AxisMode.YAxis] else None
+        else:
+            self._axis_settings[index].mode = mode
+        if mode == AxisMode.XAxis:
+            self._current_x = index
+        elif self._current_x == index:
+            self._current_x = None
+        if mode == AxisMode.YAxis:
+            self._current_y = index
+        elif self._current_y == index:
+            self._current_y = None
+        self._changed = True
 
     @plot_changer
     def set_axis_log(self, index, logarithmic):
@@ -435,15 +601,22 @@ class PlotModel:
         var_settings = self._var_settings
         histogram_mode = var_settings.histogram_mode
         da = self._data
-        dims = [settings.data.name for settings in self._axis_settings]
+
         for settings in reversed(self._axis_settings):
-            dim_name = settings.data.name
-            da[dim_name].attrs['log'] = settings.logarithmic
+            if settings.axis_type.is_coord:
+                da[settings.name].attrs['log'] = settings.logarithmic
+
+        dims = list(da.dims)
+        for settings in reversed(self._axis_settings):
             if settings.mode == AxisMode.Average:
+                if not settings.axis_type.is_dim:
+                    raise Exception(f"Cannot average {settings}")
+                dim_name = settings.name
                 if histogram_mode is None:
                     da = da.mean(dim_name)
                 dims.remove(dim_name)
-                continue
+            if settings.mode == AxisMode.All and settings.axis_type.is_dim:
+                dims.remove(settings.name)
 
         # Copy attributes. They get lost during averaging.
         for name in ['units', 'long_name']:
@@ -455,12 +628,14 @@ class PlotModel:
         # Note: order of Average and FFT matter, because of np.abs() of FFT.
         # FFT after averaging
         for settings in reversed(self._axis_settings):
-            dim_name = settings.data.name
             if settings.fft and settings.mode in [AxisMode.XAxis, AxisMode.YAxis]:
+                if settings.axis_type != AxisType.DimCoord:
+                    raise Exception(f"Cannot apply FFT on {settings}")
                 if np.iscomplexobj(da):
                     da = self._select_complex_component(da, "FFT")
+                dim_name = settings.name
                 da = apply_fft(da, dim_name)
-                da[dim_name].attrs['log'] = settings.logarithmic
+                da[settings.name].attrs['log'] = settings.logarithmic
 
         value_range = (float(da.min().real), float(da.max().real))
         if np.iscomplexobj(da):
@@ -473,7 +648,7 @@ class PlotModel:
             logger.debug("start histogram")
             if np.iscomplexobj(da):
                 da = self._select_complex_component(da, "histogram")
-            da = histogram(da, dims + ['histogram'], 50, value_range) # TODO bins, range
+            da = histogram(da, dims + ['histogram'], 50, value_range)  # TODO bins, range
             da['histogram'].attrs['log'] = False
             value_range = (float(da.min()), float(da.max()))
             logger.debug("done histogram")
@@ -483,11 +658,14 @@ class PlotModel:
 
         has_slice = False
         for settings in self._axis_settings:
-            dim_name = settings.data.name
             if settings.mode == AxisMode.Slice:
+                if not settings.axis_type.is_dim:
+                    raise Exception("Cannot slice {settings}")
                 has_slice = True
-                da = da[{dim_name: settings.slice_index}].drop(dim_name)
-                continue
+                dim_name = settings.name
+                da = da[{dim_name: settings.slice_index}]
+                if settings.axis_type == AxisType.DimCoord:
+                    da = da.drop(dim_name)
 
         var_settings.slice_value_range = value_range if has_slice else None
         if np.iscomplexobj(da):
@@ -496,9 +674,18 @@ class PlotModel:
 
         da.attrs['log'] = var_settings.logarithmic
 
-        logger.debug(f"Done get_data {self.var_name}")
-        dims = [da[dim].name for dim in self.dims]
-        da = da.transpose(*dims)
+        plot_axes = self.plot_axes
+        if self.gridded:
+            # all axes are dims!
+            dims = [da[dim].name for dim in plot_axes]
+            da = da.transpose(*dims)
+        else:
+            # set simple coordinates for remaining dims.
+            for dim in da.dims:
+                if dim not in da.coords and dim in plot_axes:
+                    da[dim] = settings.data
+            # not gridded: flatten all.
+            da = da.stack({"_": [...]}, create_index=False)
         self._last_selected_data = da
         self._changed = False
         duration = time.perf_counter() - start
@@ -532,3 +719,23 @@ def get_phase(da: xr.DataArray) -> xr.DataArray:
         )
     da2.attrs["units"] = "rad"
     return da2
+
+
+def equivalent_names(names1: list[str], names2: list[str]):
+    """
+    Names are equivalent if the are equal up to an optional extension, where
+    the extension is "-{number}".
+
+    Note: This might be specific for core-tools (exported) data.
+    """
+    pattern = re.compile(r"(.*?)(-\d)?")
+    for name1, name2 in zip(names1, names2):
+        if name1 == name2:
+            continue
+
+        m1 = pattern.fullmatch(name1)
+        m2 = pattern.fullmatch(name2)
+        if m1.group(1) != m2.group(1):
+            return False
+
+    return True

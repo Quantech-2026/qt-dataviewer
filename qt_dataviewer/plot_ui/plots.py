@@ -12,9 +12,14 @@ class BasePlot:
     def __init__(self, layout: QtWidgets.QLayout, plot_model: PlotModel):
         self._layout = layout
         self._plot_model = plot_model
-        self.dims = plot_model.dims
-        self.ndim = plot_model.ndim
+
+        # cached (!) attributes describing plot type
+        # If attribute changes, then plot should be recreated.
+        self.plot_axes = plot_model.plot_axes
+        self.gridded = plot_model.gridded
+        self.multiline_plot = plot_model.multiline_plot
         self.one_d_is_vertical = plot_model.one_d_is_vertical
+
         # TODO add title and action buttons
         try:
             self.create()

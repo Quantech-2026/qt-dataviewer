@@ -136,23 +136,46 @@ class Plot1D(BasePlot):
             if self.one_d_is_vertical:
                 x, y = y, x
             if i >= len(curves):
+                # create new curve
                 style = graph_color[i]
-                if len(x) > 100: # TODO configurable.
-                    curve_style = {"pen": style["pen"]}
+                if x.ndim == 0:
+                    curve_style = dict(**style, symbolPen="w", symbolSize=12)
+                    curve = plot.plot([x], [y], **curve_style, name=name+suffix, connect='finite')
                 else:
-                    curve_style = dict(**style, symbolPen="w", symbolSize=6)
-                curve = plot.plot(x, y, **curve_style, name=name+suffix, connect='finite')
+                    npt = len(x)
+                    if self.gridded:
+                        if npt > 100: # TODO configurable.
+                            curve_style = {"pen": style["pen"]}
+                        else:
+                            curve_style = dict(**style, symbolPen="w", symbolSize=6)
+                    else:
+                        # Scatter plot; no lines
+                        if npt < 40:
+                            size = 12
+                        elif npt < 100:
+                            size = 10
+                        else:
+                            size = 8
+                        curve_style = {n: style[n] for n in ["symbolBrush", "symbol"]}
+                        curve_style.update({"pen": None, "symbolPen": "w", "symbolSize": size})
+                    curve = plot.plot(x, y, **curve_style, name=name+suffix, connect='finite')
                 curves.append(curve)
             else:
-                curves[i].setData(x, y, connect='finite')
+                if x.ndim == 0:
+                    curves[i].setData([x], [y])
+                else:
+                    curves[i].setData(x, y)
 
     def _get_plot_data(self):
         plot_model = self._plot_model
         data = plot_model.get_data()
-        x = data[data.dims[0]]
-        if x.attrs.get('scale', '').endswith("_unsorted"):
+
+        x_name = self.plot_axes[0]
+
+        x = data[x_name]
+        if self.gridded and x.attrs.get('scale', '').endswith("_unsorted"):
             data = data.sortby(x.name)
-            x = data[data.dims[0]]
+            x = data[x_name]
         self._data = data
         y = data
 
@@ -168,10 +191,12 @@ class Plot1D(BasePlot):
         else:
             x_pos = "bottom"
             y_pos = "left"
-        _, x_axis = self._set_axis(x, x_formatter, x_pos)
-        # TODO: complex: 2nd axis phase, value ranges imag, Nyquist
-        y_data, _ = self._set_axis(y, y_formatter, y_pos, plot_model.value_range)
+        x_axis, x_data = self._set_axis(x, x_formatter, x_pos)
+        # TODO complex: 2nd axis phase, value ranges imag, Nyquist
+        _, y_data = self._set_axis(y, y_formatter, y_pos, plot_model.value_range)
 
+        # store for mouse cursor
+        self.x_data = x_data
         self.x_axis = x_axis
         self.y_data = y_data
         return x_axis, y_data
@@ -187,11 +212,11 @@ class Plot1D(BasePlot):
 
         plot_data = formatter.without_unit_prefix(data)
 
-        if issubclass(data.dtype.type, str) or formatter._units == "|..>": # TODO add to smarformaater?
-            formatter.set_labels(plot_axis, data)
+        if issubclass(data.dtype.type, str) or formatter._units == "|..>": # TODO add to smartformatter?
+            formatter.set_labels(plot_axis, data.data)
             axis_values = np.arange(len(data))
         else:
-            axis_values = plot_data
+            axis_values = plot_data.data
 
         if value_range is not None and not any(np.isnan(value_range)):
             mn = formatter.without_unit_prefix(value_range[0])
@@ -221,15 +246,20 @@ class Plot1D(BasePlot):
             if self._y_formatter.log:
                 y_val = 10**y_val
 
+            x_data = self.x_data
             x_axis = self.x_axis
             y_data = self.y_data
-            d = np.abs(y_data - y_val)
-            idx = np.nanargmin(d)
-            x_val = x_axis[idx]
-            y_val = y_data[idx].real
+            if y_data.ndim == 0:
+                x_val = x_data
+                y_val = y_data
+            else:
+                d = np.abs(x_axis - x_val)
+                idx = np.nanargmin(d)
+                x_val = x_data[idx]
+                y_val = y_data[idx]
 
-            x_str = self._x_formatter.with_units(x_val, x_axis)
-            y_str = self._y_formatter.with_units(y_val, y_data.real)  # TODO Add complex formatting
+            x_str = self._x_formatter.with_units(x_val.item(), x_data) # x_data
+            y_str = self._y_formatter.with_units(y_val.item().real, y_data.real)  # TODO Add complex formatting
 
             if self.one_d_is_vertical:
                 x_str, y_str = y_str, x_str
