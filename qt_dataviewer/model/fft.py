@@ -13,10 +13,13 @@ def apply_fft(da: xr.DataArray, dim_name: str):
     axis = da.coords[dim_name]
     if axis.attrs['scale'] != 'lin':
         logger.error(f"{dim_name} is not linear. FFT can only be applied to linear range")
-        # TODO @@@: report error in GUI
     index = list(da.dims).index(dim_name)
     r = rfft(da, axis=index, norm="forward")
-    r = (np.abs(r) * 2)
+    # remove DC component
+    r[0] = 0.0
+    r = np.abs(r)
+    # Compensate splitting in positive and negative frequencies.
+    r[1:-1] *= 2.0
 
     t_data = axis.values
     freq = rfftfreq(len(t_data), np.abs(t_data[1] - t_data[0]))
