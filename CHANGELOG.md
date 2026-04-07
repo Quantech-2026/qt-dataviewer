@@ -1,6 +1,22 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.5.0] - 2026-04-@@@@
+
+- Added Command line interface: qt-file-browser, qt-sqdl-browser, qt-qcodes-browser. qt-quantify-browser
+- Added scatter plots.
+- Added plotting of 0D (scalar) value.
+- Added plotting of complex values data.
+- Added backend for QDL database.
+- Added backend for QCoDeS sqlite database.
+- Added display of time at mouse cursor to pulse plot.
+- Added configuration in "~/.qt-dataviewer/config.yaml"
+- Added settings: plotting.colormap, plotting.2D-colorbar.
+- Added configurable logging. Default to ~/.qt-dataviewer/logs
+- Replaced pyqt5 by qtpy.
+- Fixed plotting qubit register values.
+- Speed up of scanning of directories with Quantify data directories.
+
 ## \[0.4.19] - 2025-11-10
 
 - Fixed plotting of MW pulses of sequence with multiple segments.
