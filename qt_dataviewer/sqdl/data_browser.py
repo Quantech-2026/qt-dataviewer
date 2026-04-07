@@ -30,10 +30,18 @@ class SqdlDataBrowser(DataBrowserBase):
         """
         self.data_store = SqdlDatasetStore(backend_type) # TODO @@@ change construction order to show pop-up notification for login..
         self.scope_name = scope_name
+
+        backend_titles = {
+            None: "sQDL",
+            "sqdl": "sQDL",
+            "qdl": "QDL"
+            }
+        backend_title = backend_titles.get(backend_type, backend_type)
         if self.data_store.user_name:
-            title_extra = "sQDL - " + self.data_store.user_name
+            title_extra = backend_title + " - " + self.data_store.user_name
         else:
-            title_extra = "sQDL"
+            title_extra = backend_title
+
         # TODO @@@ make GUI descriptor class
         super().__init__(
             title_extra,

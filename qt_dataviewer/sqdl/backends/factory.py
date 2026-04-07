@@ -1,6 +1,4 @@
 from .base import BaseClient
-from .qdl import QdlClient
-from .sqdl import SqdlClient
 
 
 class ClientFactory():
@@ -12,8 +10,10 @@ class ClientFactory():
 
         match backend_type:
             case "sqdl":
+                from .sqdl import SqdlClient
                 return SqdlClient()
             case "qdl":
+                from .qdl import QdlClient
                 return QdlClient()
             case _:
                 raise ValueError(f"Unfamiliar backend type: {backend_type}")

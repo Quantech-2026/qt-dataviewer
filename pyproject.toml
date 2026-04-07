@@ -43,6 +43,7 @@ Changelog = "https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/blob/main/C
 [project.scripts]
 qt-file-browser = "qt_dataviewer.cli.qt_file_browser:main"
 qt-sqdl-browser = "qt_dataviewer.cli.qt_sqdl_browser:main"
+qt-qdl-browser = "qt_dataviewer.cli.qt_qdl_browser:main"
 qt-quantify-browser = "qt_dataviewer.cli.qt_quantify_browser:main"
 qt-qcodes-browser = "qt_dataviewer.cli.qt_qcodes_browser:main"
 
