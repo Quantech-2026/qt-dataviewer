@@ -1,10 +1,7 @@
 import logging
-from packaging.version import Version
-from sqdl_client import __version__ as sqdl_client_version
 from qtpy import QtWidgets, QtCore
 
 from qt_dataviewer.browser_ui.main_window import DataBrowserBase
-from qt_dataviewer.utils.qt_utils import qt_show_error
 
 from .dataset_store import SqdlDatasetStore
 
@@ -78,13 +75,6 @@ class SqdlDataBrowser(DataBrowserBase):
             )
 
     def browser_started(self):
-        if Version(sqdl_client_version) < Version("1.0.8"):
-            qt_show_error(
-                "Upgrade sqdl-client",
-                "Upgrade sqdl-client to version 1.0.8+"
-            )
-            self.close()
-            raise Exception("Upgrade sqdl-client to version 1.0.8+")
         if self.scope_name is not None:
             self.dataset_store.set_scope(self.scope_name)
         else:
