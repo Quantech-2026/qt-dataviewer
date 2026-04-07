@@ -13,15 +13,22 @@ logger = logging.getLogger(__name__)
 
 
 class SqdlDataBrowser(DataBrowserBase):
-    def __init__(self, scope_name: str | None = None, gui_style: str | None = None):
+    def __init__(
+            self,
+            scope_name: str | None = None,
+            gui_style: str | None = None,
+            backend_type: str | None = None,
+    ):
         """
         Creates sQDL data browser.
 
         Args:
             scope_name: name of scope to open. If None a selection box will be shown.
             gui_style: if "dark" enables dark style for gui.
+            backend_type: Which backend to use. Defaults to "sqdl", but "qdl" is
+                also accepted.
         """
-        self.data_store = SqdlDatasetStore() # TODO @@@ change construction order to show pop-up notification for login..
+        self.data_store = SqdlDatasetStore(backend_type) # TODO @@@ change construction order to show pop-up notification for login..
         self.scope_name = scope_name
         if self.data_store.user_name:
             title_extra = "sQDL - " + self.data_store.user_name
@@ -64,7 +71,10 @@ class SqdlDataBrowser(DataBrowserBase):
 
     def browser_started(self):
         if Version(sqdl_client_version) < Version("1.0.8"):
-            qt_show_error("Upgrade sqdl-client", "Upgrade sqdl-client to version 1.0.8+")
+            qt_show_error(
+                "Upgrade sqdl-client",
+                "Upgrade sqdl-client to version 1.0.8+"
+            )
             self.close()
             raise Exception("Upgrade sqdl-client to version 1.0.8+")
         if self.scope_name is not None:
