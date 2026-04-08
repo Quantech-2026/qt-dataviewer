@@ -63,8 +63,13 @@ class Icons:
     def hidden():
         return get_icon("Hidden.png")
 
+    @staticmethod
+    def looping():
+        return get_icon("looping.png")
+
 
 class Images:
+
     @staticmethod
     def starred():
         return get_image("Starred.png", height=20)

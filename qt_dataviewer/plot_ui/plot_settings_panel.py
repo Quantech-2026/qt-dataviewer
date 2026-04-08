@@ -3,8 +3,9 @@ from functools import partial
 
 from qtpy import QtCore, QtWidgets
 
-from qt_dataviewer.utils.qt_utils import qt_log_exception, get_font
 from qt_dataviewer.model.plot_model import AxisMode, AxisSettings, AxisType, PlotModel, ComplexMode
+from qt_dataviewer.resources.icons import Icons
+from qt_dataviewer.utils.qt_utils import qt_log_exception, get_font
 from .smart_format import SmartFormatter
 
 logger = logging.getLogger(__name__)
@@ -111,8 +112,8 @@ class PlotSettings(QtWidgets.QWidget):
             layout.addWidget(self._height_filler(), irow, 0)
 
             slider = Slider(axis, settings, partial(self._set_slice, index=axis))
+            slider.set_enabled(settings.mode == AxisMode.Slice)
             self._sliders[axis] = slider
-            slider.widget.setVisible(settings.mode == AxisMode.Slice)
             layout.addWidget(slider.widget, irow, 0, 1, max_column)
             # layout.setRowMinimumHeight(irow, 10)
             irow += 1
@@ -215,7 +216,7 @@ class PlotSettings(QtWidgets.QWidget):
             self.update_gui()
             try:
                 slider = self._sliders[index]
-                slider.widget.setVisible(mode == AxisMode.Slice)
+                slider.set_enabled(mode == AxisMode.Slice)
             except KeyError:
                 pass
         elif index == 'histogram':
@@ -363,11 +364,20 @@ class Slider:
         label.setMinimumWidth(40)
         label.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
 
+        loop_btn = QtWidgets.QPushButton(Icons.looping(), "")
+        loop_btn.setCheckable(True)
+        loop_btn.clicked.connect(self._loop_clicked)
+
+        self._enabled = False
+        self._timer = None
         self.qslider = slider
         self.label = label
         self.widget = QtWidgets.QWidget()
+        self.widget.setVisible(False)
+        self.loop_btn = loop_btn
         layout = QtWidgets.QHBoxLayout(self.widget)
         layout.setContentsMargins(20, 2, 0, 4)
+        layout.addWidget(loop_btn)
         layout.addWidget(slider)
         layout.addWidget(label)
 
@@ -384,3 +394,32 @@ class Slider:
     def _slider_changed(self, slice_index):
         self._set_label_text(slice_index)
         self.changed_cb(slice_index)
+
+    def set_enabled(self, enabled: bool):
+        if enabled != self._enabled:
+            self.widget.setVisible(enabled)
+            self._enabled = enabled
+
+    def _loop_clicked(self, checked: bool):
+        if self._timer is not None:
+            self._timer.stop()
+            self._timer = None
+        if checked:
+            n = len(self.settings.data)
+            interval = 5000 // n
+            if interval < 100:
+                interval = 100
+            if interval > 500:
+                interval = 500
+            self._timer = QtCore.QTimer()
+            self._timer.timeout.connect(self._increment_index)
+            self._timer.setInterval(interval)
+            self._timer.start()
+
+    def _increment_index(self):
+        index = self.qslider.value()
+        if index < len(self.settings.data) - 1:
+            index += 1
+        else:
+            index = 0
+        self.qslider.setValue(index)
