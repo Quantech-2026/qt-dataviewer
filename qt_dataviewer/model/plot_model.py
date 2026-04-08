@@ -179,11 +179,15 @@ class PlotModel:
         self._plotter = None
         self._axis_settings: list[AxisSettings] = []
         self._var_settings = VariableSettings()
-        self._changed = False
         self._current_x = None
         self._current_y = None
+        self._data_changed = True
+        self._plot_changed = False
+        self._slice_changed = False
         self._last_selected_data = None
+        self._pre_slice_data = None
         self._info_message = None
+
         self._iscomplex = np.iscomplexobj(data)
 
         try:
@@ -335,7 +339,7 @@ class PlotModel:
             self._data = data
             self._iscomplex = np.iscomplexobj(data)
 
-            self._changed = True
+            self._data_changed = True
         except Exception as ex:
             msg = "Update failed"
             if ex.args:
@@ -498,28 +502,36 @@ class PlotModel:
             self._current_y = index
         elif self._current_y == index:
             self._current_y = None
-        self._changed = True
+        self._data_changed = True
+
+    @property
+    def changed(self):
+        return self._data_changed or self._plot_changed or self._slice_changed
 
     @plot_changer
     def set_axis_log(self, index, logarithmic):
         old_setting = self._axis_settings[index].logarithmic
         if old_setting != logarithmic:
-            self._axis_settings[index].logarithmic = logarithmic
-            self._changed = True
+            settings = self._axis_settings[index]
+            settings.logarithmic = logarithmic
+            self._plot_changed = True
+
+            if self._last_selected_data is not None and settings.name in self._last_selected_data.coords:
+                self._last_selected_data[settings.name].attrs['log'] = settings.logarithmic
 
     @plot_changer
     def set_axis_slice(self, index, slice_index):
         old_index = self._axis_settings[index].slice_index
         if old_index != slice_index:
             self._axis_settings[index].slice_index = slice_index
-            self._changed = True  # TODO Slice changed.
+            self._slice_changed = True
 
     @plot_changer
     def set_axis_fft(self, index, fft_on):
         old_setting = self._axis_settings[index].fft
         if old_setting != fft_on:
             self._axis_settings[index].fft = fft_on
-            self._changed = True
+            self._data_changed = True
 
     @property
     def histogram_mode(self):
@@ -529,7 +541,7 @@ class PlotModel:
     def set_complex_mode(self, mode: ComplexMode):
         if self._var_settings.complex_mode != mode:
             self._var_settings.complex_mode = mode
-            self._changed = True
+            self._data_changed = True  # TODO only if FFT or histogram
 
     @property
     def complex_mode(self):
@@ -539,7 +551,9 @@ class PlotModel:
     def set_logarithmic(self, logarithmic):
         if self._var_settings.logarithmic != logarithmic:
             self._var_settings.logarithmic = logarithmic
-            self._changed = True # TODO Only plotting changed Update result only?
+            self._plot_changed = True
+            if self._last_selected_data is not None:
+                self._last_selected_data.attrs['log'] = logarithmic
 
     @property
     def logarithmic(self):
@@ -549,7 +563,7 @@ class PlotModel:
     def set_multiline_plot(self, multiline_plot):
         if self._var_settings.multiline_plot != multiline_plot:
             self._var_settings.multiline_plot = multiline_plot
-            self._changed = True # TODO: No change in data
+            self._plot_changed = True
 
     @property
     def multiline_plot(self):
@@ -561,7 +575,7 @@ class PlotModel:
             if value_range is not None and not isinstance(value_range, tuple):
                 raise ValueError(f"Invalid range {value_range}. Expected None or tuple")
             self._var_settings.manual_value_range = value_range
-            self._changed = True
+            self._plot_changed = True
 
     @property
     def value_range(self):
@@ -571,90 +585,82 @@ class PlotModel:
     def set_show_sidebar(self, state):
         if self._var_settings.show_sidebar != state:
             self._var_settings.show_sidebar = state
-            self._changed = True
+            self._plot_changed = True
 
     @property
     def show_sidebar(self):
         return self._var_settings.show_sidebar
 
     def update(self):
-        if self._changed and self._plotter: # TODO plotting changed, data changed, slice changed.
+        if self.changed and self._plotter: # TODO plotting changed, data changed, slice changed.
+            self._plot_changed = False
             # plotter calls get_data().
             self._plotter.update()
 
     def get_data(self):
-
-        """
-        TODO:
-            * fft and histogram are 'slow'. Cache result before slicing.
-
-        Split in multiple methods.
-        """
-
-        if not self._changed and self._last_selected_data is not None:
+        if not self._data_changed and not self._slice_changed:
             return self._last_selected_data
-
-        self._info_message = None
 
         logger.debug(f"get_data {self.var_name}")
         start = time.perf_counter()
         var_settings = self._var_settings
-        histogram_mode = var_settings.histogram_mode
-        da = self._data
 
-        for settings in reversed(self._axis_settings):
-            if settings.axis_type.is_coord:
-                da[settings.name].attrs['log'] = settings.logarithmic
+        if self._data_changed:
+            self._info_message = None
 
-        dims = list(da.dims)
-        for settings in reversed(self._axis_settings):
-            if settings.mode == AxisMode.Average:
-                if not settings.axis_type.is_dim:
-                    raise Exception(f"Cannot average {settings}")
-                dim_name = settings.name
-                if histogram_mode is None:
-                    da = da.mean(dim_name)
-                dims.remove(dim_name)
-            if settings.mode == AxisMode.All and settings.axis_type.is_dim:
-                dims.remove(settings.name)
+            histogram_mode = var_settings.histogram_mode
+            da = self._data
 
-        # Copy attributes. They get lost during averaging.
-        for name in ['units', 'long_name']:
-            try:
-                da.attrs[name] = self._data.attrs[name]
-            except KeyError:
-                pass
+            dims = list(da.dims)
+            for settings in reversed(self._axis_settings):
+                if settings.mode == AxisMode.Average:
+                    if not settings.axis_type.is_dim:
+                        raise Exception(f"Cannot average {settings}")
+                    dim_name = settings.name
+                    if histogram_mode is None:
+                        da = da.mean(dim_name)
+                    dims.remove(dim_name)
+                if settings.mode == AxisMode.All and settings.axis_type.is_dim:
+                    dims.remove(settings.name)
 
-        # Note: order of Average and FFT matter, because of np.abs() of FFT.
-        # FFT after averaging
-        for settings in reversed(self._axis_settings):
-            if settings.fft and settings.mode in [AxisMode.XAxis, AxisMode.YAxis]:
-                if settings.axis_type != AxisType.DimCoord:
-                    raise Exception(f"Cannot apply FFT on {settings}")
-                if np.iscomplexobj(da):
-                    da = self._select_complex_component(da, "FFT")
-                dim_name = settings.name
-                da = apply_fft(da, dim_name)
-                da[settings.name].attrs['log'] = settings.logarithmic
+            # Copy attributes. They get lost during averaging.
+            for name in ['units', 'long_name']:
+                try:
+                    da.attrs[name] = self._data.attrs[name]
+                except KeyError:
+                    pass
 
-        value_range = (float(da.min().real), float(da.max().real))
-        if np.iscomplexobj(da):
-            imag = da.imag
-            amplitude = np.abs(da)
-            imag_range = (float(imag.min()), float(imag.max()))
-            ampl_range = (float(amplitude.min()), float(amplitude.max()))
+            # Note: order of Average and FFT matter, because of np.abs() of FFT.
+            # FFT after averaging
+            for settings in reversed(self._axis_settings):
+                if settings.fft and settings.mode in [AxisMode.XAxis, AxisMode.YAxis]:
+                    if settings.axis_type != AxisType.DimCoord:
+                        raise Exception(f"Cannot apply FFT on {settings}")
+                    if np.iscomplexobj(da):
+                        da = self._select_complex_component(da, "FFT")
+                    dim_name = settings.name
+                    da = apply_fft(da, dim_name)
+                    da[settings.name].attrs['log'] = settings.logarithmic
 
-        if histogram_mode is not None:
-            logger.debug("start histogram")
+            self._value_range = (float(da.min().real), float(da.max().real))
             if np.iscomplexobj(da):
-                da = self._select_complex_component(da, "histogram")
-            da = histogram(da, dims + ['histogram'], 50, value_range)  # TODO bins, range
-            da['histogram'].attrs['log'] = False
-            value_range = (float(da.min()), float(da.max()))
-            logger.debug("done histogram")
+                imag = da.imag
+                amplitude = np.abs(da)
+                self._imag_range = (float(imag.min()), float(imag.max()))
+                self._ampl_range = (float(amplitude.min()), float(amplitude.max()))
 
-        # @@@ Cache pre-slice value
-        self._pre_slice_data = da
+            if histogram_mode is not None:
+                logger.debug("start histogram")
+                if np.iscomplexobj(da):
+                    da = self._select_complex_component(da, "histogram")
+                da = histogram(da, dims + ['histogram'], 50, self._value_range)  # TODO bins, range
+                da['histogram'].attrs['log'] = False
+                self._value_range = (float(da.min()), float(da.max()))
+                logger.debug("done histogram")
+
+            self._pre_slice_data = da
+        else:
+            da = self._pre_slice_data
 
         has_slice = False
         for settings in self._axis_settings:
@@ -667,11 +673,14 @@ class PlotModel:
                 if settings.axis_type == AxisType.DimCoord:
                     da = da.drop(dim_name)
 
-        var_settings.slice_value_range = value_range if has_slice else None
+        var_settings.slice_value_range = self._value_range if has_slice else None
         if np.iscomplexobj(da):
-            var_settings.slice_imag_range = imag_range if has_slice else None
-            var_settings.slice_ampl_range = ampl_range if has_slice else None
+            var_settings.slice_imag_range = self._imag_range if has_slice else None
+            var_settings.slice_ampl_range = self._ampl_range if has_slice else None
 
+        for settings in self._axis_settings:
+            if settings.name in da.coords:
+                da[settings.name].attrs['log'] = settings.logarithmic
         da.attrs['log'] = var_settings.logarithmic
 
         plot_axes = self.plot_axes
@@ -686,8 +695,10 @@ class PlotModel:
                     da[dim] = settings.data
             # not gridded: flatten all.
             da = da.stack({"_": [...]}, create_index=False)
+
         self._last_selected_data = da
-        self._changed = False
+        self._slice_changed = False
+        self._data_changed = False
         duration = time.perf_counter() - start
         logger.info(f"Updated {self.var_name} {duration*1000:.1f} ms")
         return da
