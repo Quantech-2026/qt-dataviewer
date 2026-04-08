@@ -397,6 +397,9 @@ class Slider:
 
     def set_enabled(self, enabled: bool):
         if enabled != self._enabled:
+            if self.loop_btn.isChecked():
+                self.loop_btn.setChecked(False)
+                self._timer.stop()
             self.widget.setVisible(enabled)
             self._enabled = enabled
 
