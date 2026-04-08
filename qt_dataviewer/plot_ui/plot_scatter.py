@@ -132,6 +132,16 @@ class PlotScatter(BasePlot):
         plot.setLogMode(**log_mode)
 
         # create spots
+
+        # data without unit scaling
+        x = x_helper.x
+        y = y_helper.x
+        # apply log (not automatically done by ScatterPlotItem)
+        if x_formatter.log:
+            x = np.log10(x)
+        if y_formatter.log:
+            y = np.log10(y)
+
         brushes = [
             pg.mkBrush(color=color)
             for color in self._color_map
@@ -155,13 +165,13 @@ class PlotScatter(BasePlot):
                 size = 15
             else:
                 size = 12
-            self.scatter.setData(x=x_array.data, y=y_array.data, brush=brush, pen="w", size=size)
+            self.scatter.setData(x=x, y=y, brush=brush, pen="w", size=size)
         else:
             # Only 1 point. It's a strange case, but can happen.
             brush = [brushes[0]]
             size = 25
 
-            self.scatter.setData(x=[x_array.data], y=[y_array.data], brush=brush, pen="w", size=size)
+            self.scatter.setData(x=[x], y=[y], brush=brush, pen="w", size=size)
 
     # @qt_log_exception
     # def mouseMoved(self, evt):
