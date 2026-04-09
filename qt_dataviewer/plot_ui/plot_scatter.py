@@ -28,6 +28,7 @@ class PlotScatter(BasePlot):
         self.cb = None
 
         self.plot.addItem(self.scatter)
+        self.plot.showGrid(True, True)
 
         self.widget = pg.PlotWidget(plotItem=self.plot)
         self.layout_widget = QtWidgets.QWidget()
