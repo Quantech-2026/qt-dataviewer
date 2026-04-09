@@ -111,7 +111,7 @@ class PlotSettings(QtWidgets.QWidget):
             # Slider ROW
             layout.addWidget(self._height_filler(), irow, 0)
 
-            slider = Slider(axis, settings, partial(self._set_slice, index=axis))
+            slider = Slider(self, axis, settings, partial(self._set_slice, index=axis))
             slider.set_enabled(settings.mode == AxisMode.Slice)
             self._sliders[axis] = slider
             layout.addWidget(slider.widget, irow, 0, 1, max_column)
@@ -322,14 +322,15 @@ class PlotSettings(QtWidgets.QWidget):
         self._updating = False
 
 
-class Slider:
-    def __init__(self, axis: int, settings: AxisSettings, changed_cb):
+class Slider(QtCore.QObject):
+    def __init__(self, parent, axis: int, settings: AxisSettings, changed_cb):
+        super().__init__(parent)
         self.axis = axis
         self.settings = settings
         self.changed_cb = changed_cb
         self.formatter = SmartFormatter(settings.data)
 
-        slider = QtWidgets.QSlider()
+        slider = QtWidgets.QSlider(parent)
         slider.setFocusPolicy(QtCore.Qt.StrongFocus)
         slider.setOrientation(QtCore.Qt.Horizontal)
         slider.setTickInterval(1)
@@ -369,7 +370,17 @@ class Slider:
         loop_btn.clicked.connect(self._loop_clicked)
 
         self._enabled = False
-        self._timer = None
+
+        self._looping = False
+        self._timer_id = None
+        n = len(self.settings.data)
+        interval = 5000 // n
+        if interval < 100:
+            interval = 100
+        if interval > 500:
+            interval = 500
+        self._loop_interval = interval
+
         self.qslider = slider
         self.label = label
         self.widget = QtWidgets.QWidget()
@@ -399,30 +410,30 @@ class Slider:
         if enabled != self._enabled:
             if self.loop_btn.isChecked():
                 self.loop_btn.setChecked(False)
-                self._timer.stop()
+                self.killTimer(self._timer_id)
+                self._timer_id = None
+                self._looping = False
             self.widget.setVisible(enabled)
             self._enabled = enabled
 
     def _loop_clicked(self, checked: bool):
-        if self._timer is not None:
-            self._timer.stop()
-            self._timer = None
+        self._looping = checked
+        if self._timer_id is not None:
+            self.killTimer(self._timer_id)
+            self._timer_id = None
         if checked:
-            n = len(self.settings.data)
-            interval = 5000 // n
-            if interval < 100:
-                interval = 100
-            if interval > 500:
-                interval = 500
-            self._timer = QtCore.QTimer()
-            self._timer.timeout.connect(self._increment_index)
-            self._timer.setInterval(interval)
-            self._timer.start()
+            self._timer_id = self.startTimer(self._loop_interval)
 
     def _increment_index(self):
+        if not self._looping:
+            return
+
         index = self.qslider.value()
         if index < len(self.settings.data) - 1:
             index += 1
         else:
             index = 0
         self.qslider.setValue(index)
+
+    def timerEvent(self, event):
+        self._increment_index()
