@@ -40,9 +40,22 @@ class Plot1D(BasePlot):
         self.curves = []
         self._legend = None
         self._complex_mode = None
+        self._polar = False
         self._polar_circles = []
+        self._manual_range = np.array([False, False])
+
+        vb = self.plot.getViewBox()
+        vb.sigRangeChanged.connect(self._update_range)
+        vb.sigRangeChangedManually.connect(self._update_range_manually)
 
         self.update()
+
+    def _update_range(self, vb: object, view_range: list[list[int]], changed: list[bool]):
+        self._update_grid()
+        self._manual_range &= ~np.array(changed)
+
+    def _update_range_manually(self, changed: list[bool]):
+        self._manual_range |= changed
 
     @qt_log_exception
     def update(self):
@@ -87,31 +100,54 @@ class Plot1D(BasePlot):
                 if complex_mode == ComplexMode.NyquistPolar:
                     polar = True
 
-        self._set_polar(polar)
+        self._polar = polar
         plot.setAspectLocked(lock=lock_aspect)
+        self._update_grid()
 
-    def _set_polar(self, polar: bool):
+    def _update_grid(self):
+        polar = self._polar
         plot = self.plot
         for circle in self._polar_circles:
             plot.removeItem(circle)
         self._polar_circles = []
         if polar:
-            plot.showGrid(False, False)
-            self._polar_circles.append(plot.addLine(x=0, pen=0.2))
-            self._polar_circles.append(plot.addLine(y=0, pen=0.2))
+            view_range = plot.getViewBox().viewRange()
+            range_min = [None, None]
+            range_max = [None, None]
+            for axis in [0, 1]:
+                axis_range = view_range[axis]
+                if axis_range[0] < 0 < axis_range[1]:
+                    range_min[axis] = 0
+                else:
+                    range_min[axis] = np.abs(axis_range).min()
+                range_max[axis] = np.abs(axis_range).max()
 
-            max_radius = float(np.max(np.abs(self.y_data)))
-            step = self._get_tick_step(max_radius)
-            for r in np.arange(step, max_radius, step):
+            min_r = np.linalg.norm(range_min)
+            max_r = np.linalg.norm(range_max)
+            step = self._get_tick_step(max_r - min_r)
+            min_r = step * np.floor(min_r / step)
+            max_r = step * np.ceil(max_r / step)
+
+            plot.showGrid(False, False)
+            thin_pen = pg.mkPen("k", width=0.1)
+            thick_pen = pg.mkPen("k", width=0.25)
+            self._polar_circles.append(plot.addLine(x=0, pen=thick_pen))
+            self._polar_circles.append(plot.addLine(y=0, pen=thick_pen))
+            for angle in [30, 60, 120, 150]:
+                self._polar_circles.append(plot.addLine(pos=[0, 0], angle=angle, pen=thin_pen))
+
+            for i, r in enumerate(np.arange(min_r, max_r, step/10)):
+                if r == 0:
+                    continue
                 circle = pg.QtWidgets.QGraphicsEllipseItem(-r, -r, 2*r, 2*r)
-                circle.setPen(pg.mkPen(0.2))
+                circle.setPen(thick_pen if i % 10 == 0 else thin_pen)
                 plot.addItem(circle, ignoreBounds=True)
                 self._polar_circles.append(circle)
         else:
             plot.showGrid(True, True)
 
     def _get_tick_step(self, max_value):
-        step = max_value / 8
+        step = max_value / 6
         exp10 = 10**np.floor(np.log10(step))
         coefficient = step/exp10
         for r in [2, 5, 10]:
@@ -188,17 +224,34 @@ class Plot1D(BasePlot):
         if self.one_d_is_vertical:
             x_pos = "left"
             y_pos = "bottom"
+            y_axis = 0
         else:
             x_pos = "bottom"
             y_pos = "left"
-        x_axis, x_data = self._set_axis(x, x_formatter, x_pos)
-        # TODO complex: 2nd axis phase, value ranges imag, Nyquist
-        _, y_data = self._set_axis(y, y_formatter, y_pos, plot_model.value_range)
+            y_axis = 1
+        y_value_range = plot_model.value_range if not self._manual_range[y_axis] else None
+        if np.iscomplexobj(y) and plot_model.complex_mode in [ComplexMode.Nyquist, ComplexMode.NyquistPolar]:
+            plot = self.plot
+            plot.setLogMode(x=False, y=False)
+            plot_axis = plot.getAxis("bottom")
+            y_formatter.set_plot_axis(plot_axis)
+            plot_axis = plot.getAxis("left")
+            y_formatter.set_plot_axis(plot_axis)
 
-        # store for mouse cursor
-        self.x_data = x_data
-        self.x_axis = x_axis
-        self.y_data = y_data
+            y_data = y_formatter.without_unit_prefix(y)
+            self.x_data = y_data.real
+            self.y_data = y_data.imag
+            self.x_axis = None
+            x_axis = None
+        else:
+            x_axis, x_data = self._set_axis(x, x_formatter, x_pos)
+            # TODO complex: 2nd axis phase, value ranges imag
+            _, y_data = self._set_axis(y, y_formatter, y_pos, y_value_range)
+
+            # store for mouse cursor
+            self.x_data = x_data
+            self.x_axis = x_axis
+            self.y_data = y_data
         return x_axis, y_data
 
     def _set_axis(self, data: xr.DataArray, formatter: SmartFormatter, axis_name: str,
@@ -249,20 +302,26 @@ class Plot1D(BasePlot):
             x_data = self.x_data
             x_axis = self.x_axis
             y_data = self.y_data
-            if y_data.ndim == 0:
-                x_val = x_data
-                y_val = y_data
+            plot_model = self._plot_model
+            if self.x_axis is None and plot_model.complex_mode in [ComplexMode.Nyquist, ComplexMode.NyquistPolar]:
+                x_str = self._y_formatter.with_units(x_val, x_data)
+                y_str = self._y_formatter.with_units(y_val, y_data)
             else:
-                d = np.abs(x_axis - x_val)
-                idx = np.nanargmin(d)
-                x_val = x_data[idx]
-                y_val = y_data[idx]
+                if y_data.ndim == 0:
+                    x_val = x_data
+                    y_val = y_data
+                else:
+                    d = np.abs(x_axis - x_val)
+                    idx = np.nanargmin(d)
+                    x_val = x_data[idx]
+                    y_val = y_data[idx]
 
-            x_str = self._x_formatter.with_units(x_val.item(), x_data) # x_data
-            y_str = self._y_formatter.with_units(y_val.item().real, y_data.real)  # TODO Add complex formatting
+                x_str = self._x_formatter.with_units(x_val.item(), x_data) # x_data
+                y_str = self._y_formatter.with_units(y_val.item().real, y_data.real)  # TODO Add complex formatting
 
-            if self.one_d_is_vertical:
-                x_str, y_str = y_str, x_str
+                if self.one_d_is_vertical:
+                    x_str, y_str = y_str, x_str
+
             self.label.setText(f"x={x_str}, y={y_str}")
 
         # Mouse in Nyquist?
