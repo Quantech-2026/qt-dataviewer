@@ -138,6 +138,10 @@ class PlotWindow:
         # @@@ allow change name
         return top_layout
 
+    def close_plots(self):
+        if self.current_settings_widget is not None:
+            self.current_settings_widget.stop()
+
     @qt_log_exception
     def rating_changed(self, rating: int):
         ...
@@ -466,6 +470,7 @@ class PlotWindow:
 
     def show_settings(self, index: int, plot_model: PlotModel, hidden: bool):
         if self.current_settings_widget is not None:
+            self.current_settings_widget.stop()
             self.current_settings_widget.deleteLater()
 
         settings_widget = PlotSettings(plot_model)

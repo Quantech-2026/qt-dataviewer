@@ -321,6 +321,10 @@ class PlotSettings(QtWidgets.QWidget):
         self._cb_measured_log.setEnabled(ndim == 1 or plot_model.multiline_plot)
         self._updating = False
 
+    def stop(self):
+        for slider in self._sliders.values():
+            slider.set_enabled(False)
+
 
 class Slider(QtCore.QObject):
     def __init__(self, parent, axis: int, settings: AxisSettings, changed_cb):

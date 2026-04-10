@@ -149,6 +149,7 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
         self.alive = False
         self._timer.stop()
         self._ds.close()
+        self.close_plots()
 
     def variable_selection_changed(self, index: int, hidden: bool):
         plotter = self._plotters[index]
