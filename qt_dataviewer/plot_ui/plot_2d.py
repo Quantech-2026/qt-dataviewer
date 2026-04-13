@@ -27,6 +27,7 @@ class Plot2D(BasePlot):
         self.img.setImage(np.zeros((1, 1)))
         self.img.setColorMap(get_color_map())
 
+        self.mesh = None
         self.hist = None
         self.cb = None
         self.plot.addItem(self.img)
@@ -68,17 +69,19 @@ class Plot2D(BasePlot):
                 hist = pg.HistogramLUTWidget()
                 hist.setMinimumWidth(76)
                 hist.vb.setMinimumWidth(24)
-                hist.setImageItem(self.img or self.mesh)
                 hist.gradient.setColorMap(get_color_map())  # nTicks=5))
                 hist.gradient.showTicks(False)
+                hist.setImageItem(self.img or self.mesh)
                 self.h_layout.addWidget(hist)
                 self.hist = hist
         else:
             if self.hist is not None:
                 hist = self.hist
                 # disconnect and delete
-                hist.imageItem().sigImageChanged.disconnect(hist.imageChanged)
+                if self.img:
+                    self.img.sigImageChanged.disconnect(hist.imageChanged)
                 self.h_layout.removeWidget(hist)
+                self.hist.deleteLater()
                 self.hist = None
 
     @qt_log_exception
@@ -242,7 +245,8 @@ class Plot2D(BasePlot):
                     self.cb.setLevels(levels)
 
             self.mesh.setData(x_grid, y_grid, z, autoLevels=False)
-            # Is this needed? self.hist.setImageItem(self.mesh)
+            if self.hist:
+                self.hist.imageChanged()
 
             # Calculate min/max values to show data with small empty border.
             # Default behavior of pyqtgraph is to select "notural" values on axis.
