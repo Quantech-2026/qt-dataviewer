@@ -1,9 +1,9 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
-## \[0.5.0] - 2026-04-@@@@
+## \[0.5.0] - 2026-04-13
 
-- Added Command line interface: qt-file-browser, qt-sqdl-browser, qt-qcodes-browser. qt-quantify-browser
+- Added Command line interface: qt-file-browser, qt-sqdl-browser, qt-qcodes-browser, qt-quantify-browser.
 - Added scatter plots.
 - Added plotting of 0D (scalar) value.
 - Added plotting of complex values data.
