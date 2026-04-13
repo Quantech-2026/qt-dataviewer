@@ -282,10 +282,11 @@ class PlotModel:
         # the mean ratio must differ from 1.0
         mean_ratio = np.mean(ratio)
         ratio_ratio = np.min(ratio)/np.max(ratio)
-        ratio_ratio = (ratio_ratio - 1) / n + 1
+        ratio_ratio = (ratio_ratio - 1) / np.sqrt(n) + 1
         is_log = (
-                0.99 < ratio_ratio < 1.01
+                0.995 < ratio_ratio < 1.005
                 and (mean_ratio < 0.999 or mean_ratio > 1.001))
+
         if is_log:
             return 'log' + unsorted_postfix
         # TODO lin_irregular / log_irregular? => auto log
