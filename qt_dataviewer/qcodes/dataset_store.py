@@ -1,5 +1,6 @@
 import copy
 import logging
+import os
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import date, datetime
@@ -84,7 +85,9 @@ class QCoDeSDatasetStore(DatasetStore):
         self._experiments = []
 
         # @@@ try/except
-        self._db_conn = connect(self._db_path, version=5, read_only=True)
+        db_path = os.path.expanduser(self._db_path)
+
+        self._db_conn = connect(db_path, version=5, read_only=True)
 
         for experiment in experiments(self._db_conn):
             exp_id = experiment.exp_id
