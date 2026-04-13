@@ -3,7 +3,7 @@ import numpy as np
 import xarray as xr
 
 from numpy.typing import NDArray
-from qtpy import QtCore, QtWidgets
+from qtpy import QtCore, QtWidgets, QtGui
 from qt_dataviewer.model.plot_model import ComplexMode
 from qt_dataviewer.utils.qt_utils import qt_log_exception
 
@@ -42,6 +42,7 @@ class Plot1D(BasePlot):
         self._complex_mode = None
         self._polar = False
         self._polar_circles = []
+        self._is_nyquist = False
         self._manual_range = np.array([False, False])
 
         vb = self.plot.getViewBox()
@@ -129,8 +130,17 @@ class Plot1D(BasePlot):
             max_r = step * np.ceil(max_r / step)
 
             plot.showGrid(False, False)
-            thin_pen = pg.mkPen("k", width=0.1)
-            thick_pen = pg.mkPen("k", width=0.25)
+
+            color = pg.getConfigOption("foreground")
+            thick_pen = pg.mkPen(color)
+            color = QtGui.QColor(thick_pen.color())  # copy to a new QColor
+            color.setAlpha(128)  # adjust opacity
+            thick_pen.setColor(color)
+            thin_pen = QtGui.QPen(thick_pen)  # copy to a new QPen
+            color = QtGui.QColor(thick_pen.color())
+            color.setAlpha(64)
+            thin_pen.setColor(color)
+
             self._polar_circles.append(plot.addLine(x=0, pen=thick_pen))
             self._polar_circles.append(plot.addLine(y=0, pen=thick_pen))
             for angle in [30, 60, 120, 150]:
@@ -169,7 +179,7 @@ class Plot1D(BasePlot):
             plot.plotItem.legend = None
 
         for i, (x, y, suffix) in enumerate(plots):
-            if self.one_d_is_vertical:
+            if self.one_d_is_vertical and not self._is_nyquist:
                 x, y = y, x
             if i >= len(curves):
                 # create new curve
@@ -221,16 +231,9 @@ class Plot1D(BasePlot):
         self._x_formatter = x_formatter
         self._y_formatter = y_formatter
 
-        if self.one_d_is_vertical:
-            x_pos = "left"
-            y_pos = "bottom"
-            y_axis = 0
-        else:
-            x_pos = "bottom"
-            y_pos = "left"
-            y_axis = 1
-        y_value_range = plot_model.value_range if not self._manual_range[y_axis] else None
-        if np.iscomplexobj(y) and plot_model.complex_mode in [ComplexMode.Nyquist, ComplexMode.NyquistPolar]:
+        self._is_nyquist = (np.iscomplexobj(y)
+                            and plot_model.complex_mode in [ComplexMode.Nyquist, ComplexMode.NyquistPolar])
+        if self._is_nyquist:
             plot = self.plot
             plot.setLogMode(x=False, y=False)
             plot_axis = plot.getAxis("bottom")
@@ -244,6 +247,15 @@ class Plot1D(BasePlot):
             self.x_axis = None
             x_axis = None
         else:
+            if self.one_d_is_vertical:
+                x_pos = "left"
+                y_pos = "bottom"
+                y_axis = 0
+            else:
+                x_pos = "bottom"
+                y_pos = "left"
+                y_axis = 1
+            y_value_range = plot_model.value_range if not self._manual_range[y_axis] else None
             x_axis, x_data = self._set_axis(x, x_formatter, x_pos)
             # TODO complex: 2nd axis phase, value ranges imag
             _, y_data = self._set_axis(y, y_formatter, y_pos, y_value_range)
@@ -291,7 +303,7 @@ class Plot1D(BasePlot):
             x_val = mousePoint.x()
             y_val = mousePoint.y()
 
-            if self.one_d_is_vertical:
+            if self.one_d_is_vertical and not self._is_nyquist:
                 x_val, y_val = y_val, x_val
 
             if self._x_formatter.log:
@@ -319,7 +331,7 @@ class Plot1D(BasePlot):
                 x_str = self._x_formatter.with_units(x_val.item(), x_data) # x_data
                 y_str = self._y_formatter.with_units(y_val.item().real, y_data.real)  # TODO Add complex formatting
 
-                if self.one_d_is_vertical:
+                if self.one_d_is_vertical and not self._is_nyquist:
                     x_str, y_str = y_str, x_str
 
             self.label.setText(f"x={x_str}, y={y_str}")
