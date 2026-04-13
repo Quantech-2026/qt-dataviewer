@@ -19,7 +19,7 @@ each individual axis.
 <img src="https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/raw/main/docs/Scatter_plot.png" width="50%" height="50%" />
 <img src="https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/raw/main/docs/Nyquist_plot.png" width="50%" height="50%" />
 
-[Gallery](https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/raw/main/docs/Gallery.md")
+[Gallery](https://gitlab.tudelft.nl/qutech-qdlabs/qt-dataviewer/-/raw/main/docs/Gallery.md)
 
 # Data storage browser
 
