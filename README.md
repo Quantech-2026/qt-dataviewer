@@ -55,7 +55,9 @@ The sQDL backend requires the package `sqdl-client`.
 
 ```python
 from qt_dataviewer.sqdl import SqdlDataBrowser
+from qt_dataviewer.utils.logger import configure_logging
 
+configure_logging()  # Optional start logging to ~/.qt_dataviewer
 browser = SqdlDataBrowser("My-Scope")
 ```
 GUI dark style can be activated with the optional argument `gui_style="dark"`.
@@ -67,7 +69,9 @@ No additional packages are needed to browse and display the quantify datasets.
 
 ```python
 from qt_dataviewer.quantify.data_browser import QuantifyDataBrowser
+from qt_dataviewer.utils.logger import configure_logging
 
+configure_logging()  # Optional start logging to ~/.qt_dataviewer
 browser = QuantifyDataBrowser()
 ```
 Start browser in specific directory and in dark mode.
@@ -79,6 +83,16 @@ Notes:
 - The browser scans the directory and all subdirectories for Quantify datasets.
   This scanning processes can take some time.
 
+## QCoDeS database
+
+```Python
+from qt_dataviewer.qcodes.data_browser import QCoDeSDataBrowser
+from qt_dataviewer.utils.logger import configure_logging
+
+configure_logging()  # Optional start logging to ~/.qt_dataviewer
+browser = QCoDeSDataBrowser("~/Projects/Sandbox/qccodes_trials/database/experiments_2026.db")
+```
+
 ## QDL database
 
 *Experimental*
@@ -88,7 +102,9 @@ The QDL backend requires the package `qdl-client`.
 
 ```python
 from qt_dataviewer.sqdl import SqdlDataBrowser
+from qt_dataviewer.utils.logger import configure_logging
 
+configure_logging()  # Optional start logging to ~/.qt_dataviewer
 browser = SqdlDataBrowser("My-Scope", backend="qdl")
 ```
 
@@ -122,7 +138,9 @@ UID and measurement time.
 
 ```Python
 from qt_dataviewer.data_file_browser import DataFileBrowser
+from qt_dataviewer.utils.logger import configure_logging
 
+configure_logging()  # Optional start logging to ~/.qt_dataviewer
 browser = DataFileBrowser(r"C:\measurement_data")
 ```
 GUI dark style can be activated with the optional argument `gui_style="dark"`.
