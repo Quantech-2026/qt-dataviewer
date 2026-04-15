@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.5.1] - 2026-04-@@@@
+
+- Fixed 2D sidebar histogram for irregular mesh.
+
 ## \[0.5.0] - 2026-04-13
 
 - Added Command line interface: qt-file-browser, qt-sqdl-browser, qt-qcodes-browser, qt-quantify-browser.
