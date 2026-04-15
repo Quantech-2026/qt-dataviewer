@@ -1,9 +1,11 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
-## \[0.5.1] - 2026-04-@@@@
+## \[0.5.1\] - 2026-04-15
 
+- Updated project dependencies.
 - Fixed 2D sidebar histogram for irregular mesh.
+- Fixed import of logging handler.
 
 ## \[0.5.0] - 2026-04-13
 
