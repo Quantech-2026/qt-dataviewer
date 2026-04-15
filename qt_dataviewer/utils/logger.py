@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from logging.handlers import TimedRotatingFileHandler
 
 from .configuration import get_configuration
 
@@ -26,7 +27,7 @@ def configure_logging():
         handler.close()
         root_logger.removeHandler(handler)
 
-    file_handler = logging.handlers.TimedRotatingFileHandler(
+    file_handler = TimedRotatingFileHandler(
         file,
         when="midnight",
         backupCount=15,
