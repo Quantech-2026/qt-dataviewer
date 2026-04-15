@@ -16,10 +16,10 @@ def apply_fft(da: xr.DataArray, dim_name: str):
     index = list(da.dims).index(dim_name)
     r = rfft(da, axis=index, norm="forward")
     # remove DC component
-    r[0] = 0.0
+    r[..., 0] = 0.0
     r = np.abs(r)
     # Compensate splitting in positive and negative frequencies.
-    r[1:-1] *= 2.0
+    r[..., 1:-1] *= 2.0
 
     t_data = axis.values
     freq = rfftfreq(len(t_data), np.abs(t_data[1] - t_data[0]))
