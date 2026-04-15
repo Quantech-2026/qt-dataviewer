@@ -23,6 +23,8 @@ dependencies = [
     "xarray",
     "h5netcdf",
     "qdarkstyle",
+    "ruamel-yaml",
+    "h5py",
 ]
 license = "MIT"
 license-files = [
