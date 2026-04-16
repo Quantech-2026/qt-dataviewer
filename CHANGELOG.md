@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.5.3] - 2026-04-16
+
+- Fixed handling of UID for QDL.
+
 ## \[0.5.2] - 2026-04-15
 
 - Fixed FFT
