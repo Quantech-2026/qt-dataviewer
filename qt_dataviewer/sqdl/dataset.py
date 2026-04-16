@@ -23,7 +23,7 @@ class SqdlDataset(Dataset):
             s3session: Session,
     ):
         super().__init__(ds_description)
-        self.uid = int(ds_description.uid)
+        self.uid = ds_description.uid
         self._s3session = s3session
         self._snapshot = None
         self.ds_xr = None
@@ -120,8 +120,11 @@ class SqdlDataset(Dataset):
 
     @property
     def formatted_uid(self) -> str:
-        s = str(self.uid)
-        return s[:-14] + '_' + s[-14:-9] + '_' + s[-9:]
+        if self.ds_xr is not None and self.ds_xr.attrs.get("application", "").startswith("core-tools:"):
+            s = str(int(self.uid))
+            return s[:-14] + '_' + s[-14:-9] + '_' + s[-9:]
+        else:
+            return self.uid
 
     @property
     def snapshot(self) -> None | str | dict[str, any]:
