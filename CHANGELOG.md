@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.5.4] - 2026-04-17
+
+- Fixed some exceptions using QDL.
+- Fixed bug in FFT plot (bug in 0.5.0 - 0.5.3)
+- Show error message in dataset info when loading from QDL/sQDL fails.
+
 ## \[0.5.3] - 2026-04-16
 
 - Fixed handling of UID for QDL.
