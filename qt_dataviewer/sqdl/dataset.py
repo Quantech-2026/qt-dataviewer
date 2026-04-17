@@ -29,6 +29,7 @@ class SqdlDataset(Dataset):
         self.ds_xr = None
         self.file_md5_sum = None
         self._last_refresh = None
+        self._load_error_msg = None
         self.reload()
 
     def reload(self) -> None:
@@ -77,16 +78,19 @@ class SqdlDataset(Dataset):
 
     def _load_hdf5_from_url(self, file) -> xr.Dataset | None:
         t0 = time.perf_counter()
+        self._load_error = None
         try:
             content = file.download(self._s3session)
         except HTTPError as exc:
             logger.warning(
                 f"Failed to load hdf5 (status={exc.response.status_code})"
             )
+            self._load_error_msg = f"Failed to load ({exc.response.status_code})"
             logger.info(f"{exc.response.content}")
             return None
 
         if content is None:
+            self._load_error_msg = "Empty file"
             return None
 
         length = len(content)
@@ -119,7 +123,7 @@ class SqdlDataset(Dataset):
         return self._get_changed_file() is not None
 
     @property
-    def formatted_uid(self) -> str:
+    def formatted_uid(self) -> str: # TODO: get application from sqdl dataset description?
         if self.ds_xr is not None and self.ds_xr.attrs.get("application", "").startswith("core-tools:"):
             s = str(int(self.uid))
             return s[:-14] + '_' + s[-14:-9] + '_' + s[-9:]
@@ -134,6 +138,9 @@ class SqdlDataset(Dataset):
 
     @property
     def info(self) -> list[tuple[str, str]]:
+        if self.ds_xr is None:
+            return [("No data", self._load_error_msg)]
+
         # TODO @@@ Use schema
         info_keys = [
             ("Project", "project"),
