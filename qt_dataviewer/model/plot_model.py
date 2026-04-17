@@ -672,7 +672,7 @@ class PlotModel:
                 dim_name = settings.name
                 da = da[{dim_name: settings.slice_index}]
                 if settings.axis_type == AxisType.DimCoord:
-                    da = da.drop(dim_name)
+                    da = da.drop_vars(dim_name)
 
         var_settings.slice_value_range = self._value_range if has_slice else None
         if np.iscomplexobj(da):
