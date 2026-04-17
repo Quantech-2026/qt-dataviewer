@@ -287,8 +287,15 @@ class Plot1D(BasePlot):
             mn = formatter.without_unit_prefix(value_range[0])
             mx = formatter.without_unit_prefix(value_range[1])
             if log_mode:
-                mn = np.log10(mn)
-                mx = np.log10(mx)
+                if mx <= 0:
+                    mn, mx = 0.0, 1.0
+                else:
+                    mx = np.log10(mx)
+                    if mn <= 0:
+                        # If 0 or negative, plot 6 decades
+                        mn = mx - 6
+                    else:
+                        mn = np.log10(mn)
             if not any(np.isnan([mn, mx])):
                 plot.setRange(**{axis+"Range": [mn, mx]})
 
