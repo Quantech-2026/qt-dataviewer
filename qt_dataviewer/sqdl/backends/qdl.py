@@ -62,7 +62,6 @@ class QdlDataset(BaseDataset):
 
     @staticmethod
     def from_response(response: v1.Dataset) -> Self:
-        logger.debug(f"QDL DATASET >>> FROM RESPONSE: {response}")
         return QdlDataset(
             name=response.name,
             title=response.name,
@@ -160,7 +159,7 @@ class QdlScope(BaseScope):
         if data_identifiers:
             kwargs.update(data_identifiers)
 
-        logger.info(f"Searching for datasets: kwargs={kwargs}")
+        logger.info(f"Searching for datasets: filters={kwargs}")
         response = self.ref._api.list_datasets(
             scope_uid=self.ref.name,
             **kwargs,
@@ -196,7 +195,6 @@ class QdlClient(BaseClient):
     @property
     def user_info(self) -> dict[str, str]:
         info = self._client.user_info
-        logger.debug(f"qdl user info: {info}")
         return {
             "name": info.name,
             "role": info.role,
