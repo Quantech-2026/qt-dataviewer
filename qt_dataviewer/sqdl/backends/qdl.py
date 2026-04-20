@@ -95,8 +95,8 @@ class QdlScope(BaseScope):
         except v1.exceptions.NotFoundException as exc:
             raise DatasetNotFoundException(
                 f"Dataset not found in scope: ds={ds_uid}, scope={self.name}",
-                request=exc.request,
-                response=exc.response,
+                request=None,
+                response=exc,
             ) from exc
         return QdlDataset.from_response(response)
 
