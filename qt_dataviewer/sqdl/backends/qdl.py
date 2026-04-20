@@ -192,6 +192,12 @@ class QdlClient(BaseClient):
     def logout(self):
         self._client.logout()
 
+    def close(self):
+        """
+        Properly terminate the async runtime used by the QDL Backend library.
+        """
+        self._client.close()
+
     @property
     def user_info(self) -> dict[str, str]:
         info = self._client.user_info

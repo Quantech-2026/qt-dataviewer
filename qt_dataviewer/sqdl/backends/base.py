@@ -105,6 +105,10 @@ class BaseClient(ABC):
     def logout(self):
         pass
 
+    @abstractmethod
+    def close(self):
+        pass
+
     @property
     @abstractmethod
     def user_info(self) -> dict[str, str]:
