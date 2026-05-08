@@ -1,6 +1,10 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.5.5] - 2026-05-08
+
+- Improved QCoDeS dataset viewer.
+
 ## \[0.5.4] - 2026-04-17
 
 - Fixed some exceptions using QDL.
