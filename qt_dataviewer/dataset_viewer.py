@@ -116,8 +116,8 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
 
     @qt_log_exception
     def _update_ds(self):
-        logger.info('Update dataset')
         ds = self._ds
+        logger.info(f"Update dataset {ds.uid}")
         if ds.is_modified:
             was_empty = len(ds.data.data_vars) == 0
             try:

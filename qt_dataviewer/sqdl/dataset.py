@@ -23,7 +23,6 @@ class SqdlDataset(Dataset):
             s3session: Session,
     ):
         super().__init__(ds_description)
-        self.uid = ds_description.uid
         self._s3session = s3session
         self._snapshot = None
         self.ds_xr = None
@@ -61,7 +60,9 @@ class SqdlDataset(Dataset):
             if file.name.endswith('.hdf5'):
                 break
         else:
+            self._load_error_msg = "No HDF5 file found"
             logger.warning(f"HDF5 file for uid '{self.uid}' not found")
+            logger.info(f"Dataset contains files: {[file.name for file in sqdl_files]}")
             return
 
         if not file.has_data:

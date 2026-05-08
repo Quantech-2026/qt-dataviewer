@@ -31,6 +31,10 @@ class Dataset:
         raise NotImplementedError()
 
     @property
+    def uid(self) -> str:
+        return self.ds_description.uid
+
+    @property
     def collected_datetime(self) -> datetime:
         return self.ds_description.collected_datetime
 
