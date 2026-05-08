@@ -31,6 +31,10 @@ license-files = [
     "LICENSE",
 ]
 
+[project.optional-dependencies]
+pyqt5 = ["PyQt5"]
+qcodes = ["qcodes"]
+
 [tool.setuptools.package-data]
 "qt_dataviewer.resources" = ["**/*.png"]
 

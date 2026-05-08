@@ -56,6 +56,7 @@ class QCoDeSDataset(Dataset):
     @property
     def info(self) -> list[tuple[str, str]]:
         labels = self.ds_description.labels
+        ds = self._ds
         start_time = self.ds_description.collected_datetime
         end_time = self.ds_description.completed_time
         duration_str = "-"
@@ -75,11 +76,45 @@ class QCoDeSDataset(Dataset):
         except Exception:
             logger.error("Could not get duration", exc_info=True)
             duration_str = "-"
-        return [
+
+        info_items = [
             ("Sample", labels.get("sample")),
             ("Experiment", labels.get("experiment")),
+            ("Run ID", str(ds.run_id)),
+            ("Captured Run ID", str(getattr(ds, 'captured_run_id', ds.run_id))),
+            ("Start Time", f"{start_time:%Y-%m-%d %H:%M:%S}" if start_time else "-"),
+            ("Completed Time", f"{end_time:%Y-%m-%d %H:%M:%S}" if end_time else "-"),
             ("Duration", duration_str),
-            ]
+            ("# Results", str(self._number_of_results)),
+        ]
+
+        # Add run_description parameter info
+        try:
+            run_desc = ds.description
+            if run_desc and hasattr(run_desc, 'interdeps'):
+                interdeps = run_desc.interdeps
+                deps = []
+                for ps in interdeps.dependencies:
+                    dep_names = [p.name for p in interdeps.dependencies[ps]]
+                    deps.append(f"{ps.name}({', '.join(dep_names)})")
+                if deps:
+                    info_items.append(("Parameters", "; ".join(deps)))
+        except Exception:
+            logger.debug("Could not get run description", exc_info=True)
+
+        # Add user-defined metadata
+        try:
+            metadata = ds.metadata
+            if metadata:
+                for key, value in metadata.items():
+                    display_value = str(value)
+                    if len(display_value) > 200:
+                        display_value = display_value[:200] + "..."
+                    info_items.append((f"Meta: {key}", display_value))
+        except Exception:
+            logger.debug("Could not get metadata", exc_info=True)
+
+        return info_items
 
     @property
     def snapshot(self) -> None | str | dict[str, Any]:
