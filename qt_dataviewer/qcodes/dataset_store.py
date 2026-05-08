@@ -12,9 +12,6 @@ from qcodes.dataset import (
     load_by_id,
     load_experiment,
 )
-from qcodes.dataset.sqlite.queries import (
-    get_experiments,
-    )
 from qcodes.dataset.experiment_container import Experiment
 
 from qt_dataviewer.abstract import (
@@ -124,6 +121,9 @@ class QCoDeSDatasetStore(DatasetStore):
             )
 
     def _apply_filter(self):
+        # Clear previous filtered results to avoid stale/duplicate entries
+        self._filtered_ds_descriptions = defaultdict(list)
+
         # include all sample names
         sample_names: set[str] = set()
         # include only experiements with selected sample name
@@ -188,15 +188,13 @@ class QCoDeSDatasetStore(DatasetStore):
     def check_for_updates(self):
         new_ds_descriptions = []
 
-        exp_list = get_experiments(self._db_conn)
-        loaded_exp = [exp.exp_id for exp in self._experiments]
-        for exp_id in exp_list:
-            if exp_id not in loaded_exp:
-                experiment = load_experiment(exp_id, self._db_conn)
-                # datasets will be loaded in next loop.
+        # Use public API to detect new experiments
+        loaded_exp_ids = {exp.exp_id for exp in self._experiments}
+        for experiment in experiments(self._db_conn):
+            if experiment.exp_id not in loaded_exp_ids:
                 exp = ExperimentInMem(
                     experiment,
-                    exp_id,
+                    experiment.exp_id,
                     experiment.name,
                     experiment.sample_name,
                     0,

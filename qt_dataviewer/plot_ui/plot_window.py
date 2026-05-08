@@ -218,21 +218,13 @@ class PlotWindow:
         self._current_row_height = 0
         self._current_n_rows = 0
 
-        plots_widget = QtWidgets.QWidget()
-        self.plots_widget = plots_widget
-        # Horizontal: panel, line, grid with plots, spacer
-        h_layout = QtWidgets.QHBoxLayout(plots_widget)
-        h_layout.setContentsMargins(0, 0, 0, 0)
-        h_layout.setSpacing(2)
+        # Use a QSplitter so the user can drag the side pane wider/narrower
+        splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
+        self.plots_widget = splitter
 
+        # --- Left side: control panel ---
         scroll_area = QtWidgets.QScrollArea()
-        size_policy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Expanding)
-        size_policy.setHorizontalStretch(0)
-        size_policy.setVerticalStretch(0)
-        # size_policy.setHeightForWidth(scroll_area.sizePolicy().hasHeightForWidth())
-        scroll_area.setSizePolicy(size_policy)
-        scroll_area.setMinimumWidth(424)
-        scroll_area.setMaximumWidth(424)
+        scroll_area.setMinimumWidth(300)
         scroll_area.setWidgetResizable(True)
         scroll_widget = QtWidgets.QWidget()
         scroll_area.setWidget(scroll_widget)
@@ -250,8 +242,8 @@ class PlotWindow:
         cpanel_layout.addLayout(cb_layout)
 
         lb_variables = QtWidgets.QListWidget()
-        lb_variables.setMinimumSize(QtCore.QSize(300, 200))
-        lb_variables.setMaximumSize(QtCore.QSize(500, 300))
+        lb_variables.setMinimumSize(QtCore.QSize(200, 200))
+        lb_variables.setMaximumHeight(300)
         lb_variables.itemSelectionChanged.connect(self._variable_selection_changed)
         lb_variables.itemChanged.connect(self._variable_item_changed)
         self.lb_variables = lb_variables
@@ -266,9 +258,9 @@ class PlotWindow:
         cpanel_layout.addSpacerItem(
             QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.MinimumExpanding))
 
-        h_layout.addWidget(scroll_area)
+        splitter.addWidget(scroll_area)
 
-        # plots panel: Grid
+        # --- Right side: plots grid ---
         zelf = self
 
         class MyScrollArea(QtWidgets.QScrollArea):
@@ -290,9 +282,16 @@ class PlotWindow:
         plots_layout.setContentsMargins(0, 0, 0, 0)
         self.plots_layout = plots_layout
 
-        h_layout.addWidget(scroll_area, 1)
+        splitter.addWidget(scroll_area)
 
-        tabs.addTab(plots_widget, "Plots")
+        # Configure splitter: panel ~424px, plots get remaining space
+        splitter.setSizes([424, 1076])
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
+        splitter.setCollapsible(0, False)
+        splitter.setCollapsible(1, False)
+
+        tabs.addTab(splitter, "Plots")
 
     def _selected_row(self):
         selected = self.lb_variables.selectedIndexes()
