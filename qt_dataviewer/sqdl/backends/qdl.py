@@ -62,7 +62,6 @@ class QdlDataset(BaseDataset):
 
     @staticmethod
     def from_response(response: v1.Dataset) -> Self:
-        logger.debug(f"QDL DATASET >>> FROM RESPONSE: {response}")
         return QdlDataset(
             name=response.name,
             title=response.name,
@@ -95,8 +94,8 @@ class QdlScope(BaseScope):
         except v1.exceptions.NotFoundException as exc:
             raise DatasetNotFoundException(
                 f"Dataset not found in scope: ds={ds_uid}, scope={self.name}",
-                request=exc.request,
-                response=exc.response,
+                request=None,
+                response=exc,
             ) from exc
         return QdlDataset.from_response(response)
 
@@ -160,7 +159,7 @@ class QdlScope(BaseScope):
         if data_identifiers:
             kwargs.update(data_identifiers)
 
-        logger.info(f"Searching for datasets: kwargs={kwargs}")
+        logger.info(f"Searching for datasets: filters={kwargs}")
         response = self.ref._api.list_datasets(
             scope_uid=self.ref.name,
             **kwargs,
@@ -193,10 +192,15 @@ class QdlClient(BaseClient):
     def logout(self):
         self._client.logout()
 
+    def close(self):
+        """
+        Properly terminate the async runtime used by the QDL Backend library.
+        """
+        self._client.close()
+
     @property
     def user_info(self) -> dict[str, str]:
         info = self._client.user_info
-        logger.debug(f"qdl user info: {info}")
         return {
             "name": info.name,
             "role": info.role,

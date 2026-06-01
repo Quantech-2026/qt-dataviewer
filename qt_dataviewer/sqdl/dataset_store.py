@@ -410,6 +410,7 @@ class SqdlDatasetStore(DatasetStore):
 
     def close(self):
         self._update_timer.stop()
+        self._client.close()
 
     # add caching of files? Only if completed.
     # .qt_viewer/cache/cache.db; files

@@ -161,6 +161,10 @@ class SqdlClient(BaseClient):
     def logout(self):
         self._client.logout()
 
+    def close(self):
+        # SqdlClient does not require special action when closing the DataBrowser.
+        pass
+
     @property
     def user_info(self) -> dict[str, str]:
         return self._client.user_info
