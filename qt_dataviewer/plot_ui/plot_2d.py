@@ -198,8 +198,8 @@ class Plot2D(BasePlot):
             self.img.setRect(rect)
             if self.cb:
                 self.cb.setLevels(self.img.getLevels())
-            dx = x_width / len(x_array)
-            dy = y_height / len(y_array)
+            dx = 2 * x_width
+            dy = 2 * y_height
             self.plot.setLimits(xMin=x_offset-dx, xMax=x_offset+x_width+dx,
                                 yMin=y_offset-dy, yMax=y_offset+y_height+dy)
 
@@ -249,7 +249,7 @@ class Plot2D(BasePlot):
                 self.hist.imageChanged()
 
             # Calculate min/max values to show data with small empty border.
-            # Default behavior of pyqtgraph is to select "notural" values on axis.
+            # Default behavior of pyqtgraph is to select "natural" values on axis.
             # This behavior can result in a big white space around the data.
             x_min, x_max = self._get_axis_limits(x_edges)
             y_min, y_max = self._get_axis_limits(y_edges)
@@ -259,7 +259,7 @@ class Plot2D(BasePlot):
     def _get_axis_limits(self, values):
         x_min = min(values)
         x_max = max(values)
-        delta = (x_max - x_min) * 0.02
+        delta = (x_max - x_min) * 2.0
         x_min -= delta
         x_max += delta
         return x_min, x_max
