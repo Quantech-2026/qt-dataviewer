@@ -99,6 +99,9 @@ class AxisSettings:
     def update_dim_size(self, size: int):
         self.data = self._get_dim_data(self.name, size)
 
+    def update_data(self, coords: xr.DataArray):
+        self.data = coords
+
     @staticmethod
     def _get_dim_data(name, size):
         return xr.DataArray(
@@ -329,6 +332,7 @@ class PlotModel:
                 coords.attrs['scale'] = self._detect_axis_scale(coords)
                 # update name, in case up equivalent names.
                 settings.name = axis_name
+                settings.update_data(coords)
 
             for settings in self._axis_settings:
                 if settings.axis_type is AxisType.Dim:
