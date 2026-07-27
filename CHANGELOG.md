@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[0.5.7] - 2026-07-27
+
+- Increased zoom-out range.
+- Fixed axis for slicing during live update.
+
 ## \[0.5.6] - 2026-06-01
 
 - Fixed some exceptions using QDL.
