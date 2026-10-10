@@ -119,8 +119,8 @@ class InfoWidget(QtWidgets.QWidget):
                 # item.setFlags(flags)
 
     @qt_log_exception
-    def _set_condensed_snapshot(self, checked):
-        self._condensed_snapshot = checked
+    def _set_condensed_snapshot(self, checked: bool = None):
+        self._condensed_snapshot = self.cb_condensed_snapshot.isChecked()
         self._show_snapshot()
 
     def _show_snapshot(self):
