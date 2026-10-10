@@ -194,6 +194,8 @@ class PlotModel:
         self._iscomplex = np.iscomplexobj(data)
 
         try:
+            if not (np.issubdtype(data.dtype, np.number) or np.issubdtype(data.dtype, np.bool_)):
+                raise Exception(f"Cannot plot data of type {data.dtype}")
             self._add_axes()
 
             if data.name.endswith('_fraction') or data.attrs.get('units') == '%':

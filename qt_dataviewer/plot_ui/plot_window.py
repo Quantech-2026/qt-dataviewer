@@ -185,7 +185,7 @@ class PlotWindow:
                     # print(f"Prev {(t1-t0)*1000:.1f} ms")
 
     @qt_log_exception
-    def _latest_clicked(self, checked: bool):
+    def _latest_clicked(self, checked: bool = None):
         if self.datalist is not None:
             self._update_buttons(uncheck_latest=False)
 

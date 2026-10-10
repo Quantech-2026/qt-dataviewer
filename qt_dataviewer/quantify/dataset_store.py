@@ -30,7 +30,7 @@ class QuantifyDatasetStore(DatasetStore):
         self._all_ds_paths = set()
         self._ds_descriptions_changed = False
         self._auto_scan = False
-        self._check_datasets = False
+        self._check_datasets = check_datasets
         self._update_timer = QtCore.QTimer(self)
         self._update_timer.timeout.connect(self._check_for_updates)
         self._update_timer.setSingleShot(True)

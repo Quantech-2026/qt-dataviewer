@@ -12,6 +12,13 @@ def histogram(da: xr.DataArray,
         mx = float(da.max())
     else:
         mn, mx = bin_range
+    if not (np.isfinite(mn) and np.isfinite(mx)):
+        # no data (yet)
+        mn, mx = 0.0, 0.0
+    if mx == mn:
+        # all values are equal
+        half_width = abs(mn) * 0.1 if mn != 0 else 0.5
+        mn, mx = mn - half_width, mx + half_width
     step = (mx-mn)/nbins
     bin_range = (mn-step/2, mx+step/2)
     binedges = np.linspace(bin_range[0], bin_range[1], nbins+1)

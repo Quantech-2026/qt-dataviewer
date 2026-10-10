@@ -9,7 +9,7 @@ from qtpy.QtCore import QTimer
 from qcodes.dataset import (
     connect,
     experiments,
-    load_by_id,
+    load_by_counter,
     load_experiment,
 )
 from qcodes.dataset.experiment_container import Experiment
@@ -204,8 +204,8 @@ class QCoDeSDatasetStore(DatasetStore):
         for exp in self._experiments:
             current_counter = exp.experiment.last_counter
             if current_counter != exp.last_counter:
-                for run_id in range(exp.last_counter, current_counter):
-                    ds = load_by_id(run_id + 1, self._db_conn)
+                for counter in range(exp.last_counter, current_counter):
+                    ds = load_by_counter(counter + 1, exp.exp_id, self._db_conn)
                     dd = self._get_ds_description(ds, exp)
                     exp.ds_descriptions.append(dd)
                     new_ds_descriptions.append(dd)

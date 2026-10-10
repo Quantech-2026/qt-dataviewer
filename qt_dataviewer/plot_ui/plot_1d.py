@@ -331,6 +331,8 @@ class Plot1D(BasePlot):
                     y_val = y_data
                 else:
                     d = np.abs(x_axis - x_val)
+                    if np.all(np.isnan(d)):
+                        return
                     idx = np.nanargmin(d)
                     x_val = x_data[idx]
                     y_val = y_data[idx]

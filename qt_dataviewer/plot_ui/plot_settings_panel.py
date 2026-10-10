@@ -108,6 +108,10 @@ class PlotSettings(QtWidgets.QWidget):
 
             irow += 1
 
+            if settings.axis_type == AxisType.Coord:
+                # no slice mode
+                continue
+
             # Slider ROW
             layout.addWidget(self._height_filler(), irow, 0)
 
