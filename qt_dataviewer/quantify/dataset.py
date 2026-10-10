@@ -26,6 +26,9 @@ class QuantifyDataset(Dataset):
 
     def reload(self) -> None:
         self._file_modified_time = self._get_file_mtime()
+        if self._file_modified_time is None:
+            # no dataset.hdf5, e.g. a directory with only a snapshot
+            return
         try:
             ds = self._load_ds()
             self.ds_xr = convert_quantify(ds)
@@ -42,6 +45,8 @@ class QuantifyDataset(Dataset):
     def is_complete(self) -> bool:
         # TODO How can we know data is complete?
         # Assume it does not change anymore if not changed in last 10 minutes
+        if self._file_modified_time is None:
+            return True
         now = datetime.now()
         return now - self._file_modified_time > timedelta(minutes=10)
 
@@ -76,6 +81,8 @@ class QuantifyDataset(Dataset):
 
     def _get_file_mtime(self):
         file_path = self.ds_description.dataset_file_path
+        if not os.path.isfile(file_path):
+            return None
         return datetime.fromtimestamp(os.path.getmtime(file_path))
 
     def _load_ds(self) -> xr.Dataset:
@@ -87,11 +94,11 @@ class QuantifyDataset(Dataset):
             # assume we have write permission!
             tmp_file = str(file_path)[:-5]+".qt_tmp.hdf5"
             shutil.copy(file_path, tmp_file)
-            dsx = xr.load_dataset(tmp_file, engine="h5netcdf")
+            dsx = _load_dataset(tmp_file)
             os.remove(tmp_file)
             return dsx
         else:
-            return xr.load_dataset(file_path, engine="h5netcdf")
+            return _load_dataset(file_path)
 
     def _load_snapshot(self) -> dict[str, Any]:
         extensions = [
@@ -106,3 +113,12 @@ class QuantifyDataset(Dataset):
                 with _open(path, "rt", encoding="utf-8") as fp:
                     return json.load(fp)
         return None
+
+
+def _load_dataset(file_path) -> xr.Dataset:
+    with open(file_path, "rb") as fp:
+        netcdf3 = fp.read(3) == b"CDF"
+    if netcdf3:
+        # older quantify versions wrote NetCDF3. Needs scipy or netCDF4.
+        return xr.load_dataset(file_path)
+    return xr.load_dataset(file_path, engine="h5netcdf")
