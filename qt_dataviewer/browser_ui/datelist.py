@@ -16,6 +16,7 @@ class DateListView(QtWidgets.QListWidget):
             """
             QListWidget::item {
             height: 22px;
+            padding-left: 6px;
             }
             """
             )

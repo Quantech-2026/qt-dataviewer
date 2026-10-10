@@ -37,14 +37,10 @@ class BasePlot:
 
     def remove(self):
         layout = self._layout
-        for i in reversed(range(layout.count())):
-            widget = layout.itemAt(i).widget()
+        while layout.count():
+            widget = layout.takeAt(0).widget()
             if widget is not None:
-                layout.removeWidget(widget)
                 widget.setParent(None)
-            else:
-                item = layout.itemAt(i)
-                layout.removeItem(item)
 
 
 

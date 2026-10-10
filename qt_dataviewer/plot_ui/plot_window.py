@@ -433,13 +433,11 @@ class PlotWindow:
         for widget in self._plot_widgets.values():
             widget.deleteLater()
         self._plot_widgets = {}
-        for i in reversed(range(self.plots_layout.count())):
-            widget = self.plots_layout.itemAt(i).widget()
-            widget.deleteLater()
-
-        for i in range(self.settings_layout.count()):
-            widget = self.settings_layout.itemAt(i).widget()
-            widget.deleteLater()
+        for layout in [self.plots_layout, self.settings_layout]:
+            while layout.count():
+                widget = layout.takeAt(0).widget()
+                if widget is not None:
+                    widget.deleteLater()
         self.lb_variables.clear()
 
     def add_variable(self, name: str, hidden: bool):
@@ -653,7 +651,7 @@ class RatingWidget(QtWidgets.QWidget):
     def _star_changed(self, state: QtCore.Qt.CheckState) -> None:
         if self._updating:
             return
-        if state == QtCore.Qt.Checked:
+        if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
             self._rating = +1
             if self.cb_hide:
                 self.cb_hide.setCheckState(QtCore.Qt.Unchecked)
@@ -666,7 +664,7 @@ class RatingWidget(QtWidgets.QWidget):
     def _hide_changed(self, state: QtCore.Qt.CheckState) -> None:
         if self._updating:
             return
-        if state == QtCore.Qt.Checked:
+        if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
             self._rating = -1
             if self.cb_star:
                 self.cb_star.setCheckState(QtCore.Qt.Unchecked)

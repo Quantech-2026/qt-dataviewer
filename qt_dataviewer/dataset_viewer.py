@@ -35,7 +35,7 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
                 _app = qt_create_app()
 
             self.datalist = datalist
-            super(QtWidgets.QMainWindow, self).__init__()
+            super().__init__()
             self.setup_ui(self, self, rating_options)
 
             self._plotters: list[DataArrayPlotter] = []

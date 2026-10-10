@@ -45,9 +45,10 @@ class PulsesWidget(QtWidgets.QWidget):
 
     @qt_log_exception
     def set_pulses(self, pulses: dict[str, Any] | None):
-        for i in range(self.pulses_layout.count()):
-            widget = self.pulses_layout.itemAt(i).widget()
-            widget.deleteLater()
+        while self.pulses_layout.count():
+            widget = self.pulses_layout.takeAt(0).widget()
+            if widget is not None:
+                widget.deleteLater()
         self.pulses = pulses
         if pulses is not None:
             self.needs_plotting = True
