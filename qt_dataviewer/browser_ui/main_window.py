@@ -4,6 +4,8 @@ from datetime import date
 from qtpy import QtCore, QtWidgets
 
 from qt_dataviewer import DatasetViewer
+from qt_dataviewer.abstract.dataset import Dataset
+from qt_dataviewer.abstract.dataset_list import DatasetList
 from qt_dataviewer.abstract.dataset_store import DatasetStore, Filter
 from qt_dataviewer.abstract.dataset_description import DatasetDescription
 from qt_dataviewer.utils.qt_utils import (
@@ -46,8 +48,17 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         column_definitions: tuple[str] | tuple[str, int] | tuple[str, int, str],
         sort_by_column: int,
         filters: list[str | tuple[str, str]],
-        gui_style: str | None = None
+        gui_style: str | None = None,
+        *,
+        show: bool = True,
     ):
+        """
+        Args:
+            show: if False, the browser is not shown and no Qt event loop is
+                started. Use this to embed the browser in another window, e.g.
+                in a tab or dock widget. The caller then runs the Qt application.
+                Override create_viewer() to embed the dataset viewers as well.
+        """
         global _app
         logger.debug("Init QT data browser")
 
@@ -167,10 +178,11 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         content.setLayout(layout)
 
         self.setCentralWidget(content)
-        self.show()
+        if show:
+            self.show()
         self.browser_started()
 
-        if _app is not None:
+        if show and _app is not None:
             qt_run_app(_app)
 
     def browser_started(self):
@@ -226,10 +238,18 @@ class DataBrowserBase(QtWidgets.QMainWindow):
         ds = self.dataset_store.get_dataset(ds_description)
         if ds is not None:
             datalist = BrowserDatasetList(self.dataset_store, ds_description)
-            viewer = DatasetViewer(ds, datalist=datalist,
-                                   rating_options=self.rating_options)
+            viewer = self.create_viewer(ds, datalist)
             viewer.dataset_rating_changed.connect(self._update_rating)
             self.viewers.append(viewer)
+
+    def create_viewer(self, ds: Dataset, datalist: DatasetList) -> DatasetViewer:
+        """
+        Creates the viewer for a dataset opened in the browser.
+        Override to embed viewers in another window, e.g. with
+        DatasetViewer(ds, datalist=datalist, rating_options=self.rating_options, show=False).
+        """
+        return DatasetViewer(ds, datalist=datalist,
+                             rating_options=self.rating_options)
 
     @QtCore.Slot()
     def close_all_plots(self) -> None:

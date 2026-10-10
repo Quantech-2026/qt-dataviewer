@@ -7,13 +7,14 @@ from .dataset_store import QuantifyDatasetStore
 
 class QuantifyDataBrowser(DataBrowserBase):
     def __init__(self, path=None, auto_scan: bool = True, gui_style: str | None = None,
-                 check_datasets: bool = False):
+                 check_datasets: bool = False, *, show: bool = True):
         """
         Args:
             path: base directory of quantify store.
             auto_scan: if True scans for new files.
             gui_style: "light", "dark" or None
             check_data_sets: if True checks if dataset directory contains dataset.hdf5.
+            show: if False the browser is not shown, see DataBrowserBase.
         """
         self._quantify_data_dir = path
         self.data_store = QuantifyDatasetStore(check_datasets)
@@ -40,6 +41,7 @@ class QuantifyDataBrowser(DataBrowserBase):
                 "Name",
                 ],
             gui_style=gui_style,
+            show=show,
             )
 
     def browser_started(self):

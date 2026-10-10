@@ -6,7 +6,8 @@ from .dataset_store import QCoDeSDatasetStore
 
 
 class QCoDeSDataBrowser(DataBrowserBase):
-    def __init__(self, db_path: str | None = None, gui_style: str | None = None): # @@@ Path, PathLike
+    def __init__(self, db_path: str | None = None, gui_style: str | None = None, # @@@ Path, PathLike
+                 *, show: bool = True):
         self.data_store = QCoDeSDatasetStore(db_path)
         super().__init__(
             "QCoDeS",
@@ -38,6 +39,7 @@ class QCoDeSDataBrowser(DataBrowserBase):
                 ("Axes", "list"),
                 ],
             gui_style=gui_style,
+            show=show,
             )
 
     def get_menu_actions(self):

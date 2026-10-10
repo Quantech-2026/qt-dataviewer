@@ -25,7 +25,17 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
 
     def __init__(self, ds: Dataset, *,
                  datalist: DatasetList | None = None,
-                 rating_options: str | None = None):
+                 rating_options: str | None = None,
+                 show: bool = True):
+        """
+        Args:
+            ds: dataset to show.
+            datalist: list for the previous/next buttons.
+            rating_options: type of rating column of the browser, if any.
+            show: if False, the viewer is not shown and no Qt event loop is
+                started. Use this to embed the viewer in another window, e.g.
+                in a tab or dock widget. The caller then runs the Qt application.
+        """
         try:
             global _app
             qt_app_runing = qt_init()
@@ -48,10 +58,11 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
 
             self.set_ds(ds)
 
-            self.show()
+            if show:
+                self.show()
 
-            if _app is not None:
-                qt_run_app(_app)
+                if _app is not None:
+                    qt_run_app(_app)
         except Exception:
             logger.error('Dataset viewer', exc_info=True)
             raise
