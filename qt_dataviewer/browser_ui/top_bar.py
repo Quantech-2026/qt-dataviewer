@@ -111,7 +111,7 @@ class TopBar(QtWidgets.QWidget):
         Args:
             state (QtCore.Qt.CheckState): The new state of the checkbox.
         """
-        self.liveplotting_changed.emit(state == QtCore.Qt.Checked)
+        self.liveplotting_changed.emit(QtCore.Qt.CheckState(state) == QtCore.Qt.Checked)
 
     @QtCore.Slot()
     def _uid_entered(self):

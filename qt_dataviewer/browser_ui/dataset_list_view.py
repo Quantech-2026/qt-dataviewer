@@ -243,7 +243,7 @@ class RatingWidget(QtWidgets.QWidget):
 
     @QtCore.Slot(int)
     def _up_changed(self, state: QtCore.Qt.CheckState) -> None:
-        if state == QtCore.Qt.Checked:
+        if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
             self._rating = +1
             self.rating_changed.emit(self._rating)
             if self.cb_down:
@@ -254,7 +254,7 @@ class RatingWidget(QtWidgets.QWidget):
 
     @QtCore.Slot(int)
     def _down_changed(self, state: QtCore.Qt.CheckState) -> None:
-        if state == QtCore.Qt.Checked:
+        if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
             self._rating = -1
             if self.cb_up:
                 self.cb_up.setCheckState(QtCore.Qt.Unchecked)

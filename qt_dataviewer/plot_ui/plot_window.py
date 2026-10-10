@@ -653,7 +653,7 @@ class RatingWidget(QtWidgets.QWidget):
     def _star_changed(self, state: QtCore.Qt.CheckState) -> None:
         if self._updating:
             return
-        if state == QtCore.Qt.Checked:
+        if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
             self._rating = +1
             if self.cb_hide:
                 self.cb_hide.setCheckState(QtCore.Qt.Unchecked)
@@ -666,7 +666,7 @@ class RatingWidget(QtWidgets.QWidget):
     def _hide_changed(self, state: QtCore.Qt.CheckState) -> None:
         if self._updating:
             return
-        if state == QtCore.Qt.Checked:
+        if QtCore.Qt.CheckState(state) == QtCore.Qt.Checked:
             self._rating = -1
             if self.cb_star:
                 self.cb_star.setCheckState(QtCore.Qt.Unchecked)

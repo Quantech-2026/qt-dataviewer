@@ -3,7 +3,6 @@ import os
 from datetime import date
 
 from qtpy import QtCore, QtWidgets
-from qtpy.QtWidgets import QDesktopWidget
 
 from qt_dataviewer import DatasetViewer
 from qt_dataviewer.abstract.dataset_description import DatasetDescription
@@ -68,7 +67,7 @@ class DataFileBrowser(QtWidgets.QMainWindow):
         self.setWindowTitle(self._WINDOW_TITLE)
 
         # set window size
-        screen = QDesktopWidget().screenGeometry()
+        screen = QtWidgets.QApplication.primaryScreen().availableGeometry()
         self.resize(int(screen.width() * 0.7), int(screen.height() * 0.7))
 
         label_keys = {

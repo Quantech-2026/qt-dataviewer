@@ -4,7 +4,7 @@ import threading
 import traceback
 
 import pyqtgraph as pg
-from qtpy import QtCore, QtWidgets, QtGui
+from qtpy import QT5, QtCore, QtWidgets, QtGui
 from qtpy.QtWidgets import QMessageBox
 
 try:
@@ -78,6 +78,19 @@ def qt_show_error(title, message):
 _qt_app = None
 
 
+def _set_high_dpi_scaling():
+    '''Proper scaling when display scaling is not equal to 100%.
+    This must be done before QApplication is started.
+    '''
+    if QtCore.QCoreApplication.instance() is not None:
+        return
+    if QT5:
+        # Always enabled in Qt6, where the attribute is deprecated.
+        QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
+    QtGui.QGuiApplication.setHighDpiScaleFactorRoundingPolicy(
+        QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+
+
 def qt_init(style: str | None = None) -> bool:
     '''Tries to start the QT application if not yet started.
     Most of the cases the QT backend is already started
@@ -91,10 +104,7 @@ def qt_init(style: str | None = None) -> bool:
 
     if _qt_app is None:
 
-        # Set attributes for proper scaling when display scaling is not equal to 100%
-        # This should be done before QApplication is started.
-        QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-        QtCore.QCoreApplication.setAttribute(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+        _set_high_dpi_scaling()
 
         ipython = get_ipython()
 
@@ -158,8 +168,7 @@ def qt_create_app() -> QtCore.QCoreApplication:
     global _qt_app
 
     logger.info("Create Qt application")
-    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling)
-    QtCore.QCoreApplication.setAttribute(QtCore.Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
+    _set_high_dpi_scaling()
     _qt_app = QtWidgets.QApplication([])
     return _qt_app
 
