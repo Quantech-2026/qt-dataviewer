@@ -159,6 +159,7 @@ class DatasetViewer(QtWidgets.QMainWindow, PlotWindow, EventHandler):
         """ Override of QT closeEvent. """
         self.alive = False
         self._timer.stop()
+        self._timer_latest.stop()
         self._ds.close()
         self.close_plots()
 
