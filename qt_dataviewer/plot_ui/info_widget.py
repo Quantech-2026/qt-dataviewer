@@ -63,9 +63,10 @@ class InfoWidget(QtWidgets.QWidget):
             QtWidgets.QSpacerItem(0, 0, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum))
 
     def set_info(self, details_list: list[tuple[str, str]]):
-        for i in range(self.details_layout.count()):
-            widget = self.details_layout.itemAt(i).widget()
-            widget.deleteLater()
+        while self.details_layout.count():
+            widget = self.details_layout.takeAt(0).widget()
+            if widget is not None:
+                widget.deleteLater()
         for irow, (name, value) in enumerate(details_list):
             self.details_layout.addWidget(QtWidgets.QLabel(name), irow, 0)
             self.details_layout.addWidget(QtWidgets.QLabel(str(value)), irow, 1)
