@@ -274,6 +274,24 @@ def test_qcodes_browser_navigation(qtbot, qcodes_db, traps):
     browser.close()
 
 
+def test_qcodes_viewer_closed_with_latest_checked(qtbot, qcodes_db):
+    """A viewer closed with Latest checked stops looking for the latest dataset;
+    deleted (as an embedded viewer is), its timer must not fire on its widgets."""
+    browser = qcodes_browser(qcodes_db)
+    select_all_dates(qtbot, browser)
+    double_click_row(qtbot, browser.dataset_list_view, 0)
+    viewer = browser.viewers[-1]
+    viewer.btnLatest.click()
+    settle(qtbot, 300)
+    assert viewer.btnLatest.isChecked()
+    viewer.close()
+    assert not viewer._timer_latest.isActive()
+    browser.viewers.remove(viewer)
+    viewer.deleteLater()
+    settle(qtbot, 300)
+    browser.close()
+
+
 def test_qcodes_browser_live_run(qtbot, qcodes_db):
     """A run that starts while the browser is open shows up and plots live."""
     import qcodes as qc
