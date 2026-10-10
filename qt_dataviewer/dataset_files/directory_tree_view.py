@@ -50,19 +50,20 @@ class DirectoryTreeView(QTreeWidget):
                 item = self.topLevelItem(i)
                 if item.text(0) == name:
                     if last:
-                        item.setSelected(True)
+                        self.setCurrentItem(item)
                     else:
                         self._select(item, path_parts[1:])
                     return
         else:
-            path, children_loaded = item.data(0, Qt.UserRole)
+            path, children_loaded = parent.data(0, Qt.UserRole)
             if not children_loaded:
-                self._add_children(item, path)
+                self._add_children(parent, path)
+            parent.setExpanded(True)
             for i in range(parent.childCount()):
                 item = parent.child(i)
-                if item.text() == name:
+                if item.text(0) == name:
                     if last:
-                        item.setSelected(True)
+                        self.setCurrentItem(item)
                     else:
                         self._select(item, path_parts[1:])
                     return
