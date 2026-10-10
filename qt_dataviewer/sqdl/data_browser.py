@@ -15,6 +15,8 @@ class SqdlDataBrowser(DataBrowserBase):
             scope_name: str | None = None,
             gui_style: str | None = None,
             backend_type: str | None = None,
+            *,
+            show: bool = True,
     ):
         """
         Creates sQDL data browser.
@@ -24,6 +26,7 @@ class SqdlDataBrowser(DataBrowserBase):
             gui_style: if "dark" enables dark style for gui.
             backend_type: Which backend to use. Defaults to "sqdl", but "qdl" is
                 also accepted.
+            show: if False the browser is not shown, see DataBrowserBase.
         """
         self.data_store = SqdlDatasetStore(backend_type) # TODO @@@ change construction order to show pop-up notification for login..
         self.scope_name = scope_name
@@ -72,6 +75,7 @@ class SqdlDataBrowser(DataBrowserBase):
                 ("Axes", "list"),
                 ],
             gui_style=gui_style,
+            show=show,
             )
 
     def browser_started(self):

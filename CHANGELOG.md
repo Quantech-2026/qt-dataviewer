@@ -1,6 +1,11 @@
 # Changelog
 All notable changes to QT-DataViewer will be documented in this file.
 
+## \[Unreleased]
+
+- Added argument `show` to the data browsers and DatasetViewer, and DataBrowserBase.create_viewer(),
+  to embed browser and viewers in another window.
+
 ## \[0.5.7] - 2026-07-27
 
 - Increased zoom-out range.

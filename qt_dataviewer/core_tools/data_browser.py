@@ -4,7 +4,7 @@ from .dataset_store import CoreToolsDatasetStore
 
 
 class CoreToolsDataBrowser(DataBrowserBase):
-    def __init__(self, gui_style: str | None = None):
+    def __init__(self, gui_style: str | None = None, *, show: bool = True):
         self.data_store = CoreToolsDatasetStore()
         super().__init__(
             "CoreTools",
@@ -37,6 +37,7 @@ class CoreToolsDataBrowser(DataBrowserBase):
                 ("Keywords", "keywords"),
                 ],
             gui_style=gui_style,
+            show=show,
             )
 
     def get_menu_actions(self):
