@@ -5,6 +5,8 @@ All notable changes to QT-DataViewer will be documented in this file.
 
 - Added argument `show` to the data browsers and DatasetViewer, and DataBrowserBase.create_viewer(),
   to embed browser and viewers in another window.
+- Fixed QCoDeS browser for a run created but not started yet: it raised and stopped the updates.
+  The run is listed once started.
 
 ## \[0.5.7] - 2026-07-27
 

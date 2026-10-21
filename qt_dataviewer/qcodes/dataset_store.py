@@ -98,6 +98,10 @@ class QCoDeSDatasetStore(DatasetStore):
             self._experiments.append(exp)
 
             for ds in experiment.data_sets():
+                if not ds.started:
+                    # no start time yet: check_for_updates lists it once started
+                    exp.unstarted.append(ds.counter)
+                    continue
                 dd = self._get_ds_description(ds, exp)
                 exp.ds_descriptions.append(dd)
         self._apply_filter()
@@ -203,13 +207,19 @@ class QCoDeSDatasetStore(DatasetStore):
 
         for exp in self._experiments:
             current_counter = exp.experiment.last_counter
-            if current_counter != exp.last_counter:
-                for counter in range(exp.last_counter, current_counter):
-                    ds = load_by_counter(counter + 1, exp.exp_id, self._db_conn)
-                    dd = self._get_ds_description(ds, exp)
-                    exp.ds_descriptions.append(dd)
-                    new_ds_descriptions.append(dd)
-                exp.last_counter = current_counter
+            # the runs not started at the last check, then the new ones
+            counters = exp.unstarted + list(range(exp.last_counter + 1, current_counter + 1))
+            exp.unstarted = []
+            for counter in counters:
+                ds = load_by_counter(counter, exp.exp_id, self._db_conn)
+                if not ds.started:
+                    # created, but without start time and parameters yet
+                    exp.unstarted.append(counter)
+                    continue
+                dd = self._get_ds_description(ds, exp)
+                exp.ds_descriptions.append(dd)
+                new_ds_descriptions.append(dd)
+            exp.last_counter = current_counter
 
         if new_ds_descriptions:
             self._emit_updates(new_ds_descriptions)
@@ -308,3 +318,5 @@ class ExperimentInMem:
     sample_name: str
     last_counter: int
     ds_descriptions: list[QCoDeSDatasetDescription] = field(default_factory=list)
+    # counters of the runs created but not started yet
+    unstarted: list[int] = field(default_factory=list)
