@@ -31,6 +31,7 @@ class QCoDeSDatasetStore(DatasetStore):
 
         self._db_path = db_path
         self._db_conn = None
+        self._db_conn_path: str = None
         self._filter = Filter()
         self._sample: str = None
         self._experiment: str = None
@@ -73,18 +74,21 @@ class QCoDeSDatasetStore(DatasetStore):
         if self._db_path is None:
             return
 
+        # @@@ try/except
+        db_path = os.path.expanduser(self._db_path)
+
         # @@@ Open database. Print exception.
-        if self._db_conn is not None:
+        # The datasets in open viewers use the connection: closed only for another database.
+        if self._db_conn is not None and db_path != self._db_conn_path:
             self._db_conn.close()
             self._db_conn = None
 
         # @@@ clear dates, labels, ...
         self._experiments = []
 
-        # @@@ try/except
-        db_path = os.path.expanduser(self._db_path)
-
-        self._db_conn = connect(db_path, version=5, read_only=True)
+        if self._db_conn is None:
+            self._db_conn = connect(db_path, version=5, read_only=True)
+            self._db_conn_path = db_path
 
         for experiment in experiments(self._db_conn):
             exp_id = experiment.exp_id
@@ -98,6 +102,10 @@ class QCoDeSDatasetStore(DatasetStore):
             self._experiments.append(exp)
 
             for ds in experiment.data_sets():
+                if not ds.started:
+                    # no start time yet: check_for_updates lists it once started
+                    exp.unstarted.append(ds.counter)
+                    continue
                 dd = self._get_ds_description(ds, exp)
                 exp.ds_descriptions.append(dd)
         self._apply_filter()
@@ -203,13 +211,19 @@ class QCoDeSDatasetStore(DatasetStore):
 
         for exp in self._experiments:
             current_counter = exp.experiment.last_counter
-            if current_counter != exp.last_counter:
-                for counter in range(exp.last_counter, current_counter):
-                    ds = load_by_counter(counter + 1, exp.exp_id, self._db_conn)
-                    dd = self._get_ds_description(ds, exp)
-                    exp.ds_descriptions.append(dd)
-                    new_ds_descriptions.append(dd)
-                exp.last_counter = current_counter
+            # the runs not started at the last check, then the new ones
+            counters = exp.unstarted + list(range(exp.last_counter + 1, current_counter + 1))
+            exp.unstarted = []
+            for counter in counters:
+                ds = load_by_counter(counter, exp.exp_id, self._db_conn)
+                if not ds.started:
+                    # created, but without start time and parameters yet
+                    exp.unstarted.append(counter)
+                    continue
+                dd = self._get_ds_description(ds, exp)
+                exp.ds_descriptions.append(dd)
+                new_ds_descriptions.append(dd)
+            exp.last_counter = current_counter
 
         if new_ds_descriptions:
             self._emit_updates(new_ds_descriptions)
@@ -308,3 +322,5 @@ class ExperimentInMem:
     sample_name: str
     last_counter: int
     ds_descriptions: list[QCoDeSDatasetDescription] = field(default_factory=list)
+    # counters of the runs created but not started yet
+    unstarted: list[int] = field(default_factory=list)
