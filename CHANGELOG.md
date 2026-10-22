@@ -7,6 +7,7 @@ All notable changes to QT-DataViewer will be documented in this file.
   to embed browser and viewers in another window.
 - Fixed QCoDeS browser for a run created but not started yet: it raised and stopped the updates.
   The run is listed once started.
+- Fixed QCoDeS browser refresh closing the database of the datasets in open viewers.
 
 ## \[0.5.7] - 2026-07-27
 

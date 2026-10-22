@@ -31,6 +31,7 @@ class QCoDeSDatasetStore(DatasetStore):
 
         self._db_path = db_path
         self._db_conn = None
+        self._db_conn_path: str = None
         self._filter = Filter()
         self._sample: str = None
         self._experiment: str = None
@@ -73,18 +74,21 @@ class QCoDeSDatasetStore(DatasetStore):
         if self._db_path is None:
             return
 
+        # @@@ try/except
+        db_path = os.path.expanduser(self._db_path)
+
         # @@@ Open database. Print exception.
-        if self._db_conn is not None:
+        # The datasets in open viewers use the connection: closed only for another database.
+        if self._db_conn is not None and db_path != self._db_conn_path:
             self._db_conn.close()
             self._db_conn = None
 
         # @@@ clear dates, labels, ...
         self._experiments = []
 
-        # @@@ try/except
-        db_path = os.path.expanduser(self._db_path)
-
-        self._db_conn = connect(db_path, version=5, read_only=True)
+        if self._db_conn is None:
+            self._db_conn = connect(db_path, version=5, read_only=True)
+            self._db_conn_path = db_path
 
         for experiment in experiments(self._db_conn):
             exp_id = experiment.exp_id
